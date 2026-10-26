@@ -477,7 +477,7 @@ function choose(p){
  selected=p;
  if(p){
    const functions=pinFunctions(p[0]);
-   const muxHTML=functions.length?`<details class="muxDetails" ${keepMuxOpen?'open':''}><summary class="muxTitle">管腳功能（${functions.length}）</summary><div class="muxList" style="max-height:38vh;overflow-y:auto;overscroll-behavior:contain;margin-top:5px">${functions.map((v,i)=>`<div class="muxItem" style="padding:3px 0">${i+1}. ${escapeInfo(v)}</div>`).join('')}</div></details>`:'';
+   const muxHTML=functions.length>1?`<details class="muxDetails" ${keepMuxOpen?'open':''}><summary class="muxTitle">管腳功能（${functions.length}）</summary><div class="muxList" style="max-height:38vh;overflow-y:auto;overscroll-behavior:contain;margin-top:5px">${functions.map((v,i)=>`<div class="muxItem" style="padding:3px 0">${i+1}. ${escapeInfo(v)}</div>`).join('')}</div></details>`:'';
    infoContent.innerHTML=`<details class="pinDetails" ${keepPinOpen?'open':''}><summary>${escapeInfo(p[0])}　${escapeInfo(p[1])}</summary><div class="pinSummary">分組：${escapeInfo(p[4])}<div>X: ${fmtLen(p[2])}　Y: ${fmtLen(p[3])}</div></div><div class="pinBody">${muxHTML}</div></details>`;
  }else infoContent.textContent='未找到對應管腳';
  info.classList.add('show');draw();
