@@ -1,0 +1,970 @@
+{
+  "title": "STM32F103C8Tx · LQFP48 管腳與復用功能",
+  "description": "STM32F103C8Tx LQFP48 封裝；腳號及復用功能參考 ST DS5319 Rev 20 Table 5。位置採示意封裝幾何（非 IPC 製造焊盤）；復用功能為可用候選，並非可同時使用。",
+  "author": {
+    "source": "STMicroelectronics DS5319 Rev 20",
+    "datasheet": "https://www.st.com/resource/en/datasheet/stm32f103c8.pdf"
+  },
+  "package_name": "LQFP48",
+  "pins": 48,
+  "measure_units": {
+    "length": "mm",
+    "angle": "deg"
+  },
+  "measure_types": "orth",
+  "pad_samples": [
+    {
+      "shape": "rectangle",
+      "width": 1.5,
+      "height": 0.28,
+      "center": [
+        0,
+        0
+      ]
+    }
+  ],
+  "pinouts": {
+    "1": {
+      "position": [
+        -4.25,
+        2.75
+      ],
+      "func_name": "VBAT",
+      "para": {
+        "group": "Power",
+        "pin_name": "VBAT",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "2": {
+      "position": [
+        -4.25,
+        2.25
+      ],
+      "func_name": [
+        "PC13",
+        "TAMPER-RTC"
+      ],
+      "para": {
+        "group": "Clock / Backup",
+        "pin_name": "PC13",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "3": {
+      "position": [
+        -4.25,
+        1.75
+      ],
+      "func_name": [
+        "PC14",
+        "OSC32_IN"
+      ],
+      "para": {
+        "group": "Clock / Backup",
+        "pin_name": "PC14",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "4": {
+      "position": [
+        -4.25,
+        1.25
+      ],
+      "func_name": [
+        "PC15",
+        "OSC32_OUT"
+      ],
+      "para": {
+        "group": "Clock / Backup",
+        "pin_name": "PC15",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "5": {
+      "position": [
+        -4.25,
+        0.75
+      ],
+      "func_name": [
+        "PD0",
+        "OSC_IN"
+      ],
+      "para": {
+        "group": "Clock / Backup",
+        "pin_name": "PD0",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "6": {
+      "position": [
+        -4.25,
+        0.25
+      ],
+      "func_name": [
+        "PD1",
+        "OSC_OUT"
+      ],
+      "para": {
+        "group": "Clock / Backup",
+        "pin_name": "PD1",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "7": {
+      "position": [
+        -4.25,
+        -0.25
+      ],
+      "func_name": "NRST",
+      "para": {
+        "group": "Control",
+        "pin_name": "NRST",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "8": {
+      "position": [
+        -4.25,
+        -0.75
+      ],
+      "func_name": "VSSA",
+      "para": {
+        "group": "Ground",
+        "pin_name": "VSSA",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "9": {
+      "position": [
+        -4.25,
+        -1.25
+      ],
+      "func_name": "VDDA",
+      "para": {
+        "group": "Power",
+        "pin_name": "VDDA",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "10": {
+      "position": [
+        -4.25,
+        -1.75
+      ],
+      "func_name": [
+        "PA0",
+        "WKUP",
+        "USART2_CTS",
+        "ADC12_IN0",
+        "TIM2_CH1_ETR"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PA0",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "11": {
+      "position": [
+        -4.25,
+        -2.25
+      ],
+      "func_name": [
+        "PA1",
+        "USART2_RTS",
+        "ADC12_IN1",
+        "TIM2_CH2"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PA1",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "12": {
+      "position": [
+        -4.25,
+        -2.75
+      ],
+      "func_name": [
+        "PA2",
+        "USART2_TX",
+        "ADC12_IN2",
+        "TIM2_CH3"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PA2",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "13": {
+      "position": [
+        -2.75,
+        -4.25
+      ],
+      "func_name": [
+        "PA3",
+        "USART2_RX",
+        "ADC12_IN3",
+        "TIM2_CH4"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PA3",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "14": {
+      "position": [
+        -2.25,
+        -4.25
+      ],
+      "func_name": [
+        "PA4",
+        "SPI1_NSS",
+        "USART2_CK",
+        "ADC12_IN4"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PA4",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "15": {
+      "position": [
+        -1.75,
+        -4.25
+      ],
+      "func_name": [
+        "PA5",
+        "SPI1_SCK",
+        "ADC12_IN5"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PA5",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "16": {
+      "position": [
+        -1.25,
+        -4.25
+      ],
+      "func_name": [
+        "PA6",
+        "SPI1_MISO",
+        "ADC12_IN6",
+        "TIM3_CH1",
+        "TIM1_BKIN (remap)"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PA6",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "復用功能包含重映射選項；實際使用受 AFIO_MAPR、除錯介面及外設衝突限制。",
+        "en": "Some alternate functions require AFIO remapping."
+      }
+    },
+    "17": {
+      "position": [
+        -0.75,
+        -4.25
+      ],
+      "func_name": [
+        "PA7",
+        "SPI1_MOSI",
+        "ADC12_IN7",
+        "TIM3_CH2",
+        "TIM1_CH1N (remap)"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PA7",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "復用功能包含重映射選項；實際使用受 AFIO_MAPR、除錯介面及外設衝突限制。",
+        "en": "Some alternate functions require AFIO remapping."
+      }
+    },
+    "18": {
+      "position": [
+        -0.25,
+        -4.25
+      ],
+      "func_name": [
+        "PB0",
+        "ADC12_IN8",
+        "TIM3_CH3",
+        "TIM1_CH2N (remap)"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PB0",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "復用功能包含重映射選項；實際使用受 AFIO_MAPR、除錯介面及外設衝突限制。",
+        "en": "Some alternate functions require AFIO remapping."
+      }
+    },
+    "19": {
+      "position": [
+        0.25,
+        -4.25
+      ],
+      "func_name": [
+        "PB1",
+        "ADC12_IN9",
+        "TIM3_CH4",
+        "TIM1_CH3N (remap)"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PB1",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "復用功能包含重映射選項；實際使用受 AFIO_MAPR、除錯介面及外設衝突限制。",
+        "en": "Some alternate functions require AFIO remapping."
+      }
+    },
+    "20": {
+      "position": [
+        0.75,
+        -4.25
+      ],
+      "func_name": [
+        "PB2",
+        "BOOT1"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PB2",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "21": {
+      "position": [
+        1.25,
+        -4.25
+      ],
+      "func_name": [
+        "PB10",
+        "I2C2_SCL",
+        "USART3_TX",
+        "TIM2_CH3 (remap)"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PB10",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "復用功能包含重映射選項；實際使用受 AFIO_MAPR、除錯介面及外設衝突限制。",
+        "en": "Some alternate functions require AFIO remapping."
+      }
+    },
+    "22": {
+      "position": [
+        1.75,
+        -4.25
+      ],
+      "func_name": [
+        "PB11",
+        "I2C2_SDA",
+        "USART3_RX",
+        "TIM2_CH4 (remap)"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PB11",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "復用功能包含重映射選項；實際使用受 AFIO_MAPR、除錯介面及外設衝突限制。",
+        "en": "Some alternate functions require AFIO remapping."
+      }
+    },
+    "23": {
+      "position": [
+        2.25,
+        -4.25
+      ],
+      "func_name": "VSS_1",
+      "para": {
+        "group": "Ground",
+        "pin_name": "VSS_1",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "24": {
+      "position": [
+        2.75,
+        -4.25
+      ],
+      "func_name": "VDD_1",
+      "para": {
+        "group": "Power",
+        "pin_name": "VDD_1",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "25": {
+      "position": [
+        4.25,
+        -2.75
+      ],
+      "func_name": [
+        "PB12",
+        "SPI2_NSS",
+        "I2C2_SMBA",
+        "USART3_CK",
+        "TIM1_BKIN"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PB12",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "26": {
+      "position": [
+        4.25,
+        -2.25
+      ],
+      "func_name": [
+        "PB13",
+        "SPI2_SCK",
+        "USART3_CTS",
+        "TIM1_CH1N"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PB13",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "27": {
+      "position": [
+        4.25,
+        -1.75
+      ],
+      "func_name": [
+        "PB14",
+        "SPI2_MISO",
+        "USART3_RTS",
+        "TIM1_CH2N"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PB14",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "28": {
+      "position": [
+        4.25,
+        -1.25
+      ],
+      "func_name": [
+        "PB15",
+        "SPI2_MOSI",
+        "TIM1_CH3N"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PB15",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "29": {
+      "position": [
+        4.25,
+        -0.75
+      ],
+      "func_name": [
+        "PA8",
+        "USART1_CK",
+        "TIM1_CH1",
+        "MCO"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PA8",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "30": {
+      "position": [
+        4.25,
+        -0.25
+      ],
+      "func_name": [
+        "PA9",
+        "USART1_TX",
+        "TIM1_CH2"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PA9",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "31": {
+      "position": [
+        4.25,
+        0.25
+      ],
+      "func_name": [
+        "PA10",
+        "USART1_RX",
+        "TIM1_CH3"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PA10",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "32": {
+      "position": [
+        4.25,
+        0.75
+      ],
+      "func_name": [
+        "PA11",
+        "USART1_CTS",
+        "CAN_RX",
+        "TIM1_CH4",
+        "USB_DM"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PA11",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "33": {
+      "position": [
+        4.25,
+        1.25
+      ],
+      "func_name": [
+        "PA12",
+        "USART1_RTS",
+        "CAN_TX",
+        "TIM1_ETR",
+        "USB_DP"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PA12",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "34": {
+      "position": [
+        4.25,
+        1.75
+      ],
+      "func_name": [
+        "PA13",
+        "JTMS",
+        "SWDIO"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PA13",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "35": {
+      "position": [
+        4.25,
+        2.25
+      ],
+      "func_name": "VSS_2",
+      "para": {
+        "group": "Ground",
+        "pin_name": "VSS_2",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "36": {
+      "position": [
+        4.25,
+        2.75
+      ],
+      "func_name": "VDD_2",
+      "para": {
+        "group": "Power",
+        "pin_name": "VDD_2",
+        "pad_rotation_deg": 0
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "37": {
+      "position": [
+        2.75,
+        4.25
+      ],
+      "func_name": [
+        "PA14",
+        "JTCK",
+        "SWCLK"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PA14",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "38": {
+      "position": [
+        2.25,
+        4.25
+      ],
+      "func_name": [
+        "PA15",
+        "JTDI",
+        "TIM2_CH1_ETR (remap)",
+        "SPI1_NSS (remap)"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PA15",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "復用功能包含重映射選項；實際使用受 AFIO_MAPR、除錯介面及外設衝突限制。",
+        "en": "Some alternate functions require AFIO remapping."
+      }
+    },
+    "39": {
+      "position": [
+        1.75,
+        4.25
+      ],
+      "func_name": [
+        "PB3",
+        "JTDO",
+        "TRACESWO",
+        "TIM2_CH2 (remap)",
+        "SPI1_SCK (remap)"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PB3",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "復用功能包含重映射選項；實際使用受 AFIO_MAPR、除錯介面及外設衝突限制。",
+        "en": "Some alternate functions require AFIO remapping."
+      }
+    },
+    "40": {
+      "position": [
+        1.25,
+        4.25
+      ],
+      "func_name": [
+        "PB4",
+        "JNTRST",
+        "TIM3_CH1 (remap)",
+        "SPI1_MISO (remap)"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PB4",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "復用功能包含重映射選項；實際使用受 AFIO_MAPR、除錯介面及外設衝突限制。",
+        "en": "Some alternate functions require AFIO remapping."
+      }
+    },
+    "41": {
+      "position": [
+        0.75,
+        4.25
+      ],
+      "func_name": [
+        "PB5",
+        "I2C1_SMBA",
+        "TIM3_CH2 (remap)",
+        "SPI1_MOSI (remap)"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PB5",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "復用功能包含重映射選項；實際使用受 AFIO_MAPR、除錯介面及外設衝突限制。",
+        "en": "Some alternate functions require AFIO remapping."
+      }
+    },
+    "42": {
+      "position": [
+        0.25,
+        4.25
+      ],
+      "func_name": [
+        "PB6",
+        "I2C1_SCL",
+        "TIM4_CH1",
+        "USART1_TX (remap)"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PB6",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "復用功能包含重映射選項；實際使用受 AFIO_MAPR、除錯介面及外設衝突限制。",
+        "en": "Some alternate functions require AFIO remapping."
+      }
+    },
+    "43": {
+      "position": [
+        -0.25,
+        4.25
+      ],
+      "func_name": [
+        "PB7",
+        "I2C1_SDA",
+        "TIM4_CH2",
+        "USART1_RX (remap)"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PB7",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "復用功能包含重映射選項；實際使用受 AFIO_MAPR、除錯介面及外設衝突限制。",
+        "en": "Some alternate functions require AFIO remapping."
+      }
+    },
+    "44": {
+      "position": [
+        -0.75,
+        4.25
+      ],
+      "func_name": "BOOT0",
+      "para": {
+        "group": "Control",
+        "pin_name": "BOOT0",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "45": {
+      "position": [
+        -1.25,
+        4.25
+      ],
+      "func_name": [
+        "PB8",
+        "TIM4_CH3",
+        "I2C1_SCL (remap)",
+        "CAN_RX (remap)"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PB8",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "復用功能包含重映射選項；實際使用受 AFIO_MAPR、除錯介面及外設衝突限制。",
+        "en": "Some alternate functions require AFIO remapping."
+      }
+    },
+    "46": {
+      "position": [
+        -1.75,
+        4.25
+      ],
+      "func_name": [
+        "PB9",
+        "TIM4_CH4",
+        "I2C1_SDA (remap)",
+        "CAN_TX (remap)"
+      ],
+      "para": {
+        "group": "GPIO / Alternate",
+        "pin_name": "PB9",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "復用功能包含重映射選項；實際使用受 AFIO_MAPR、除錯介面及外設衝突限制。",
+        "en": "Some alternate functions require AFIO remapping."
+      }
+    },
+    "47": {
+      "position": [
+        -2.25,
+        4.25
+      ],
+      "func_name": "VSS_3",
+      "para": {
+        "group": "Ground",
+        "pin_name": "VSS_3",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    },
+    "48": {
+      "position": [
+        -2.75,
+        4.25
+      ],
+      "func_name": "VDD_3",
+      "para": {
+        "group": "Power",
+        "pin_name": "VDD_3",
+        "pad_rotation_deg": 90
+      },
+      "desc": {
+        "zh-Hant": "",
+        "en": ""
+      }
+    }
+  }
+}
