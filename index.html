@@ -251,8 +251,8 @@ body.settings-pinned #settingsResizeHandle::after{content:none!important;display
 body.settings-pinned #settingsResizeHandle{height:22px!important;min-height:22px!important;bottom:0!important;top:auto!important;touch-action:none!important;cursor:ns-resize!important}
 body.settings-pinned #settingsResizeHandle span{width:60px!important;height:5px!important}
 body.settings-pinned #advancedBody{bottom:22px!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important}
-body.settings-pinned.settings-folded #advanced{height:22px!important;flex:0 0 22px!important;overflow:hidden!important}
-body.settings-pinned.settings-folded #advancedBody{display:none!important}
+
+
 body.settings-pinned.settings-folded #settingsResizeHandle{display:flex!important}
 @media(min-width:800px){
  body.settings-pinned #settingsResizeHandle{width:22px!important;min-width:22px!important;height:auto!important;top:0!important;bottom:0!important;left:0!important;right:auto!important;cursor:ew-resize!important}
@@ -533,14 +533,15 @@ document.getElementById('showAllGroups').onclick=()=>{Object.keys(colors).forEac
  const viewport=document.getElementById('viewport');
  const parent=panel.parentNode, next=panel.nextSibling;
  const wide=()=>matchMedia('(min-width:800px)').matches;
- const collapsedSize=22;
- let docked=false,collapsed=false,gesture=null,lastOpen=0;
+ const collapseThreshold=55;
+ let docked=false,gesture=null,lastOpen=0;
  const axisSize=()=>panel.getBoundingClientRect()[wide()?'width':'height'];
  const maxSize=()=>wide()?Math.min(650,innerWidth*.65):Math.min(innerHeight*.72,innerHeight-170);
  const minOpen=()=>wide()?220:110;
  function setSize(n){
-   if(n<=collapsedSize+18){collapsed=true;document.body.classList.add('settings-folded');document.body.style.setProperty('--settings-size',collapsedSize+'px');}
-   else{collapsed=false;document.body.classList.remove('settings-folded');let v=Math.min(maxSize(),Math.max(minOpen(),n));lastOpen=v;document.body.style.setProperty('--settings-size',v+'px');}
+   const v=Math.min(maxSize(),Math.max(minOpen(),n));
+   lastOpen=v;
+   document.body.style.setProperty('--settings-size',v+'px');
    requestAnimationFrame(resize);
  }
  function enter(){
@@ -554,7 +555,7 @@ document.getElementById('showAllGroups').onclick=()=>{Object.keys(colors).forEac
  }
  function leave(){
    if(!docked)return;
-   docked=false;collapsed=false;
+   docked=false;
    document.body.classList.remove('settings-pinned','settings-folded');
    parent.insertBefore(panel,next);panel.open=false;
    requestAnimationFrame(()=>{resize();updateSettingsTop()});
@@ -565,31 +566,31 @@ document.getElementById('showAllGroups').onclick=()=>{Object.keys(colors).forEac
    if(!docked)return;
    e.preventDefault();e.stopPropagation();
    handle.setPointerCapture(e.pointerId);
-   gesture={id:e.pointerId,x:e.clientX,y:e.clientY,size:axisSize(),moved:false};
+   gesture={id:e.pointerId,x:e.clientX,y:e.clientY,size:axisSize(),moved:false,target:axisSize()};
  });
  handle.addEventListener('pointermove',e=>{
    if(!gesture||gesture.id!==e.pointerId)return;
    const delta=wide()?gesture.x-e.clientX:e.clientY-gesture.y;
    if(Math.abs(delta)>6)gesture.moved=true;
-   if(gesture.moved)setSize(gesture.size+delta);
+   if(gesture.moved){gesture.target=gesture.size+delta;if(gesture.target>minOpen())setSize(gesture.target);}
  });
  handle.addEventListener('pointerup',e=>{
    if(!gesture||gesture.id!==e.pointerId)return;
-   const moved=gesture.moved;gesture=null;
+   const {moved,target}=gesture;gesture=null;
    if(handle.hasPointerCapture(e.pointerId))handle.releasePointerCapture(e.pointerId);
-   if(!moved){if(collapsed)setSize(lastOpen||Math.round(innerHeight*.36));else setSize(collapsedSize)}
+   if(!moved||target<=minOpen())leave();
  });
  handle.addEventListener('pointercancel',()=>gesture=null);
  handle.addEventListener('lostpointercapture',()=>gesture=null);
  handle.addEventListener('keydown',e=>{
    if(!docked)return;
-   if(e.key==='Enter'||e.key===' '){e.preventDefault();if(collapsed)setSize(lastOpen||300);else setSize(collapsedSize)}
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();leave();return}
    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){
      e.preventDefault();const delta=wide()?(e.key==='ArrowLeft'?35:e.key==='ArrowRight'?-35:0):(e.key==='ArrowDown'?35:e.key==='ArrowUp'?-35:0);
-     if(delta)setSize(axisSize()+delta);
+     if(delta){if(axisSize()+delta<=minOpen())leave();else setSize(axisSize()+delta);}
    }
  });
- // A collapsed split remains as a slim draggable divider. Long-press menu is unnecessary.
- window.addEventListener('resize',()=>{if(docked){if(!collapsed)setSize(Math.min(lastOpen,maxSize()));requestAnimationFrame(resize)}});
+ // Closing the split restores the floating settings button; no collapsed dock remains.
+ window.addEventListener('resize',()=>{if(docked){setSize(Math.min(lastOpen,maxSize()));requestAnimationFrame(resize)}});
 })();
 </script></body></html>
