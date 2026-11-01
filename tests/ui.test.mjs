@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import vm from 'node:vm';
+import {createDOM} from './dom-fixture.mjs';
+const base=new URL('../',import.meta.url),core=await readFile(new URL('shared/viewport-core.js',base),'utf8'),ui=await readFile(new URL('shared/workspace-ui.js',base),'utf8');
+export async function runUI(){const results=[],traces=[];let sharedMarkup;
+for(const app of ['chipchip','chipdraw']){
+ const source=await readFile(new URL('src/'+app+'/index.html',base),'utf8');assert.ok(source.includes('src="../../shared/workspace-ui.js"'));assert.ok(source.includes('href="../../shared/workspace-ui.css"'));assert.ok(!source.includes('id="gridX"'));assert.ok(!source.includes('function setupGrid('));assert.ok(!source.includes('.gridSettings{'));assert.ok(!source.includes('id="fileMenu"'));assert.ok(!source.includes('<header'));assert.ok(!source.includes('function updateGridControls('));assert.ok(!source.includes("getElementById('left').onclick"));
+ const {document,event}=createDOM(source),listeners={},window={addEventListener(type,fn){(listeners[type]||=[]).push(fn)},dispatchEvent(e){for(const fn of listeners[e.type]||[])fn(e)}};
+ const context=vm.createContext({document,window,innerWidth:1000,innerHeight:800,matchMedia:()=>({matches:true}),Event:class{constructor(type){this.type=type}},setTimeout:()=>1,clearTimeout(){},alert(){}});vm.runInContext(core,context);vm.runInContext(ui,context);context.ChipUI.mount();
+ const $=id=>document.getElementById(id);assert.ok($('projectTitle'));assert.ok($('fileMenu'));assert.ok($('advanced'));const groups=$('advancedBody').querySelectorAll('.settingGroup').slice(0,2).map(e=>e.outerHTML).join('');if(sharedMarkup)assert.equal(groups,sharedMarkup);else sharedMarkup=groups;
+ const all=document.querySelectorAll('[id]').map(e=>e.id);assert.equal(new Set(all).size,all.length,'duplicate mounted IDs');
+ let state={mode:'line',directions:{horizontal:'solid',vertical:'solid',diagonalUp:'off',diagonalDown:'off'},modeStates:{line:{horizontal:'solid',vertical:'solid',diagonalUp:'off',diagonalDown:'off'},point:{horizontal:'off',vertical:'off',diagonalUp:'off',diagonalDown:'off'}},circle:false,linked:true,widthUnits:{originWidth:'px',gridLineWidth:'px'},overflowUnit:'%'},angle=0,mirror=false,changes=0;
+ context.ChipUI.bindViewGrid({read:()=>state,write:s=>state=s,getAngle:()=>angle,setAngle:a=>angle=a,getMirror:()=>mirror,setMirror:m=>mirror=m,getScale:()=>2,viewport:()=>({getBoundingClientRect:()=>({width:1000,height:600})}),changed:()=>changes++});
+ function click(el){el.dispatchEvent(event('click',el))}function input(id,value){const el=$(id);el.value=value;el.dispatchEvent(event(el.tagName==='SELECT'?'change':'input',el))}
+ input('gridX',8);assert.equal($('gridY').value,'8');click($('gridLink'));input('gridY',12);assert.equal($('gridX').value,'8');click($('gridLink'));assert.equal($('gridY').value,'8');
+ click(document.querySelector('[data-grid-mode="point"]'));assert.equal(state.mode,'point');click(document.querySelector('[data-grid-direction="horizontal"]'));assert.equal(state.directions.horizontal,'solid');click(document.querySelector('[data-grid-direction="horizontal"]'));assert.equal(state.directions.horizontal,'dashed');click(document.querySelector('[data-grid-direction="horizontal"]'));assert.equal(state.directions.horizontal,'off');
+ click($('right'));assert.equal(angle,90);click($('mirrorToggle'));assert.equal(mirror,true);input('unitSystem','imperial');assert.ok(Math.abs(Number($('gridX').value)*25.4-8)<1e-8);input('unitSystem','metric');assert.ok(Math.abs(Number($('gridX').value)-8)<1e-8);
+ input('angleMode','rad');input('rotationValue',Math.PI);assert.equal(angle,180);input('angleMode','clock');assert.ok($('rotationPart2'));input('rotationValue',3);input('rotationPart1',0);input('rotationPart2',0);assert.equal(angle,90);
+ input('coordinateMode','polar');assert.equal($('cartGridSpacing').hidden,true);assert.equal($('polarGridSpacing').hidden,false);input('polarStepMode','equal');input('polarTheta',8);assert.ok(Math.abs(context.ChipUI.angle.thetaDegrees()-45)<1e-8);
+ context.ChipUI.setLanguage('en');assert.equal($('fileSave').querySelector('span').textContent,'Save');context.ChipUI.setLanguage('zh-Hant');assert.equal($('fileSave').querySelector('span').textContent,'保存');click($('projectTitle'));assert.equal($('fileMenu').hidden,false);document.dispatchEvent({...event('keydown',document),key:'Escape'});assert.equal($('fileMenu').hidden,true);
+ $('advanced').open=true;click($('pinSettings'));assert.equal(document.body.classList.contains('ui-settings-pinned'),true);click($('closeSettings'));assert.equal(document.body.classList.contains('ui-settings-pinned'),false);assert.equal($('advanced').open,false);
+ traces.push(JSON.stringify({state,angle,mirror,x:$('gridX').value,y:$('gridY').value,changes}));results.push(app+': mounted common templates, controls, unit conversion, angles, menu and pinned panel');
+}
+assert.equal(traces[0],traces[1]);results.push('both apps produce identical settings behavior for the same interaction sequence');return results}
+export const results=await runUI();
