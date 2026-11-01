@@ -3,7 +3,7 @@ import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 export async function build(){
  const base=new URL('../',import.meta.url);
- const files=['shared/viewport-core.js','shared/bubbles.js','shared/workspace-ui.js','shared/workspace-ui.css'];
+ const files=['shared/viewport-core.js','shared/ring-gesture.js','shared/bubbles.js','shared/workspace-ui.js','shared/workspace-ui.css'];
  const sources=await Promise.all(files.map(file=>readFile(new URL(file,base),'utf8')));
  const version=createHash('sha256').update(sources.join('\n')).digest('hex').slice(0,12),outputs=[];
  for(const [name,source]of [['ChipChip','src/chipchip/index.html'],['ChipDraw','src/chipdraw/index.html']]){

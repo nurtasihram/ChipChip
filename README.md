@@ -9,6 +9,7 @@
 ## 原始碼與產物
 
 - shared/viewport-core.js：唯一的視圖與格線核心。
+- shared/ring-gesture.js：共用環模式旋轉／縮放，兩條參考線與中心點。
 - shared/bubbles.js：以 ChipChip 為基準的共用氣泡、比例尺／方向指示器模板及內容渲染。
 - shared/workspace-ui.js：共用標題欄、檔案選單、設定面板模板與選項控制器。
 - shared/workspace-ui.css：共用 UI 樣式與面板釘選／調整大小。
@@ -55,3 +56,10 @@ ChipChip 的既有 Canvas 直接使用 Camera；ChipDraw 使用共用 Canvas 格
 ChipChip 來源：https://github.com/nurtasihram/ChipChip 。本次接入以 2026-11-01 桌面 ChipChip/index.html 為基線；保留其既有介面與專案資料讀寫。MIT 授權全文位於 LICENSE.ChipChip。
 
 revision-review/ 與 ChipChip_view_revision_ready.zip 為既有未追蹤參考資料，未改動，亦非正式原始碼來源。
+## 環模式旋轉／縮放
+
+兩個工具使用同一個 ChipRing 控制器。按住滑鼠中鍵拖出第一條基準線，放開中鍵後移動游標調整第二條對稱線，再點滑鼠主鍵確認。藍色虛線為基準，橙色實線為調整線，白色中心點為環心。
+
+雙指按下建立基準，移動雙指顯示調整線及中點位移；雙指全部釋放後才套用旋轉、縮放和平移。第一指釋放後凍結預覽，直到第二指釋放。Esc、指標取消或視窗失焦會取消預覽。
+
+基準與調整線的夾角決定旋轉，長度比決定縮放；錨點在變換後保持於環心，觸控則跟隨雙指中點位移。預覽期間不變換畫布，也不修改圖形或增加繪圖撤銷紀錄。扇模式尚未實作。
