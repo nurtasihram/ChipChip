@@ -110,5 +110,8 @@ function renderCompass(camera,coordinate){
  document.getElementById('axisCompass').setAttribute('aria-label',polar?'極座標方向：ρ 徑向，θ 為極角及其遞增方向':'正交座標方向：X 軸與 Y 軸');
 }
 
-root.ChipBubbles={Bubble,mount,update,refresh,show:id=>instances.get(id)?.refresh(true),get:id=>instances.get(id)};
+let transientNotice=null,transientTimer=null,transientRemoval=null;
+function transient({x,y,text,duration=1000}){clearTimeout(transientTimer);clearTimeout(transientRemoval);transientNotice?.remove();const node=document.createElement('div');node.className='ui-transient-bubble';node.setAttribute('role','status');node.setAttribute('aria-live','polite');node.textContent=text;document.body.append(node);transientNotice=node;const r=node.getBoundingClientRect();node.style.left=Math.max(8,Math.min(innerWidth-r.width-8,x+12))+'px';node.style.top=Math.max(8,Math.min(innerHeight-r.height-8,y+12))+'px';transientTimer=setTimeout(()=>{node.style.opacity='0';transientRemoval=setTimeout(()=>{node.remove();if(transientNotice===node)transientNotice=null},240)},duration);return node}
+
+root.ChipBubbles={transient,Bubble,mount,update,refresh,show:id=>instances.get(id)?.refresh(true),get:id=>instances.get(id)};
 })(globalThis);
