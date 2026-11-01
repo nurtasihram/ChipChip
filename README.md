@@ -2,6 +2,10 @@
 
 兩個工具在同一個 Git 專案與 main 分支維護，共用一份底層視圖及格線引擎。
 
+入口：[ChipChip](index.html) · [ChipDraw](ChipDraw.html)
+
+原 ChipChip 專案說明保留於 [docs/CHIPCHIP_README.md](docs/CHIPCHIP_README.md)。
+
 ## 原始碼與產物
 
 - shared/viewport-core.js：唯一的視圖與格線核心。
@@ -10,7 +14,7 @@
 - shared/workspace-ui.css：共用 UI 樣式與面板釘選／調整大小。
 - src/chipchip/index.html：ChipChip 介面、管腳資料與適配層。
 - src/chipdraw/index.html：ChipDraw 介面、SVG 編輯工具與適配層。
-- tools/build.mjs：由同一份核心產生 ChipChip.html 與 ChipDraw.html。
+- tools/build.mjs：由同一份核心產生 ChipChip.html、ChipDraw.html 及 GitHub Pages 入口 index.html。
 - tests/run.mjs：執行核心、共用 UI 行為與完整應用啟動檢查。
 - 根目錄的兩個 HTML 為可離線開啟的產物，請勿直接修改。
 

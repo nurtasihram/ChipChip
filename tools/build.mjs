@@ -14,7 +14,7 @@ export async function build(){
    html=html.replace(marker,()=>css?'<style>\n'+sources[i]+'\n</style>':'<script>\n'+sources[i]+'\n</script>');
   }
   html=html.replace('<!doctype html>','<!doctype html>\n<!-- GENERATED from '+source+'; shared workspace '+version+'. Edit src/ and shared/, then rebuild. -->');
-  const output=new URL(name+'.html',base);await writeFile(output,html,'utf8');outputs.push({name,path:fileURLToPath(output),sharedVersion:version});
+  const output=new URL(name+'.html',base);await writeFile(output,html,'utf8');if(name==='ChipChip')await writeFile(new URL('index.html',base),html,'utf8');outputs.push({name,path:fileURLToPath(output),sharedVersion:version});
  }
  return outputs;
 }
