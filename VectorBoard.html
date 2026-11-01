@@ -40,7 +40,7 @@ function dockCandidate(){const b=toolsBounds(),r=toolsBar.getBoundingClientRect(
 let dockPreviewEdge=null,dockPreviewExpired=false,dockPreviewTimer=null,dockPreviewDeadline=0;
 function hideDockPreview(){$('dockPreview').classList.remove('visible')}
 function resetDockPreview(){clearTimeout(dockPreviewTimer);dockPreviewTimer=null;dockPreviewEdge=null;dockPreviewExpired=false;dockPreviewDeadline=0;hideDockPreview()}
-function armDockPreview(edge){if(edge===dockPreviewEdge)return;resetDockPreview();dockPreviewEdge=edge;dockPreviewDeadline=performance.now()+1000;dockPreviewTimer=setTimeout(()=>{dockPreviewExpired=true;hideDockPreview()},1000)}
+function armDockPreview(edge){if(edge===dockPreviewEdge)return;resetDockPreview();dockPreviewEdge=edge;dockPreviewDeadline=performance.now()+500;dockPreviewTimer=setTimeout(()=>{dockPreviewExpired=true;hideDockPreview()},500)}
 
 function showDockPreview(){const edge=dockCandidate(),p=$('dockPreview');if(!edge){resetDockPreview();return}armDockPreview(edge);if(dockPreviewExpired||performance.now()>=dockPreviewDeadline){dockPreviewExpired=true;hideDockPreview();return}const b=toolsBounds(),before=toolsBar.getBoundingClientRect(),vertical=toolsBar.classList.contains('vertical'),buttons=$('toolsButtons'),oldMaxHeight=buttons.style.maxHeight;let target;
 // Measure the actual docked layout, then restore the dragging layout before paint.
