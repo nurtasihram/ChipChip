@@ -107,6 +107,7 @@ function widthWorld(id){return numberValue(id,1)*(widthUnits[id]==='px'?1/scale:
 function renderSettingsGrid(){const canvas=$('gridCanvas'),r=svg.getBoundingClientRect(),dpr=Math.min(3,window.devicePixelRatio||1);const width=Math.max(1,Math.round(r.width*dpr)),height=Math.max(1,Math.round(r.height*dpr));if(canvas.width!==width)canvas.width=width;if(canvas.height!==height)canvas.height=height;const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,r.width,r.height);$('gridBg').style.display='none';ChipViewport.drawGrid(ctx,drawCamera(),r.width,r.height,drawGridOptions())}
 function updateViewOverlays(active){ChipBubbles.update(drawCamera(),{active})}
 function initViewSettings(){
+ $('gridFill').checked=true;
  ChipUI.bindViewGrid({
  read:()=>({mode:gridMode,directions:gridDirections,circle:gridCircle,linked:gridLinked,modeStates:modeDirections,widthUnits,overflowUnit}),
  write:s=>{gridMode=s.mode;gridDirections=s.directions;gridCircle=s.circle;gridLinked=s.linked;Object.assign(modeDirections,s.modeStates);Object.assign(widthUnits,s.widthUnits);overflowUnit=s.overflowUnit},
@@ -126,7 +127,7 @@ for(const kind of ['visible','locked']){const button=document.createElement('but
 
 function showLayers(open){$('layersPanel').hidden=!open;$('layersToggle').setAttribute('aria-expanded',String(open));if(open)renderLayers()}
 for(const [id,icon,label]of [['layersToggle','layers','圖層'],['layersClose','close','關閉圖層'],['layerAddArtwork','addArtwork','新增美工圖層'],['layerAddPcb','addPcb','新增印刷電路層'],['layerAddVector','addVector','新增矢線層'],['layerMove','move','移動選取物件至指定圖層']])ChipUI.iconButton($(id),icon,label);$('layersToggle').setAttribute('aria-controls','layersPanel');$('layersToggle').setAttribute('aria-expanded','false');$('layersToggle').onclick=()=>showLayers($('layersPanel').hidden);$('layersClose').onclick=()=>showLayers(false);$('layerAddArtwork').onclick=()=>layers.add({type:'artwork'});$('layerAddVector').onclick=()=>layers.add({type:'vector'});$('layerAddPcb').onclick=()=>{const open=$('pcbLayerChoices').hidden;$('pcbLayerChoices').hidden=!open;$('layerAddPcb').setAttribute('aria-expanded',String(open));refreshPcbChoices()};for(const button of $('pcbLayerChoices').children)button.onclick=()=>{layers.add({type:'pcb',role:button.getAttribute('data-pcb-role'),name:button.textContent});$('pcbLayerChoices').hidden=true;$('layerAddPcb').setAttribute('aria-expanded','false')};$('layerMove').onclick=()=>layers.move(selected,$('layerDestination').value);renderLayers();
-window.addEventListener('resize',view);initViewSettings();view();snapshot();
+ChipUI.resizePanel($('layersPanel'),{minWidth:280,minHeight:180});ChipUI.resizePanel(panel,{minWidth:190,minHeight:150});window.addEventListener('resize',view);initViewSettings();view();snapshot();
 let ringTouchCheckpoint=null;
 const ringGesture=ChipRing.mount({surface:svg,viewport:$('view'),getCamera:drawCamera,applyCamera:camera=>{applyDrawCamera(camera);view()},limits:{min:.1,max:15},
  onTouchStart:()=>{ringTouchCheckpoint={html:art.innerHTML,history:[...history],future:[...future],points:[...points],selectedIndex:[...art.querySelectorAll('*')].indexOf(selected),anchor:clickAnchor}},
