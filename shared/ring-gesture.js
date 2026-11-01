@@ -3,11 +3,12 @@
 'use strict';
 const middle=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
 class Session{
- constructor(camera,a,b,{min=.000001,max=1e9,mode='ring'}={}){this.camera=camera;this.a={...a};this.b={...b};this.mode=mode;this.origin=mode==='sector'?{...a}:middle(a,b);this.center={...this.origin};this.length=Math.hypot(b.x-a.x,b.y-a.y);this.baseAngle=Math.atan2(b.y-a.y,b.x-a.x);this.previousAngle=this.baseAngle;this.delta=0;this.ratio=1;this.currentA={...a};this.currentB={...b};this.min=min;this.max=max;this.valid=this.length>=8}
- setSegment(a,b){if(this.mode==='sector')a=this.origin;this.center=this.mode==='sector'?{...this.origin}:middle(a,b);this.currentA=this.mode==='sector'?{...this.origin}:{...a};this.currentB={...b};const length=Math.hypot(b.x-a.x,b.y-a.y);if(length>=2){const angle=Math.atan2(b.y-a.y,b.x-a.x);let difference=angle-this.previousAngle;while(difference>Math.PI)difference-=Math.PI*2;while(difference< -Math.PI)difference+=Math.PI*2;this.delta+=difference;this.previousAngle=angle}this.ratio=length/Math.max(this.length,1e-12);this.valid=this.length>=8;return this}
+ constructor(camera,a,b,{min=.000001,max=1e9,mode='ring',angleLocked=false}={}){this.camera=camera;this.a={...a};this.b={...b};this.mode=mode;this.origin=mode==='sector'?{...a}:middle(a,b);this.center={...this.origin};this.length=Math.hypot(b.x-a.x,b.y-a.y);this.baseAngle=Math.atan2(b.y-a.y,b.x-a.x);this.previousAngle=this.baseAngle;this.delta=0;this.angleLocked=angleLocked;this.ratio=1;this.currentA={...a};this.currentB={...b};this.min=min;this.max=max;this.valid=this.length>=8}
+ setSegment(a,b){if(this.mode==='sector')a=this.origin;this.center=this.mode==='sector'?{...this.origin}:middle(a,b);this.currentA=this.mode==='sector'?{...this.origin}:{...a};this.currentB={...b};const length=Math.hypot(b.x-a.x,b.y-a.y);if(length>=2){const angle=Math.atan2(b.y-a.y,b.x-a.x);let difference=angle-this.previousAngle;while(difference>Math.PI)difference-=Math.PI*2;while(difference< -Math.PI)difference+=Math.PI*2;if(!this.angleLocked)this.delta+=difference;this.previousAngle=angle}this.ratio=length/Math.max(this.length,1e-12);this.valid=this.length>=8;return this}
+ setAngleLocked(locked){this.angleLocked=!!locked;return this}
  setControl(point){return this.setSegment(this.mode==='sector'?this.origin:{x:2*this.origin.x-point.x,y:2*this.origin.y-point.y},point)}
  get appliedRatio(){return Math.max(this.min,Math.min(this.max,this.camera.scale*this.ratio))/this.camera.scale}
- guides(){const dx=this.center.x-this.origin.x,dy=this.center.y-this.origin.y,ratio=this.appliedRatio,radius=this.length/(this.mode==='sector'?1:2)*ratio,angle=this.baseAngle+this.delta,vector={x:radius*Math.cos(angle),y:radius*Math.sin(angle)},c=this.mode==='sector'?{...this.center}:{x:this.center.x-vector.x,y:this.center.y-vector.y},d={x:this.center.x+vector.x,y:this.center.y+vector.y},limited=Math.abs(ratio-this.ratio)>1e-9*Math.max(1,ratio),overflow=limited?[{a:d,b:this.currentB}]:[];if(limited&&this.mode!=='sector')overflow.push({a:c,b:this.currentA});return {a:{x:this.a.x+dx,y:this.a.y+dy},b:{x:this.b.x+dx,y:this.b.y+dy},c,d,center:this.center,overflow,limited}}
+ guides(){const dx=this.center.x-this.origin.x,dy=this.center.y-this.origin.y,ratio=this.appliedRatio,radius=this.length/(this.mode==='sector'?1:2)*ratio,angle=this.baseAngle+this.delta,vector={x:radius*Math.cos(angle),y:radius*Math.sin(angle)},c=this.mode==='sector'?{...this.center}:{x:this.center.x-vector.x,y:this.center.y-vector.y},d={x:this.center.x+vector.x,y:this.center.y+vector.y},limited=Math.abs(ratio-this.ratio)>1e-9*Math.max(1,ratio),rawRadius=this.length/(this.mode==='sector'?1:2)*this.ratio,rawD={x:this.center.x+rawRadius*Math.cos(angle),y:this.center.y+rawRadius*Math.sin(angle)},rawC={x:this.center.x-rawRadius*Math.cos(angle),y:this.center.y-rawRadius*Math.sin(angle)},overflow=limited?[{a:d,b:rawD}]:[];if(limited&&this.mode!=='sector')overflow.push({a:c,b:rawC});return {a:{x:this.a.x+dx,y:this.a.y+dy},b:{x:this.b.x+dx,y:this.b.y+dy},c,d,center:this.center,overflow,limited}}
 
  result(){if(!this.valid)return null;return this.camera.zoomAt(this.appliedRatio,this.origin,this.min,this.max).rotateAt(this.delta,this.origin).pan(this.center.x-this.origin.x,this.center.y-this.origin.y)}
 }
@@ -30,7 +31,7 @@ function mount({surface,viewport=surface.parentNode,getCamera,applyCamera,onTouc
  const create=(tag,attrs)=>{const n=document.createElementNS(ns,tag);for(const [key,value]of Object.entries(attrs))n.setAttribute(key,value);guide.append(n);return n};
  const colors=ChipViewport.colors;
  const reference=create('line',{'data-ring-reference':'',stroke:colors.rho,'stroke-dasharray':'6 4'}),following=create('line',{'data-ring-following':'',stroke:colors.theta}),extension=create('line',{'data-ring-extension':'',stroke:colors.scale}),limitExtension=create('path',{'data-ring-limit-extension':'',stroke:colors.limit,fill:'none'}),arc=create('path',{'data-ring-angle-arc':'',stroke:colors.theta,fill:'none'}),ticks=create('path',{'data-ring-ticks':'',stroke:colors.theta,fill:'none'}),tickLabels=create('g',{'data-ring-tick-labels':''}),arrow=create('polygon',{'data-ring-direction-arrow':'',fill:colors.theta}),scaleLabel=create('text',{'data-ring-scale-label':'',fill:colors.scale,'text-anchor':'middle'}),angleLabel=create('text',{'data-ring-angle-label':'',fill:colors.theta,'text-anchor':'middle'}),center=create('circle',{'data-ring-center':'',r:4,fill:'#0b1220',stroke:'#ffffff'});viewport.append(guide);
- let stage='idle',start=null,session=null,mouseId=null,touches=new Map(),swallowUp=null,suppressClick=false;
+ let stage='idle',start=null,session=null,mouseId=null,touches=new Map(),swallowUp=null,suppressClick=false,ctrlHeld=false;
  const point=e=>{const r=surface.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}};
  const consume=e=>{e.preventDefault();e.stopImmediatePropagation()};
  function line(n,a,b){for(const [key,value]of Object.entries({x1:a.x,y1:a.y,x2:b.x,y2:b.y}))n.setAttribute(key,value)}
@@ -39,28 +40,33 @@ function mount({surface,viewport=surface.parentNode,getCamera,applyCamera,onTouc
  function finish(commit){const result=commit&&session?session.result():null;stage='idle';session=null;start=null;showGuide(false);if(result)applyCamera(result);onFinish(!!result)}
  function cancel(){const active=stage!=='idle';if(active)finish(false);stage=touches.size?'draining':'idle'}
  function updateTouches(){if(stage!=='touch-adjust'||touches.size!==2)return;const [a,b]=[...touches.values()];session.setSegment(a,b);paint(session.guides())}
+ function syncControl(e){if(typeof e.ctrlKey==='boolean')setControlKey(e.ctrlKey)}
+ function setControlKey(pressed){if(ctrlHeld===pressed)return;ctrlHeld=pressed;if(session){session.setAngleLocked(ctrlHeld);if(stage==='mouse-adjust'||stage==='touch-adjust'||stage==='touch-release')paint(session.guides())}}
  function down(e){
+  syncControl(e);
   if(e.pointerType!=='touch'&&e.button===2){cancel();onCancel();swallowUp=e.pointerId;consume(e);return}
   if(e.pointerType==='touch'){
    if(stage==='mouse-baseline'||stage==='mouse-adjust'||stage==='sector-reference'){consume(e);return}
    if(stage==='draining'){touches.set(e.pointerId,point(e));consume(e);return}
    touches.set(e.pointerId,point(e));if(touches.size===1&&stage==='idle'){onTouchStart();return}
-   if(touches.size===2&&stage==='idle'){onStart('touch');const [a,b]=[...touches.values()];session=new Session(getCamera(),a,b,limits);if(!session.valid){finish(false);stage='draining';consume(e);return}stage='touch-adjust';surface.setPointerCapture(e.pointerId);paint(session.guides());consume(e);return}
+   if(touches.size===2&&stage==='idle'){onStart('touch');const [a,b]=[...touches.values()];session=new Session(getCamera(),a,b,{...limits,angleLocked:ctrlHeld});if(!session.valid){finish(false);stage='draining';consume(e);return}stage='touch-adjust';surface.setPointerCapture(e.pointerId);paint(session.guides());consume(e);return}
    if(touches.size>2){cancel();consume(e);return}consume(e);return;
   }
-  if(stage==='sector-reference'&&(e.button===0||e.button===1)){const next=new Session(getCamera(),start,point(e),{...limits,mode:'sector'});swallowUp=e.pointerId;suppressClick=e.button===0;if(next.valid){session=next;stage='mouse-adjust';paint(session.guides())}consume(e);return}
+  if(stage==='sector-reference'&&(e.button===0||e.button===1)){const next=new Session(getCamera(),start,point(e),{...limits,mode:'sector',angleLocked:ctrlHeld});swallowUp=e.pointerId;suppressClick=e.button===0;if(next.valid){session=next;stage='mouse-adjust';paint(session.guides())}consume(e);return}
   if(stage==='mouse-adjust'&&(e.button===0||e.button===1&&session.mode==='sector')){session.setControl(point(e));swallowUp=e.pointerId;suppressClick=e.button===0;finish(true);consume(e);return}
   if(e.button===1&&stage==='idle'&&!touches.size){onStart('mouse');stage='mouse-baseline';mouseId=e.pointerId;start=point(e);surface.setPointerCapture(e.pointerId);paint({a:start,b:start,center:start},false);consume(e);return}
   if(stage!=='idle')consume(e);
  }
  function move(e){
+  syncControl(e);
   if(e.pointerType==='touch'){if(stage==='mouse-baseline'||stage==='mouse-adjust'||stage==='sector-reference'){consume(e);return}if(!touches.has(e.pointerId))return;touches.set(e.pointerId,point(e));if(stage==='touch-adjust'){updateTouches();consume(e)}else if(stage!=='idle')consume(e);return}
   if(stage==='mouse-baseline'){const end=point(e);paint({a:start,b:end,center:middle(start,end)},false);consume(e)}else if(stage==='sector-reference'){paint({a:start,b:point(e),center:start},false);consume(e)}else if(stage==='mouse-adjust'){session.setControl(point(e));paint(session.guides());consume(e)}
  }
  function up(e){
+  syncControl(e);
   if(e.pointerType==='touch'){if(!touches.has(e.pointerId))return;const handled=stage!=='idle';if(stage==='touch-adjust'){touches.set(e.pointerId,point(e));updateTouches();stage='touch-release'}touches.delete(e.pointerId);if(!touches.size){if(stage==='touch-release')finish(true);else if(stage==='draining')stage='idle';onTouchEnd()}if(handled)consume(e);return}
   if(swallowUp===e.pointerId){swallowUp=null;consume(e);return}
-  if(stage==='mouse-baseline'&&e.pointerId===mouseId){const end=point(e);session=new Session(getCamera(),start,end,limits);if(session.valid){stage='mouse-adjust';paint(session.guides())}else{session=null;stage='sector-reference';paint({a:start,b:start,center:start},false)};if(surface.hasPointerCapture(e.pointerId))surface.releasePointerCapture(e.pointerId);consume(e)}
+  if(stage==='mouse-baseline'&&e.pointerId===mouseId){const end=point(e);session=new Session(getCamera(),start,end,{...limits,angleLocked:ctrlHeld});if(session.valid){stage='mouse-adjust';paint(session.guides())}else{session=null;stage='sector-reference';paint({a:start,b:start,center:start},false)};if(surface.hasPointerCapture(e.pointerId))surface.releasePointerCapture(e.pointerId);consume(e)}
  }
  viewport.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch'&&e.button===2&&!surface.contains(e.target)){cancel();onCancel();consume(e)}},true);viewport.addEventListener('contextmenu',e=>{if(stage!=='idle')cancel();onCancel();consume(e)},true);
  surface.addEventListener('pointerdown',down,true);surface.addEventListener('pointermove',move,true);surface.addEventListener('pointerup',up,true);
@@ -68,7 +74,7 @@ function mount({surface,viewport=surface.parentNode,getCamera,applyCamera,onTouc
  surface.addEventListener('lostpointercapture',e=>{if(stage==='mouse-baseline'||touches.has(e.pointerId)&&stage==='touch-adjust'){touches.delete(e.pointerId);cancel()}},true);
  surface.addEventListener('auxclick',e=>{if(e.button===1||e.button===2)consume(e)},true);surface.addEventListener('click',e=>{if(suppressClick){suppressClick=false;consume(e)}},true);surface.addEventListener('contextmenu',e=>{if(stage!=='idle')cancel();onCancel();consume(e)},true);
  surface.addEventListener('wheel',e=>{if(stage!=='idle')consume(e)},true);document.addEventListener('pointerdown',e=>{if((stage==='mouse-baseline'||stage==='mouse-adjust'||stage==='sector-reference')&&!surface.contains(e.target))cancel()},true);
- document.addEventListener('keydown',e=>{if(e.key==='Escape'&&stage!=='idle'){cancel();consume(e)}},true);window.addEventListener('blur',()=>{cancel();touches.clear();stage='idle';onTouchEnd()});window.addEventListener('resize',()=>{if(stage!=='idle')cancel()});
+ document.addEventListener('keyup',e=>{if(e.key==='Control')setControlKey(false);else syncControl(e)},true);document.addEventListener('keydown',e=>{if(e.key==='Control')setControlKey(true);else syncControl(e);if(e.key==='Escape'&&stage!=='idle'){cancel();consume(e)}},true);window.addEventListener('blur',()=>{ctrlHeld=false;cancel();touches.clear();stage='idle';onTouchEnd()});window.addEventListener('resize',()=>{if(stage!=='idle')cancel()});
  return {cancel,get stage(){return stage},get session(){return session},guide};
 }
 root.ChipRing={Session,annotationGeometry,arcDecorations,mount};
