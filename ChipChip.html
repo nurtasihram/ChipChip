@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- GENERATED from src/chipchip/index.html; shared workspace 8eb4b36c361e. Edit src/ and shared/, then rebuild. --><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><title>E38xx 摺疊設定 · 功能分佈圖</title><style>
+<!-- GENERATED from src/chipchip/index.html; shared workspace 5bcc052e02d2. Edit src/ and shared/, then rebuild. --><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><title>E38xx 摺疊設定 · 功能分佈圖</title><style>
 /* Shared UI primitives and view/grid panel. App styles must not redefine these components. */
 :root{--ui-bg:#152238;--ui-control:#1c2a42;--ui-border:#40536e;--ui-text:#eaf1ff;--ui-accent:#7cb4fa;--ui-panel-size:340px;--ui-header-bottom:68px}
 .chip-ui,.chip-ui *{box-sizing:border-box;font-family:system-ui,sans-serif}
@@ -19,8 +19,12 @@ header.chip-ui.ui-header{position:relative!important;z-index:40!important;displa
 /* Shared leftmost View entry replaces the former right-side settings summary. */
 header.chip-ui.ui-header{padding-right:14px!important}#viewMenuButton{flex:none!important;white-space:nowrap!important;min-width:58px!important}#advanced.chip-ui>summary{display:none!important}#advanced.chip-ui{left:8px!important;right:auto!important}.ui-settings-pinned #advanced.chip-ui{left:auto!important;right:0!important}@media(max-width:799px){.ui-settings-pinned #advanced.chip-ui{left:0!important;right:0!important}}
 
+/* Reusable viewport bubbles: shared by both applications and information overlays. */
+.ui-bubble{position:absolute!important;z-index:12!important;display:block;box-sizing:border-box!important;width:max-content!important;min-width:0!important;height:auto!important;padding:9px 11px!important;border:1px solid #40536e55!important;border-radius:13px!important;background:rgba(21,34,56,var(--bubble-opacity,.73))!important;color:#eaf1ff!important;font:13px system-ui!important;box-shadow:0 4px 16px #0003!important;backdrop-filter:blur(8px);touch-action:none!important;user-select:none;cursor:grab!important;overflow:auto;transition:opacity .35s ease!important;pointer-events:auto!important;transform:none!important;margin:0!important;inset:auto}
+.ui-bubble[hidden]{display:none!important}.ui-bubble:focus-visible{outline:2px solid #7cb4fa;outline-offset:2px}.ui-bubble.bubble-dragging{cursor:grabbing!important}.ui-bubble .bubble-content{position:static!important;display:block!important;white-space:normal;line-height:1.45}.ui-bubble .bubble-meta{display:flex;flex-wrap:wrap;gap:4px 8px;color:#aebed5;font-size:11px;margin-top:5px}.ui-bubble .bubble-actions{position:absolute;right:4px;top:4px;display:none;gap:3px}.ui-bubble.bubble-actions-open{padding-top:37px!important}.ui-bubble.bubble-actions-open .bubble-actions{display:flex}.ui-bubble .bubble-actions button{display:flex;align-items:center;justify-content:center;width:28px;height:28px;min-width:28px;padding:3px;background:transparent;border:0;border-radius:6px;color:#eaf1ff;cursor:pointer}.ui-bubble .bubble-actions button[aria-pressed=true]{background:#315b8d}.ui-bubble .bubble-actions svg{display:block;width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}.ui-bubble #scaleBar{height:6px;border:1px solid #d5e7ff;border-top:0;margin-top:5px;max-width:100%}.ui-bubble.bubble-compass{max-width:170px}.ui-bubble.bubble-compass .bubble-content>svg{display:block;width:124px;height:124px;margin:auto}.ui-bubble.bubble-compass text{font:12px system-ui;fill:#eaf1ff;text-anchor:middle}.ui-bubble #coordinateReadout{display:block;text-align:center;font-size:10px;color:#aebed5;max-width:145px;overflow-wrap:anywhere}.ui-bubble.bubble-status{padding:6px 9px!important}.ui-bubble.bubble-info{overflow-wrap:anywhere}.ui-bubble.bubble-info .bubble-content{user-select:text}.ui-bubble.bubble-info details,.ui-bubble.bubble-info a{touch-action:manipulation}
+
 </style><style>
-:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0b1220;color:#f1f5ff;font:14px system-ui,'Noto Sans',sans-serif}h1{font-size:19px;margin:0 0 4px}small{color:#aebbd0}#toolbar{display:flex;gap:7px;padding:8px 12px;flex-wrap:wrap;align-items:center}button,input{background:#1c2a42;border:1px solid #41536d;border-radius:9px;color:white;padding:9px 11px;font:inherit}button:active{background:#345071}input{flex:1;min-width:140px}#viewport{height:64dvh;min-height:360px;position:relative;overflow:hidden;background:#101a2b;touch-action:none;border-block:1px solid #34465e}canvas{display:block;width:100%;height:100%}#hint{position:absolute;top:10px;left:10px;background:#0b1220c9;padding:7px 10px;border-radius:7px;font-size:12px;pointer-events:none}#info{position:absolute;left:12px;bottom:12px;z-index:3;max-width:min(88%,360px);padding:12px 36px 12px 13px;background:rgba(17,31,51,.78);border:1px solid rgba(175,203,239,.4);border-radius:14px;box-shadow:0 6px 24px #0006;backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);pointer-events:auto;display:none;overflow-wrap:anywhere}#info.show{display:block}#closeInfo{position:absolute;right:7px;top:5px;background:transparent;border:0;padding:4px 8px;font-size:20px;color:#dce8ff}#legend{display:flex;flex-wrap:wrap;gap:7px;padding:8px 12px 16px}.chip{display:flex;gap:6px;align-items:center;border:1px solid #43536b;border-radius:30px;padding:7px 10px;background:#18263a;color:#e9f0ff;cursor:pointer}.chip.off{opacity:.32}.dot{width:11px;height:11px;border-radius:50%}#sizeControl{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#152238;border-block:1px solid #34465e;flex-wrap:wrap}#ballSize{flex:1;min-width:160px;accent-color:#60a5fa;padding:0;height:32px}#ballSizeValue{font-variant-numeric:tabular-nums;min-width:54px;text-align:right;color:#bfdbfe}#notice{padding:0 12px 15px;color:#9fb0c8;font-size:12px}strong{color:#fff}#sizeControl{border:0!important;padding:10px!important;background:transparent!important}.syncOption{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-size:13px;color:#dce8ff}.syncOption input{flex:none;min-width:0;width:18px;height:18px;padding:0;margin:0;accent-color:#60a5fa}.settingNote{color:#aebbd0;font-size:12px;padding:4px 12px 8px}details#categoryDrawer{margin:8px 12px 10px;background:#152238;border:1px solid #34465e;border-radius:12px;overflow:hidden}#categoryDrawer summary{list-style:none;cursor:pointer;padding:13px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:650;user-select:none}#categoryDrawer summary::-webkit-details-marker{display:none}#categoryDrawer summary:after{content:"⌃";font-size:19px;color:#bfdbfe}#categoryDrawer[open] summary:after{content:"⌄"}#categoryDrawer .drawerSub{color:#aebbd0;font-size:12px;font-weight:400}#categoryDrawer #legend{padding-top:6px}#categoryDrawer .drawerActions{display:flex;gap:8px;padding:0 12px 12px}#categoryDrawer .drawerActions button{flex:1}#categoryDrawer .drawerActions button:active{background:#345071}
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0b1220;color:#f1f5ff;font:14px system-ui,'Noto Sans',sans-serif}h1{font-size:19px;margin:0 0 4px}small{color:#aebbd0}#toolbar{display:flex;gap:7px;padding:8px 12px;flex-wrap:wrap;align-items:center}button,input{background:#1c2a42;border:1px solid #41536d;border-radius:9px;color:white;padding:9px 11px;font:inherit}button:active{background:#345071}input{flex:1;min-width:140px}#viewport{height:64dvh;min-height:360px;position:relative;overflow:hidden;background:#101a2b;touch-action:none;border-block:1px solid #34465e}canvas{display:block;width:100%;height:100%}#hint{position:absolute;top:10px;left:10px;background:#0b1220c9;padding:7px 10px;border-radius:7px;font-size:12px;pointer-events:none}#legend{display:flex;flex-wrap:wrap;gap:7px;padding:8px 12px 16px}.chip{display:flex;gap:6px;align-items:center;border:1px solid #43536b;border-radius:30px;padding:7px 10px;background:#18263a;color:#e9f0ff;cursor:pointer}.chip.off{opacity:.32}.dot{width:11px;height:11px;border-radius:50%}#sizeControl{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#152238;border-block:1px solid #34465e;flex-wrap:wrap}#ballSize{flex:1;min-width:160px;accent-color:#60a5fa;padding:0;height:32px}#ballSizeValue{font-variant-numeric:tabular-nums;min-width:54px;text-align:right;color:#bfdbfe}#notice{padding:0 12px 15px;color:#9fb0c8;font-size:12px}strong{color:#fff}#sizeControl{border:0!important;padding:10px!important;background:transparent!important}.syncOption{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-size:13px;color:#dce8ff}.syncOption input{flex:none;min-width:0;width:18px;height:18px;padding:0;margin:0;accent-color:#60a5fa}.settingNote{color:#aebbd0;font-size:12px;padding:4px 12px 8px}details#categoryDrawer{margin:8px 12px 10px;background:#152238;border:1px solid #34465e;border-radius:12px;overflow:hidden}#categoryDrawer summary{list-style:none;cursor:pointer;padding:13px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:650;user-select:none}#categoryDrawer summary::-webkit-details-marker{display:none}#categoryDrawer summary:after{content:"⌃";font-size:19px;color:#bfdbfe}#categoryDrawer[open] summary:after{content:"⌄"}#categoryDrawer .drawerSub{color:#aebbd0;font-size:12px;font-weight:400}#categoryDrawer #legend{padding-top:6px}#categoryDrawer .drawerActions{display:flex;gap:8px;padding:0 12px 12px}#categoryDrawer .drawerActions button{flex:1}#categoryDrawer .drawerActions button:active{background:#345071}
 /* Mobile single-screen layout: no document scrolling */
 html,body{height:100%;height:100dvh;overflow:hidden;overscroll-behavior:none}
 body{display:flex;flex-direction:column;min-height:0}
@@ -36,13 +40,11 @@ body{display:flex;flex-direction:column;min-height:0}
 #categoryDrawer #legend{gap:5px;padding:6px 9px}
 #categoryDrawer .chip{padding:6px 9px;font-size:12px}
 #categoryDrawer .drawerActions{padding:4px 9px 9px}
-#info{bottom:55px;max-width:min(85%,340px);padding:9px 32px 9px 10px;font-size:12px}
 
 /* Compact top-right hamburger menu */
 #toolbar{padding-right:57px!important}
 /* Menu aligned with the title row, not the search row */
-#toolbar{padding-right:8px!important}
-#scaleLegend{opacity:1;transition:opacity .35s ease;position:absolute;right:12px;bottom:8px;z-index:4;pointer-events:none;background:rgba(11,18,32,.73);border:1px solid #62738a88;border-radius:9px;padding:7px 10px;color:#e8f1ff;font-size:12px;font-variant-numeric:tabular-nums;backdrop-filter:blur(5px)}#scaleBar{height:10px;border-left:2px solid #e8f1ff;border-right:2px solid #e8f1ff;border-bottom:2px solid #e8f1ff;margin-top:5px;max-width:220px}#unitSelect{min-width:90px;background:#1c2a42;border:1px solid #41536d;border-radius:8px;color:#fff;padding:7px}#scaleLegend .caption{opacity:.7;font-size:10px}.scaleMeta{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:6px;white-space:nowrap;font-size:10px;color:#c4d4e9}.packageOptions{display:flex;flex-wrap:wrap;gap:12px;padding:9px 12px;align-items:center}#searchPanel{position:fixed;z-index:18;left:8px;right:8px;top:100px;max-height:min(70dvh,650px);overflow-y:auto;background:rgba(20,34,55,.97);border:1px solid #546780;border-radius:14px;padding:12px;box-shadow:0 10px 30px #0009;backdrop-filter:blur(12px)}#searchPanel[hidden]{display:none}.panelTitle{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:9px}.searchChecks{display:flex;flex-wrap:wrap;gap:8px 12px;margin-bottom:10px}.searchChecks label{display:flex;gap:5px;align-items:center;white-space:nowrap;font-size:12px}.searchChecks input{flex:none;min-width:0;margin:0;accent-color:#60a5fa}.saveRow{display:flex;gap:6px;margin:10px 0}.saveRow input{min-width:0}#searchStatus{font-size:12px;color:#bfd1ed;margin:7px 0}#searchResults,#savedGroups{max-height:27dvh;overflow:auto;border:1px solid #3c506a;border-radius:9px}#searchResults button,#savedGroups button{font-size:12px;padding:6px 8px}.resultItem,.savedItem{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border-bottom:1px solid #34465e;font-size:12px}.resultItem span{overflow-wrap:anywhere}.savedItem .actions{display:flex;gap:5px;flex-shrink:0}.resultItem:last-child,.savedItem:last-child{border-bottom:0}#searchOptions{padding-inline:10px}#searchPanel .panelTitle button{padding:3px 9px}#scaleLegend{transition:opacity 350ms ease}#info .muxTitle{margin-top:9px;font-weight:700;color:#bfdbfe}#info .muxList{display:grid;gap:4px;margin-top:4px}#info .muxItem{display:block;white-space:normal;overflow-wrap:anywhere;padding:3px 0;border-bottom:1px solid #ffffff18} #info .pinDetails>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;padding-right:25px;user-select:none;font-weight:650;touch-action:manipulation}#info .pinDetails>summary::-webkit-details-marker{display:none}#info .pinDetails>summary::before{content:"▸";color:#a8c9f4;font-size:15px}#info .pinDetails[open]>summary::before{content:"▾"}#info .pinDetails .pinSummary{margin-top:5px;font-size:13px;line-height:1.55}#info .pinDetails .pinBody{margin-top:7px} .muxDetails>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;user-select:none;touch-action:manipulation;padding:7px 0} .muxDetails>summary::-webkit-details-marker{display:none}.muxDetails>summary::after{content:"▾";font-size:17px;color:#a8c9f4;transition:transform .15s}.muxDetails:not([open])>summary::after{transform:rotate(-90deg)} .muxDetails>summary:focus-visible{outline:2px solid #9dc9ff;outline-offset:2px;border-radius:4px}
+#toolbar{padding-right:8px!important}#unitSelect{min-width:90px;background:#1c2a42;border:1px solid #41536d;border-radius:8px;color:#fff;padding:7px}.packageOptions{display:flex;flex-wrap:wrap;gap:12px;padding:9px 12px;align-items:center}#searchPanel{position:fixed;z-index:18;left:8px;right:8px;top:100px;max-height:min(70dvh,650px);overflow-y:auto;background:rgba(20,34,55,.97);border:1px solid #546780;border-radius:14px;padding:12px;box-shadow:0 10px 30px #0009;backdrop-filter:blur(12px)}#searchPanel[hidden]{display:none}.panelTitle{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:9px}.searchChecks{display:flex;flex-wrap:wrap;gap:8px 12px;margin-bottom:10px}.searchChecks label{display:flex;gap:5px;align-items:center;white-space:nowrap;font-size:12px}.searchChecks input{flex:none;min-width:0;margin:0;accent-color:#60a5fa}.saveRow{display:flex;gap:6px;margin:10px 0}.saveRow input{min-width:0}#searchStatus{font-size:12px;color:#bfd1ed;margin:7px 0}#searchResults,#savedGroups{max-height:27dvh;overflow:auto;border:1px solid #3c506a;border-radius:9px}#searchResults button,#savedGroups button{font-size:12px;padding:6px 8px}.resultItem,.savedItem{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border-bottom:1px solid #34465e;font-size:12px}.resultItem span{overflow-wrap:anywhere}.savedItem .actions{display:flex;gap:5px;flex-shrink:0}.resultItem:last-child,.savedItem:last-child{border-bottom:0}#searchOptions{padding-inline:10px}#searchPanel .panelTitle button{padding:3px 9px}#info .muxTitle{margin-top:9px;font-weight:700;color:#bfdbfe}#info .muxList{display:grid;gap:4px;margin-top:4px}#info .muxItem{display:block;white-space:normal;overflow-wrap:anywhere;padding:3px 0;border-bottom:1px solid #ffffff18} #info .pinDetails>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;padding-right:25px;user-select:none;font-weight:650;touch-action:manipulation}#info .pinDetails>summary::-webkit-details-marker{display:none}#info .pinDetails>summary::before{content:"▸";color:#a8c9f4;font-size:15px}#info .pinDetails[open]>summary::before{content:"▾"}#info .pinDetails .pinSummary{margin-top:5px;font-size:13px;line-height:1.55}#info .pinDetails .pinBody{margin-top:7px} .muxDetails>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;user-select:none;touch-action:manipulation;padding:7px 0} .muxDetails>summary::-webkit-details-marker{display:none}.muxDetails>summary::after{content:"▾";font-size:17px;color:#a8c9f4;transition:transform .15s}.muxDetails:not([open])>summary::after{transform:rotate(-90deg)} .muxDetails>summary:focus-visible{outline:2px solid #9dc9ff;outline-offset:2px;border-radius:4px}
 </style><style>
 .groupTabs{display:flex;gap:6px;padding:8px 10px 3px}.groupTabs button{flex:1;font-weight:650;background:#17243a}.groupTabs button.active{background:#305b8e;border-color:#8bbaf4}#manageTab[hidden],#colorTab[hidden]{display:none!important}.manageSplit{display:grid;grid-template-columns:minmax(110px,40%) minmax(0,60%);gap:7px;padding:8px;min-height:220px;max-height:49dvh}.manageGroups,.manageDetail{overflow:auto;min-width:0;border:1px solid #34465e;border-radius:9px;padding:6px;background:#101b2e}.manageGroups{touch-action:pan-y}.manageGroup{display:flex;align-items:center;gap:6px;width:100%;text-align:left;padding:9px 6px;margin:0 0 5px;border-radius:8px;font-size:12px;touch-action:pan-y;user-select:none;-webkit-user-select:none}.manageGroup.active{border-color:#9dc9ff;background:#31547c}.manageGroup.dragging{opacity:.45}.manageGroup .dot{flex:none}.manageDetail .detailTitle{font-weight:700;font-size:13px;margin-bottom:9px;overflow-wrap:anywhere}.manageDetail label{display:flex;align-items:center;gap:7px;font-size:12px}.manageDetail input[type=color]{width:48px;min-width:48px;height:34px;padding:2px;flex:none}.managePin{display:flex;justify-content:space-between;align-items:center;gap:4px;padding:6px 0;border-bottom:1px solid #34465e;font-size:11px}.managePin span{overflow-wrap:anywhere;min-width:0}.managePin button{flex:none;font-size:11px;padding:5px}.muted{font-size:12px;color:#aebbd0}.chip[data-mode=highlight]{border-color:#e4f1ff;box-shadow:inset 0 0 0 1px #e4f1ff66}.chip[data-mode=hidden]{opacity:.48;border-style:dashed}.chip[data-mode=default]{opacity:1}.chip .state{font-size:10px;color:#bbcee7}
 
@@ -57,7 +59,6 @@ body{display:flex;flex-direction:column;min-height:0}
 #categoryDrawer #legend{padding:7px 10px;display:flex;flex-wrap:wrap;gap:7px}
 #categoryDrawer .drawerActions{padding:8px 10px 12px}
 #categoryDrawer #manageTab .manageSplit{height:100%;min-height:0}
-#info{bottom:12px!important}
 /* Collapsible split: handle remains accessible at minimum height. */
 #categoryDrawer.is-collapsed{flex:0 0 22px!important;height:22px!important;min-height:22px!important;max-height:22px!important;overflow:hidden!important}
 #categoryDrawer.is-collapsed > :not(#splitHandle){display:none!important}
@@ -105,15 +106,11 @@ body{display:flex;flex-direction:column;min-height:0}
 
 /* Draggable pin info bubble; the content and its buttons remain interactive. */
 #info{touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
-#info.dragging{cursor:grabbing}
-#info{max-height:calc(100% - 16px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 #info #infoContent{min-width:0}
 #info .muxList{touch-action:pan-y;user-select:text;-webkit-user-select:text;cursor:auto}
 #info button,#info .muxDetails{cursor:pointer}
 #scaleOpacity{width:94px;min-width:75px;accent-color:#60a5fa}
-#scaleOpacityValue{font-variant-numeric:tabular-nums;min-width:35px}
-#scaleLegend{pointer-events:auto!important;touch-action:none;user-select:none;cursor:grab;box-sizing:border-box;max-width:calc(100% - 8px)}
-#scaleLegend.dragging{cursor:grabbing;transition:none!important}</style></style><style id="originRowLayout"></style><style id="gridResponsiveFix">
+#scaleOpacityValue{font-variant-numeric:tabular-nums;min-width:35px}</style></style><style id="originRowLayout"></style><style id="gridResponsiveFix">
 /* CSS pixels for layout, devicePixelRatio for the canvas backing store. */
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* Out-of-view recovery notice: independent of the draggable scale legend. */
@@ -121,40 +118,16 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #viewRecovery.visible{display:flex;pointer-events:auto}#viewRecovery:focus-visible{outline:2px solid #bcd8ff;outline-offset:2px}#viewRecovery svg{width:19px;height:19px;flex:none;color:#ff525c;stroke-width:2.3}#viewRecovery span{flex:1}
 /* v19: pin info is a floating overlay, independent of split-pane geometry. */
 #info{position:fixed!important;z-index:35!important;left:12px;bottom:calc(env(safe-area-inset-bottom, 0px) + 42px)!important;max-height:min(72dvh,680px);overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}
-#info.dragging{touch-action:none}
 </style><style id="viewOverlayHierarchyFix">
 /* Overlays are owned by the drawing viewport, never by the entire screen. */
 #viewport{isolation:isolate}
-#axisCompass{transition:opacity 350ms ease;opacity:1;position:absolute;top:12px;left:12px;width:124px;height:124px;z-index:7;pointer-events:auto;user-select:none;touch-action:none;background:transparent;border:0;filter:drop-shadow(0 1px 2px #07111bcc)}
-#axisCompass .compassActions{position:absolute;right:0;top:0;display:flex;gap:1px;opacity:0;pointer-events:none;transition:opacity .18s}
-#axisCompass.compass-actions-open .compassActions{opacity:1;pointer-events:auto}
-#axisCompass .compassActions button{background:transparent!important;border:0!important;box-shadow:none!important;color:#eaf2ff;width:30px;height:30px;padding:4px;display:grid;place-items:center}
-#axisCompass .compassActions svg{width:22px;height:22px}
-#axisCompass #pinCompass[aria-pressed="true"]{color:#60a5fa}
-#axisCompass #pinCompass.compass-auto-hint{color:#fbbf24}
-#axisCompass.compass-dragging{cursor:grabbing}
-#axisCompass.compass-invisible{opacity:0;pointer-events:none}
-#axisCompass svg{width:100%;height:100%;overflow:hidden}
-#axisCompass text{fill:#edf4ff;font:700 13px system-ui,sans-serif;text-anchor:middle;paint-order:stroke;stroke:#101a2b;stroke-width:2.5px;stroke-linejoin:round}
 
 #viewport #info{position:absolute!important;z-index:6!important;bottom:auto!important;right:auto!important;max-width:calc(100% - 16px);touch-action:none!important;overscroll-behavior:contain}
-#viewport #scaleLegend{z-index:5!important;touch-action:none!important}
 #viewport #info .pinDetails>summary{touch-action:none!important;cursor:grab}
 #viewport #info .muxList{touch-action:pan-y!important;user-select:text;-webkit-user-select:text}
 #viewport #info.dragging{cursor:grabbing}
 /* Menus and docks must paint above the drawing and its informational overlays. */
 #categoryDrawer{z-index:15!important}#searchPanel{z-index:45!important}
-#scaleLegend{position:absolute;padding-right:12px}
-#closeScaleLegend{position:absolute;top:3px;right:3px;display:none;align-items:center;justify-content:center;width:29px;height:29px;min-width:29px;min-height:29px;padding:0;border:1px solid #617e9c;border-radius:7px;background:#223650;color:#f1f6ff;font-size:22px;line-height:1;z-index:2;touch-action:manipulation;cursor:pointer}
-#scaleLegend.scale-actions-open{padding-right:84px}
-#scaleLegend.scale-actions-open #closeScaleLegend{display:flex}
-#pinScaleLegend{position:absolute;top:3px;right:39px;display:none;align-items:center;justify-content:center;width:29px;height:29px;padding:0;border:1px solid #617e9c;border-radius:7px;background:#223650;color:#f1f6ff;z-index:2;touch-action:manipulation;cursor:pointer}
-#scaleLegend.scale-actions-open #pinScaleLegend{display:flex}
-#pinScaleLegend[aria-pressed="true"]{background:#32669e;color:white;border-color:#8abfff}
-#scaleLegend.scale-actions-open{padding-right:84px}
-#scaleLegend .scaleMeta{display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin-top:6px}
-#scaleLegend.scale-pinned:not(.scale-actions-open) #closeScaleLegend,#scaleLegend.scale-pinned:not(.scale-actions-open) #pinScaleLegend{display:none!important}
-#scaleLegend.scale-pinned:not(.scale-actions-open){padding-right:12px!important}
 </style><style>
 
 .polarGridSpacing{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
@@ -163,9 +136,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .polarGridSpacing input{width:65px;min-width:0;padding:7px;font-size:13px}
 .polarGridSpacing select{max-width:85px;padding:7px;font-size:13px}
 </style><style id="gridVisibilityLayout">
-/* Shared pin glyphs: no frame or fill,
-#scaleLegend #pinScaleLegend,
-#scaleLegend #closeScaleLegend {
+/* Shared pin glyphs: no frame or fill{
   background:transparent!important;
   border:0!important;
   border-radius:0!important;
@@ -175,21 +146,11 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   appearance:none;
   -webkit-appearance:none;
 }
-#scaleLegend #pinScaleLegend[aria-pressed="true"] {background:transparent!important;color:#e8f1ff!important}
-#scaleLegend #pinScaleLegend .sharedPinSvg {display:block;width:22px;height:22px;transform:none!important}
-#scaleLegend #pinScaleLegend[aria-pressed="true"] .sharedPinSvg {transform:rotate(0deg)!important}
-#scaleLegend #closeScaleLegend svg{display:block;width:22px;height:22px}
-#scaleLegend #pinScaleLegend:focus-visible,
-#scaleLegend #closeScaleLegend:focus-visible{outline:2px solid #8abfff;outline-offset:1px;border-radius:4px!important}
-/* Pin interior reflects auto-hide status; controls remain frameless. */
-#scaleLegend #pinScaleLegend .sharedPinSvg{transition:color .18s,filter .18s}
-#scaleLegend #pinScaleLegend.auto-hide-hint .sharedPinSvg{color:#f6bb60;filter:drop-shadow(0 0 2px #d99b4788)}
-#scaleLegend #pinScaleLegend[aria-pressed="true"] .sharedPinSvg{color:#78c7ff}
 
 /* Unified dropdown appearance across the editor, including mobile native selects. */
 select{appearance:none!important;-webkit-appearance:none!important;color-scheme:dark!important;background-color:#1c2a42!important;color:#f1f5ff!important;border:1px solid #41536d!important;border-radius:9px!important;box-shadow:none!important;font:inherit!important;line-height:1.35!important;min-height:36px!important;padding:7px 30px 7px 11px!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23c9d8ed' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 8px center!important;background-size:15px 15px!important}
 select:focus-visible{outline:2px solid #60a5fa!important;outline-offset:1px!important}
-</style></head><body data-ui-title="Intel Atom E38xx · 功能焊球分佈" data-ui-subtitle="1170 balls · Intel E3800 Datasheet Rev. 4.3 · 原始 X/Y 座標（可切換翻轉）"><template id="ui-documents-extension"><div class="mdiDocuments" id="mdiDocuments"><div class="mdiHeading"><span>已開啟圖紙</span><span id="mdiDocCount">1</span></div><div id="mdiDocList" role="list" aria-label="已開啟圖紙"></div></div></template><template id="ui-settings-extension"><details class="settingGroup" open><summary class="settingHeading">焊盤／矽片</summary><div id="sizeControl"><label for="ballSize">焊盤</label><label class="syncOption" for="syncBallZoom"><input id="syncBallZoom" type="checkbox" checked> 同步縮放</label><input id="ballSize" type="range" min="2" max="24" step="1" value="5"><output id="ballSizeValue" for="ballSize">5 px</output></div><div class="hiddenPadRow"><label class="syncOption" for="outlineHidden"><input id="outlineHidden" type="checkbox" checked> 框出隱藏管腳</label></div><div class="packageOptions"><span class="packageLabel">矽片</span><label class="syncOption" for="showPackage"><input id="showPackage" type="checkbox" checked> 矩形外框</label><label class="chipFillColor" for="packageColor">底色 <input id="packageColor" type="color" value="#3f5b7b" aria-label="矽片底色"></label><label class="packageOpacity" for="packageOpacity">透明度 <input id="packageOpacity" type="range" min="0" max="100" value="20" step="1"><output id="packageOpacityValue">20%</output></label></div><div class="dimensionRow"><span>尺標</span><label class="syncOption" for="showDimensions"><input id="showDimensions" type="checkbox"> 顯示</label></div></details></template><div data-ui-shell></div><input id="projectFileInput" type="file" accept=".json,application/json" hidden><div id="toolbar" hidden><input id="search" placeholder="搜尋管腳：A3、DRAM0_DQ、USB…"><button id="find">搜尋</button><button id="searchOptions" type="button" aria-label="搜尋選項">⚙</button></div><button id="searchToggle" type="button" aria-label="展開搜尋框" aria-expanded="false" title="搜尋"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.6"/><path d="m16 16 5 5"/></svg></button><section id="searchPanel" hidden><div class="panelTitle"><strong>進階管腳搜尋</strong><button id="closeSearch" type="button">×</button></div><div class="searchChecks"><label><input type="checkbox" id="regexMode"> 正規表達式</label><label><input type="checkbox" id="exactMode"> 完全匹配</label><label><input type="checkbox" id="ignoreCase" checked> 忽略大小寫</label><label><input type="checkbox" id="byBall" checked> 按管腳號</label><label><input type="checkbox" id="byName" checked> 按功能名</label></div><div id="searchStatus">輸入條件後按搜尋</div><div id="searchResults"></div><div class="saveRow"><input id="groupName" placeholder="為搜尋結果命名分類群"><button id="saveGroup" type="button">儲存結果</button></div><div class="panelTitle"><strong>自訂分類群</strong></div><div id="savedGroups"></div></section><div data-ui-settings></div><div id="viewport"><button type="button" id="viewRecovery" aria-live="polite" aria-label="已超出有效視圖範圍，點擊恢復適合的觀察位置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5m0 3h.01"/></svg><span>已超出有效視圖範圍<br>點擊恢復適合的觀察位置</span></button><canvas id="plot"></canvas><div id="axisCompass" aria-label="座標方向指示器" role="group" tabindex="0"><svg viewBox="0 0 124 124" aria-hidden="true"><g id="axisCompassGeometry"></g></svg><div class="compassActions"><button type="button" id="pinCompass" aria-label="釘選方向指示器" aria-pressed="false" title="釘選方向指示器"><svg class="sharedPinSvg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3 21 8 18 9 15 13 15 17 13 19 9 15 4 20 9 15 5 11 7 9 11 9 15 6Z"/></svg></button><button type="button" id="closeCompass" aria-label="關閉方向指示器" title="關閉方向指示器"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5 19 19M19 5 5 19"/></svg></button></div></div><div id="scaleLegend"><button type="button" id="closeScaleLegend" aria-label="關閉比例尺提示" title="關閉比例尺提示"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5 19 19M19 5 5 19"/></svg></button><button type="button" id="pinScaleLegend" aria-label="釘選比例尺" title="釘選比例尺" aria-pressed="false"><svg class="sharedPinSvg" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3 21 8 18 9 15 13 15 17 13 19 9 15 4 20 9 15 5 11 7 9 11 9 15 6Z"/></svg></button><span id="scaleText">5 mm</span><div id="scaleBar"></div><div class="scaleMeta"><span id="pixelScaleText">0.000 mm/px</span><span id="orientationText">旋轉 0°</span></div></div><div id="info" role="status" aria-live="polite"><button id="closeInfo" type="button" aria-label="關閉資訊">×</button><div id="infoContent"></div></div></div><section id="categoryDrawer" aria-label="下方分組面板"><div id="splitHandle" role="separator" aria-label="點擊展開或摺疊，拖動調整上下分欄高度" aria-orientation="horizontal" tabindex="0" aria-expanded="true"><span class="grip"></span></div><div class="dockHeading"><strong>管腳分組</strong><span id="categoryCount" class="drawerSub">染色</span></div><div class="groupTabs"><button type="button" id="tabColor" class="active">染色</button><button type="button" id="tabManage">分組管理</button></div><section id="colorTab"><div id="legend"></div><div class="drawerActions"><button id="showAllGroups" type="button">全部預設</button><button id="hideAllGroups" type="button">全部隱藏</button></div></section><section id="manageTab" hidden><div class="manageSplit"><div id="manageGroups" class="manageGroups"></div><div id="manageDetail" class="manageDetail"><span class="muted">選擇左側分組，查看管腳及修改管腳色彩</span></div></div></section></section><script>
+</style></head><body data-ui-title="Intel Atom E38xx · 功能焊球分佈" data-ui-subtitle="1170 balls · Intel E3800 Datasheet Rev. 4.3 · 原始 X/Y 座標（可切換翻轉）"><template id="ui-documents-extension"><div class="mdiDocuments" id="mdiDocuments"><div class="mdiHeading"><span>已開啟圖紙</span><span id="mdiDocCount">1</span></div><div id="mdiDocList" role="list" aria-label="已開啟圖紙"></div></div></template><template id="ui-settings-extension"><details class="settingGroup" open><summary class="settingHeading">焊盤／矽片</summary><div id="sizeControl"><label for="ballSize">焊盤</label><label class="syncOption" for="syncBallZoom"><input id="syncBallZoom" type="checkbox" checked> 同步縮放</label><input id="ballSize" type="range" min="2" max="24" step="1" value="5"><output id="ballSizeValue" for="ballSize">5 px</output></div><div class="hiddenPadRow"><label class="syncOption" for="outlineHidden"><input id="outlineHidden" type="checkbox" checked> 框出隱藏管腳</label></div><div class="packageOptions"><span class="packageLabel">矽片</span><label class="syncOption" for="showPackage"><input id="showPackage" type="checkbox" checked> 矩形外框</label><label class="chipFillColor" for="packageColor">底色 <input id="packageColor" type="color" value="#3f5b7b" aria-label="矽片底色"></label><label class="packageOpacity" for="packageOpacity">透明度 <input id="packageOpacity" type="range" min="0" max="100" value="20" step="1"><output id="packageOpacityValue">20%</output></label></div><div class="dimensionRow"><span>尺標</span><label class="syncOption" for="showDimensions"><input id="showDimensions" type="checkbox"> 顯示</label></div></details></template><div data-ui-shell></div><input id="projectFileInput" type="file" accept=".json,application/json" hidden><div id="toolbar" hidden><input id="search" placeholder="搜尋管腳：A3、DRAM0_DQ、USB…"><button id="find">搜尋</button><button id="searchOptions" type="button" aria-label="搜尋選項">⚙</button></div><button id="searchToggle" type="button" aria-label="展開搜尋框" aria-expanded="false" title="搜尋"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.6"/><path d="m16 16 5 5"/></svg></button><section id="searchPanel" hidden><div class="panelTitle"><strong>進階管腳搜尋</strong><button id="closeSearch" type="button">×</button></div><div class="searchChecks"><label><input type="checkbox" id="regexMode"> 正規表達式</label><label><input type="checkbox" id="exactMode"> 完全匹配</label><label><input type="checkbox" id="ignoreCase" checked> 忽略大小寫</label><label><input type="checkbox" id="byBall" checked> 按管腳號</label><label><input type="checkbox" id="byName" checked> 按功能名</label></div><div id="searchStatus">輸入條件後按搜尋</div><div id="searchResults"></div><div class="saveRow"><input id="groupName" placeholder="為搜尋結果命名分類群"><button id="saveGroup" type="button">儲存結果</button></div><div class="panelTitle"><strong>自訂分類群</strong></div><div id="savedGroups"></div></section><div data-ui-settings></div><div id="viewport"><button type="button" id="viewRecovery" aria-live="polite" aria-label="已超出有效視圖範圍，點擊恢復適合的觀察位置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5m0 3h.01"/></svg><span>已超出有效視圖範圍<br>點擊恢復適合的觀察位置</span></button><canvas id="plot"></canvas><div data-ui-bubbles></div><div id="info" role="status" aria-live="polite"><div id="infoContent"></div></div></div><section id="categoryDrawer" aria-label="下方分組面板"><div id="splitHandle" role="separator" aria-label="點擊展開或摺疊，拖動調整上下分欄高度" aria-orientation="horizontal" tabindex="0" aria-expanded="true"><span class="grip"></span></div><div class="dockHeading"><strong>管腳分組</strong><span id="categoryCount" class="drawerSub">染色</span></div><div class="groupTabs"><button type="button" id="tabColor" class="active">染色</button><button type="button" id="tabManage">分組管理</button></div><section id="colorTab"><div id="legend"></div><div class="drawerActions"><button id="showAllGroups" type="button">全部預設</button><button id="hideAllGroups" type="button">全部隱藏</button></div></section><section id="manageTab" hidden><div class="manageSplit"><div id="manageGroups" class="manageGroups"></div><div id="manageDetail" class="manageDetail"><span class="muted">選擇左側分組，查看管腳及修改管腳色彩</span></div></div></section></section><script>
 /* Shared drawing viewport and grid engine. Both apps consume this file. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;root.ChipViewport=api})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
@@ -225,6 +186,124 @@ function gridGeometry(camera,width,height,o={}){
 function drawGrid(ctx,camera,width,height,o){ctx.save();ctx.beginPath();ctx.rect(0,0,width,height);ctx.clip();ctx.strokeStyle=o.color||'#728cb1';ctx.fillStyle=o.color||'#728cb1';ctx.lineWidth=o.width||1;const geometry=o.show===false?[]:gridGeometry(camera,width,height,o);for(const p of geometry){ctx.globalAlpha=p.type==='point'?.5:.27;ctx.beginPath();if(p.type==='point'){ctx.arc(p.p.x,p.p.y,p.r,0,Math.PI*2);ctx.fill()}else{ctx.setLineDash(p.state==='dashed'?[6,5]:[]);ctx.lineDashOffset=-(p.dashOffset||0);ctx.moveTo(p.a.x,p.a.y);ctx.lineTo(p.b.x,p.b.y);ctx.stroke()}}if(o.showOrigin){const p=camera.toScreen({x:0,y:0}),r=9;ctx.globalAlpha=1;ctx.strokeStyle=o.originColor||'#92a9c6';ctx.lineWidth=o.originWidth||1;ctx.setLineDash([]);ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.moveTo(p.x-r*.58,p.y-r*.58);ctx.lineTo(p.x+r*.58,p.y+r*.58);ctx.moveTo(p.x+r*.58,p.y-r*.58);ctx.lineTo(p.x-r*.58,p.y+r*.58);ctx.stroke()}ctx.restore();return geometry.length}
 return Object.freeze({Camera,units,snap,clipLine,gridGeometry,drawGrid});
 });
+
+</script><script>
+/* Shared bubble component: all overlay presentation and interaction lives here. */
+(function(root){
+'use strict';
+const $=id=>document.getElementById(id),instances=new Map(),surfacePointers=new Set();
+const pinIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 3 6 6-4 1-3 4v4l-2 2-4-4-5 5 5-5-4-4 2-2h4l4-3Z"/></svg>';
+const closeIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>';
+function actions(pin,close){return '<div class="bubble-actions"><button type="button" id="'+pin+'" data-bubble-pin aria-pressed="false" aria-label="釘選氣泡">'+pinIcon+'</button><button type="button" id="'+close+'" data-bubble-close aria-label="關閉氣泡">'+closeIcon+'</button></div>'}
+const markup='<div id="scaleLegend" class="ui-bubble bubble-scale" role="group" aria-label="比例尺" tabindex="0">'+actions('pinScaleLegend','closeScaleLegend')+'<div class="bubble-content"><span id="scaleText"></span><div id="scaleBar"></div><div class="bubble-meta"><span id="pixelScaleText"></span><span id="orientationText"></span></div></div></div><div id="axisCompass" class="ui-bubble bubble-compass" role="group" aria-label="座標方向指示器" tabindex="0">'+actions('pinCompass','closeCompass')+'<div class="bubble-content"><svg viewBox="0 0 124 124" aria-hidden="true"><g id="axisCompassGeometry"></g></svg><small id="coordinateReadout"></small></div></div><div id="statusBubble" class="ui-bubble bubble-status" role="status" tabindex="0"><span id="status" class="bubble-content"></span></div>';
+class Bubble{
+ constructor(element,{viewport,placement='top-left',visible=()=>true,autoHide=()=>false,duration=()=>1500,opacity=()=>.73,onClose=()=>{},actions=true,maxWidth=Infinity}={}){
+  this.element=element;this.options={viewport,placement,visible,autoHide,duration,opacity,onClose,actions,maxWidth};this.pinned=false;this.desired=null;this.drag=null;this.hideTimer=null;this.actionTimer=null;this.visible=false;this.suppressClick=false;
+  element.classList.add('ui-bubble');if(!element.getAttribute('tabindex'))element.setAttribute('tabindex','0');
+  const pin=element.querySelector('[data-bubble-pin]'),close=element.querySelector('[data-bubble-close]');
+  pin?.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();this.pinned=!this.pinned;this.refresh(true)});
+  close?.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();this.pinned=false;this.options.onClose();this.refresh(false);element.dispatchEvent(new Event('bubbleclose'))});
+  element.addEventListener('pointerdown',e=>{if(surfacePointers.size||e.isPrimary===false||(e.button!==undefined&&e.button!==0)||e.target.closest('button,input,select,textarea,a,.muxList'))return;const r=element.getBoundingClientRect(),v=viewport.getBoundingClientRect();this.drag={id:e.pointerId,x:e.clientX,y:e.clientY,left:r.left-v.left,top:r.top-v.top,moved:false};element.setPointerCapture(e.pointerId);this.refresh(true);e.stopPropagation()});
+  element.addEventListener('pointermove',e=>{if(!this.drag||this.drag.id!==e.pointerId)return;const dx=e.clientX-this.drag.x,dy=e.clientY-this.drag.y;if(Math.hypot(dx,dy)>4)this.drag.moved=true;if(this.drag.moved){this.desired={x:this.drag.left+dx,y:this.drag.top+dy};element.classList.add('bubble-dragging');this.clamp();e.preventDefault()}this.refresh(true);e.stopPropagation()});
+  const end=e=>{if(!this.drag||this.drag.id!==e.pointerId)return;const moved=this.drag.moved,tap=e.type==='pointerup'&&!moved;this.drag=null;element.classList.remove('bubble-dragging');if(element.hasPointerCapture(e.pointerId))element.releasePointerCapture(e.pointerId);if(moved){this.suppressClick=true;setTimeout(()=>this.suppressClick=false,0)}if(tap)this.revealActions();this.refresh(true);e.stopPropagation()};
+  for(const type of ['pointerup','pointercancel','lostpointercapture'])element.addEventListener(type,end);
+  element.addEventListener('click',e=>{if(this.suppressClick){e.preventDefault();e.stopImmediatePropagation();this.suppressClick=false}else if(!e.target.closest('button'))this.revealActions()},true);
+  element.addEventListener('focusin',()=>this.revealActions());
+  element.addEventListener('keydown',e=>{const delta={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];if(delta&&e.target===element){e.preventDefault();const r=element.getBoundingClientRect(),v=viewport.getBoundingClientRect(),step=e.shiftKey?25:10;this.desired={x:r.left-v.left+delta[0]*step,y:r.top-v.top+delta[1]*step};this.clamp();this.refresh(true)}if(e.key==='Escape'){element.classList.remove('bubble-actions-open');this.refresh(true)}});
+  for(const type of ['wheel','dblclick'])element.addEventListener(type,e=>e.stopPropagation());
+  document.addEventListener('pointerdown',e=>{if(!element.contains(e.target))element.classList.remove('bubble-actions-open')});
+  new ResizeObserver(()=>this.clamp()).observe(element);new ResizeObserver(()=>this.clamp()).observe(viewport);window.addEventListener('resize',()=>this.clamp());window.addEventListener('pinview-overlay-layout',()=>this.clamp());this.refresh(true);
+ }
+ clamp(){const e=this.element,v=this.options.viewport.getBoundingClientRect(),r=e.getBoundingClientRect(),gap=8;if(!v.width||!v.height)return;e.style.maxWidth=Math.max(0,Math.min(this.options.maxWidth,v.width-gap*2))+'px';e.style.maxHeight=Math.max(0,v.height-gap*2)+'px';let desired=this.desired;if(!desired){const bottom=this.options.placement.startsWith('bottom'),right=this.options.placement.endsWith('right'),status=this.options.placement==='bottom-left-above-status';desired={x:right?v.width-r.width-gap:gap,y:bottom?v.height-r.height-gap:gap};if(status)desired.y-=Math.min(42,($('statusBubble')?.getBoundingClientRect().height||24)+8)}const x=Math.max(gap,Math.min(desired.x,Math.max(gap,v.width-r.width-gap))),y=Math.max(gap,Math.min(desired.y,Math.max(gap,v.height-r.height-gap)));e.style.left=x+'px';e.style.top=y+'px';e.style.right='auto';e.style.bottom='auto'}
+ revealActions(){if(!this.options.actions)return;clearTimeout(this.actionTimer);this.element.classList.add('bubble-actions-open');this.refresh(true);this.actionTimer=setTimeout(()=>{if(!this.drag){this.element.classList.remove('bubble-actions-open');this.refresh(true)}},1800)}
+ refresh(active=false){const e=this.element,visible=!!this.options.visible(),appeared=visible&&!this.visible;this.visible=visible;e.hidden=!visible;e.style.setProperty('--bubble-opacity',String(Math.max(0,Math.min(1,this.options.opacity()))));const pin=e.querySelector('[data-bubble-pin]');if(pin){pin.setAttribute('aria-pressed',String(this.pinned));pin.title=this.pinned?'取消釘選':'釘選氣泡'}if(!visible){clearTimeout(this.hideTimer);e.style.opacity='0';return}if(active||appeared||this.pinned||!this.options.autoHide()){clearTimeout(this.hideTimer);e.style.opacity='1';if(this.options.autoHide()&&!this.pinned&&!this.drag&&!e.classList.contains('bubble-actions-open'))this.hideTimer=setTimeout(()=>{if(!this.drag&&!this.pinned)e.style.opacity='0'},Math.max(0,this.options.duration()))}this.clamp()}
+}
+let viewport=null,lastCamera=null,lastStatus=null,pointer=null;
+function mount(){const host=document.querySelector('[data-ui-bubbles]');if(!host)return;viewport=host.parentNode;host.outerHTML=markup;viewport.addEventListener('pointerdown',e=>{if(!e.target.closest('.ui-bubble'))surfacePointers.add(e.pointerId)},true);for(const type of ['pointerup','pointercancel','lostpointercapture'])document.addEventListener(type,e=>surfacePointers.delete(e.pointerId),true);window.addEventListener('blur',()=>surfacePointers.clear());
+ const controlled=(id,show,hide,placement,opacity)=>new Bubble($(id),{viewport,placement,visible:()=>$(show).checked,autoHide:()=>$(hide).checked,duration:()=>ChipUI.duration(hide),opacity:opacity||(()=>.73),onClose:()=>{$(show).checked=false;$(show).dispatchEvent(new Event('input',{bubbles:true}));ChipUI.sync()}});
+ instances.set('scaleLegend',controlled('scaleLegend','showScale','autoHideScale','bottom-left-above-status',()=>Number($('scaleOpacity').value)/100));instances.set('axisCompass',controlled('axisCompass','showCompass','autoHideCompass','bottom-right'));instances.set('statusBubble',new Bubble($('statusBubble'),{viewport,placement:'bottom-left',actions:false}));
+ const info=$('info');if(info){info.classList.add('bubble-info');$('infoContent').classList.add('bubble-content');info.insertAdjacentHTML('afterbegin',actions('pinInfoBubble','closeInfoBubble'));const close=$('closeInfo');if(close)close.remove();instances.set('info',new Bubble(info,{viewport,placement:'top-left',maxWidth:360,visible:()=>info.classList.contains('show'),onClose:()=>info.classList.remove('show')}))}
+ viewport.addEventListener('pointermove',e=>{if(!lastCamera)return;const r=viewport.getBoundingClientRect();pointer=lastCamera.toWorld({x:e.clientX-r.left,y:e.clientY-r.top});renderPointer();refresh(true)});
+ const body=$('advancedBody');for(const type of ['input','change','click'])body.addEventListener(type,()=>refresh(true));
+}
+function refresh(active=false){for(const bubble of instances.values())bubble.refresh(active)}
+function renderPointer(){if(!pointer)return;const unit=$('unitSelect').value,factor=ChipViewport.units[unit]||1,n=Math.max(0,Math.min(9,Number($('lengthPrecision').value)||0)),fmt=x=>(x/factor).toFixed(n);$('coordinateReadout').textContent=$('coordinateMode').value==='polar'?'ρ '+fmt(Math.hypot(pointer.x,pointer.y))+' '+unit+' · θ '+ChipUI.angle.format(Math.atan2(pointer.y,pointer.x)*180/Math.PI,$('angleMode').value,$('anglePrecision').value):'X '+fmt(pointer.x)+' · Y '+fmt(pointer.y)+' '+unit}
+function update(camera,{status,active=false}={}){lastCamera=camera;const unit=$('unitSelect').value,factor=ChipViewport.units[unit]||1,n=Math.max(0,Math.min(9,Number($('lengthPrecision').value)||0)),span=Math.min(120,Math.max(1,viewport.getBoundingClientRect().width*.3))/camera.scale/factor,power=Math.pow(10,Math.floor(Math.log10(span))),nice=[1,2,5,10].filter(v=>v*power<=span).pop()*power||power;$('scaleText').textContent=nice.toFixed(n)+' '+(unit==='um'?'µm':unit);$('scaleBar').style.width=Math.max(1,nice*factor*camera.scale)+'px';$('pixelScaleText').textContent=(1/camera.scale/factor).toFixed(n)+' '+unit+'/px';$('orientationText').textContent=ChipUI.angle.format(camera.angle*180/Math.PI,$('angleMode').value,$('anglePrecision').value)+(camera.mirror?' · 翻轉':'');if(status!==undefined){lastStatus=status;$('status').textContent=status}else if(lastStatus!==null)$('status').textContent=lastStatus;renderCompass(camera,$('coordinateMode').value);renderPointer();refresh(active)}
+function renderCompass(camera,coordinate){
+ const polar=coordinate==='polar';
+ const mirror=camera.mirror?-1:1;
+ const c=Math.cos(camera.angle),sn=Math.sin(camera.angle);
+ const vector=(x,y)=>{const a=x*mirror,b=-y;return [a*c-b*sn,a*sn+b*c]};
+ const norm=v=>{const d=Math.hypot(...v)||1;return [v[0]/d,v[1]/d]};
+ const xaxis=norm(vector(1,0)),yaxis=norm(vector(0,1));
+ const g=document.getElementById('axisCompassGeometry');
+ const NS='http://www.w3.org/2000/svg';
+ g.replaceChildren();
+ const add=(tag,attrs)=>{const e=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,String(v));g.appendChild(e);return e};
+ const O=[62,62],L=31;
+ const arrow=(point,tangent,color,size=7)=>{
+  const back=[point[0]-tangent[0]*size,point[1]-tangent[1]*size];
+  const perp=[-tangent[1]*size*.43,tangent[0]*size*.43];
+  add('polygon',{points:`${point.join(',')} ${back[0]+perp[0]},${back[1]+perp[1]} ${back[0]-perp[0]},${back[1]-perp[1]}`,fill:color});
+ };
+ const line=(v,color,label,withArrow=true)=>{
+  const end=[O[0]+v[0]*L,O[1]+v[1]*L];
+  add('line',{x1:O[0],y1:O[1],x2:end[0]-(withArrow?v[0]*7:0),y2:end[1]-(withArrow?v[1]*7:0),stroke:color,'stroke-width':3,'stroke-linecap':'round'});
+  if(withArrow)arrow(end,v,color);
+  if(label)add('text',{x:end[0]+v[0]*11,y:end[1]+v[1]*11+4}).textContent=label;
+ };
+ // Positive polar angles increase counterclockwise in drawing-plane coordinates.
+ // Mirroring reverses that direction on screen.
+ const positive=mirror===1?-1:1;
+ const angleOf=v=>Math.atan2(v[1],v[0]);
+ const curvedArrow=(startAngle,endAngle,r,color)=>{
+  const n=Math.max(8,Math.ceil(Math.abs(endAngle-startAngle)/.045));
+  let d='';for(let i=0;i<=n;i++){
+   const t=startAngle+(endAngle-startAngle)*i/n;
+   d+=(i?' L ':'M ')+(O[0]+r*Math.cos(t)).toFixed(3)+' '+(O[1]+r*Math.sin(t)).toFixed(3);
+  }
+  // Stop the arc at the base of the arrowhead, not its tip.
+  const shortened=endAngle-positive*7/r;
+  const pathSteps=Math.max(8,Math.ceil(Math.abs(shortened-startAngle)/.045));
+  d='';for(let i=0;i<=pathSteps;i++){const t=startAngle+(shortened-startAngle)*i/pathSteps;d+=(i?' L ':'M ')+(O[0]+r*Math.cos(t)).toFixed(3)+' '+(O[1]+r*Math.sin(t)).toFixed(3)}
+  add('path',{d,fill:'none',stroke:color,'stroke-width':2.3,'stroke-linecap':'round'});
+  const e=[O[0]+r*Math.cos(endAngle),O[1]+r*Math.sin(endAngle)];
+  const t=positive===1?[-Math.sin(endAngle),Math.cos(endAngle)]:[Math.sin(endAngle),-Math.cos(endAngle)];
+  arrow(e,t,color,7);
+  return e;
+ };
+ if(!polar){line(xaxis,'#ff5969','x');line(yaxis,'#60a5fa','y')}
+ else{
+  // ρ is the drawing plane's rotated X direction; θ is an angular annotation,
+  // never a perpendicular linear coordinate axis.
+  line(xaxis,'#60a5fa','ρ');
+  const rotated=Math.abs(Math.atan2(Math.sin(camera.angle),Math.cos(camera.angle)))>0.001;
+  if(rotated){
+   const reference=[mirror,0]; // unrotated X direction, not an independent θ axis
+   const delta=Math.atan2(reference[0]*xaxis[1]-reference[1]*xaxis[0],reference[0]*xaxis[0]+reference[1]*xaxis[1]);
+   // Display θ reference as a thin ray, with no arrowhead.
+   line(reference,'#42d98c','',false);
+   if(Math.abs(delta)>.025){
+    let sweep=delta;
+    if(positive===1&&sweep<0)sweep+=Math.PI*2;
+    if(positive===-1&&sweep>0)sweep-=Math.PI*2;
+    // Large rotations remain within the compass bounds.
+    curvedArrow(angleOf(reference),angleOf(reference)+sweep,18,'#42d98c');
+   }
+   add('text',{x:O[0]+Math.cos(angleOf(reference)+positive*.45)*28,y:O[1]+Math.sin(angleOf(reference)+positive*.45)*28+4}).textContent='θ';
+  }else{
+   // No θ ray at zero rotation: only a curved direction marker beyond ρ.
+   const base=angleOf(xaxis),start=base+positive*.15,end=base+positive*.9;
+   curvedArrow(start,end,47,'#42d98c');
+   add('text',{x:O[0]+Math.cos(end)*58,y:O[1]+Math.sin(end)*58+4}).textContent='θ';
+  }
+ }
+ add('circle',{cx:O[0],cy:O[1],r:3.2,fill:'#e8f1ff'});
+ document.getElementById('axisCompass').setAttribute('aria-label',polar?'極座標方向：ρ 徑向，θ 為極角及其遞增方向':'正交座標方向：X 軸與 Y 軸');
+}
+
+root.ChipBubbles={Bubble,mount,update,refresh,get:id=>instances.get(id)};
+})(globalThis);
 
 </script><script>
 /* Shared UI: templates, settings controller, header, menu and panel lifecycle. */
@@ -310,7 +389,7 @@ document.addEventListener('pointerdown',e=>{if(popup&&!popup.contains(e.target)&
 
 return durations;
 }
-function mount(){const host=document.querySelector('[data-ui-shell]'),settingsHost=document.querySelector('[data-ui-settings]');if(!host||!settingsHost)throw Error('Missing shared UI hosts');host.outerHTML=templates.header+templates.menu;settingsHost.outerHTML=templates.panel;for(const name of ['header','documents','settings']){const source=$('ui-'+name+'-extension'),slot=document.querySelector('[data-ui-slot="'+name+'"]');if(source&&slot){slot.innerHTML=source.innerHTML;source.remove()}else if(slot)slot.hidden=true}const title=document.body.dataset.uiTitle||'Chip Workspace',subtitle=document.body.dataset.uiSubtitle||'';$('projectTitle').textContent=title;$('projectSubtitle').textContent=subtitle;$('projectSubtitle').hidden=!subtitle;for(const row of document.querySelectorAll('.scaleSettingsRow'))for(const child of row.children)if(!child.classList.contains('scaleTitle')&&!child.contains($('showScale')))child.classList.add('ui-dependent');attachMenu();attachLanguage();panelController=attachPanel();autoHideDurations=attachDurationEditor()}
+function mount(){const host=document.querySelector('[data-ui-shell]'),settingsHost=document.querySelector('[data-ui-settings]');if(!host||!settingsHost)throw Error('Missing shared UI hosts');host.outerHTML=templates.header+templates.menu;settingsHost.outerHTML=templates.panel;for(const name of ['header','documents','settings']){const source=$('ui-'+name+'-extension'),slot=document.querySelector('[data-ui-slot="'+name+'"]');if(source&&slot){slot.innerHTML=source.innerHTML;source.remove()}else if(slot)slot.hidden=true}const title=document.body.dataset.uiTitle||'Chip Workspace',subtitle=document.body.dataset.uiSubtitle||'';$('projectTitle').textContent=title;$('projectSubtitle').textContent=subtitle;$('projectSubtitle').hidden=!subtitle;for(const row of document.querySelectorAll('.scaleSettingsRow'))for(const child of row.children)if(!child.classList.contains('scaleTitle')&&!child.contains($('showScale')))child.classList.add('ui-dependent');attachMenu();attachLanguage();panelController=attachPanel();autoHideDurations=attachDurationEditor();ChipBubbles.mount()}
 root.ChipUI={mount,setLanguage,duration:id=>autoHideDurations.get(id)??1500,bindViewGrid,angle:{value:angleValue,format:angleFormat,thetaDegrees},sync:()=>controller?.sync(),precisionOptions:()=>controller?.precisionOptions(),closeMenu:()=>menuController?.close(),syncFullscreen,get panel(){return panelController}};
 })(globalThis);
 
@@ -346,73 +425,10 @@ const chipSettings=ChipUI.bindViewGrid({
  getAngle:()=>angle*180/Math.PI,setAngle:degrees=>rotate(degrees*Math.PI/180-angle),getMirror:()=>mirrorX.checked,setMirror:value=>{mirrorX.checked=value;draw();showScaleTemporarily()},getScale:()=>scale,viewport:()=>view,
  changed:()=>{draw();showScaleTemporarily();if(selected)choose(selected)}
 });
-function reset(){mirrorX.checked=false;angle=0;scale=Math.min(w/(packageWidth+2),h/(packageHeight+2));referenceScale=scale;ox=w/2;oy=h/2;draw();showScaleTemporarily()}function xy(p){const q=chipCamera().toScreen({x:p[2],y:p[3]});return [q.x,q.y]}function centerOn(p){let x=p[2]*scale*(mirrorX.checked?-1:1),y=-p[3]*scale,c=Math.cos(angle),sn=Math.sin(angle);ox=w/2-(x*c-y*sn);oy=h/2-(x*sn+y*c)}function rotate(delta,cx=w/2,cy=h/2){applyChipCamera(chipCamera().rotateAt(delta,{x:cx,y:cy}));ChipUI.sync();draw();showScaleTemporarily()}function resize(){const r=view.getBoundingClientRect(),oldW=w,oldH=h;w=r.width;h=r.height;const dpr=Math.min(3,devicePixelRatio||1);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);if(!oldW)reset();else{ox+=(w-oldW)/2;oy+=(h-oldH)/2;draw()}updateGridOverflowUI()}function updateScaleLegend(){const pxUnit=mmPerUnit()/1;document.getElementById("pixelScaleText").textContent=`${fmtNumber(1/Math.max(scale,1e-12)/pxUnit)} ${document.getElementById("unitSelect").value}/px`;const degrees=((angle*180/Math.PI)%360+360)%360;const shown=Math.abs(degrees-360)<0.05||degrees<0.05?0:Number(degrees.toFixed(1));document.getElementById('orientationText').textContent=`旋轉 ${formatViewAngle(angle)}${mirrorX.checked?'（翻轉）':''}`;const unit=document.getElementById('unitSelect').value;const maxMM=Math.max(.02,Math.min(140,Math.min(w*.31,180)/scale));const unitMM=mmPerUnit();const maxUnits=maxMM/unitMM;const power=Math.pow(10,Math.floor(Math.log10(maxUnits)));let nice=power;for(const factor of [1,2,5,10]){if(factor*power<=maxUnits)nice=factor*power}document.getElementById('scaleText').textContent=`${fmtNumber(nice)} ${unit}`;document.getElementById('scaleBar').style.width=(nice*unitMM*scale)+'px'}let scaleHideTimer=null;const scaleLegend=document.getElementById('scaleLegend');const autoHideScale=document.getElementById('autoHideScale');
-const scaleOpacityInput=document.getElementById('scaleOpacity');
-function updateScaleOpacity(){const value=Number(scaleOpacityInput.value);document.getElementById('scaleOpacityValue').textContent=value+'%';scaleLegend.style.backgroundColor=`rgba(11,18,32,${value/100})`}
-scaleOpacityInput.addEventListener('input',updateScaleOpacity);updateScaleOpacity();
-let scaleLegendPosition=null;
-function clampScaleLegend(){
- const vw=view.clientWidth,vh=view.clientHeight;
- if(!vw||!vh)return;
- const maxX=Math.max(0,vw-scaleLegend.offsetWidth),maxY=Math.max(0,vh-scaleLegend.offsetHeight);
- if(!scaleLegendPosition){const r=scaleLegend.getBoundingClientRect(),v=view.getBoundingClientRect();if(r.width&&r.height)scaleLegendPosition={x:r.left-v.left,y:r.top-v.top};}
- if(scaleLegendPosition){scaleLegend.style.left=Math.max(0,Math.min(maxX,scaleLegendPosition.x))+'px';scaleLegend.style.top=Math.max(0,Math.min(maxY,scaleLegendPosition.y))+'px';scaleLegend.style.right='auto';scaleLegend.style.bottom='auto'}
-}
-let scaleDrag=null;
-const closeScaleLegend=document.getElementById('closeScaleLegend');
-const pinScaleLegend=document.getElementById('pinScaleLegend');let scalePinned=false;
-function syncScalePinHint(){const enabled=autoHideScale.checked;pinScaleLegend.classList.toggle('auto-hide-hint',enabled&&!scalePinned);pinScaleLegend.title=scalePinned?'取消釘選':enabled?'釘選比例尺（目前自動隱藏）':'釘選比例尺（目前常駐）';pinScaleLegend.setAttribute('aria-label',pinScaleLegend.title)}
-pinScaleLegend.addEventListener('pointerdown',e=>e.stopPropagation());
-pinScaleLegend.addEventListener('pointerup',e=>e.stopPropagation());
-pinScaleLegend.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();scalePinned=!scalePinned;pinScaleLegend.setAttribute('aria-pressed',String(scalePinned));scaleLegend.classList.toggle('scale-pinned',scalePinned);if(scalePinned){scaleLegend.classList.remove('scale-actions-open');clearTimeout(scaleActionTimer);}syncScalePinHint();clearTimeout(scaleHideTimer);scaleLegend.style.opacity='1';if(!scalePinned)showScaleTemporarily();});
-let scaleActionTimer=null;
-function revealScaleActions(){
- if(!document.getElementById('showScale').checked)return;
- clearTimeout(scaleActionTimer);
- scaleLegend.classList.add('scale-actions-open');
- clampScaleLegend();
- // Keep the close control available long enough for a second tap.
- scaleActionTimer=setTimeout(()=>{if(!scaleDrag){scaleLegend.classList.remove('scale-actions-open');if(scaleLegend.contains(document.activeElement))document.activeElement.blur();clampScaleLegend();showScaleTemporarily()}},1800);
-}
-scaleLegend.addEventListener('focusin',()=>revealScaleActions());
-// Outside focus/taps dismiss controls without dismissing the pinned bubble.
-document.addEventListener('pointerdown',e=>{if(!scaleLegend.contains(e.target)){clearTimeout(scaleActionTimer);scaleLegend.classList.remove('scale-actions-open');clampScaleLegend();}});
-closeScaleLegend.addEventListener('pointerdown',e=>e.stopPropagation());
-closeScaleLegend.addEventListener('pointerup',e=>e.stopPropagation());
-closeScaleLegend.addEventListener('click',e=>{
- e.preventDefault();e.stopPropagation();
- clearTimeout(scaleActionTimer);clearTimeout(scaleHideTimer);
- scaleLegend.classList.remove('scale-actions-open','scale-pinned');scalePinned=false;pinScaleLegend.setAttribute('aria-pressed','false');syncScalePinHint();
- const show=document.getElementById('showScale');show.checked=false;
- scaleLegend.style.display='none';draw();
-});
-scaleLegend.addEventListener('pointerdown',e=>{
- if(e.button!==0)return;
- const v=view.getBoundingClientRect(),r=scaleLegend.getBoundingClientRect();
- scaleLegendPosition={x:r.left-v.left,y:r.top-v.top};
- scaleDrag={id:e.pointerId,startX:e.clientX,startY:e.clientY,x:scaleLegendPosition.x,y:scaleLegendPosition.y};
- scaleLegend.setPointerCapture(e.pointerId);scaleLegend.classList.add('dragging');showScaleTemporarily();e.preventDefault();e.stopPropagation();
-});
-scaleLegend.addEventListener('pointermove',e=>{
- if(!scaleDrag||scaleDrag.id!==e.pointerId)return;
- scaleLegendPosition={x:scaleDrag.x+e.clientX-scaleDrag.startX,y:scaleDrag.y+e.clientY-scaleDrag.startY};
- clampScaleLegend();showScaleTemporarily();e.preventDefault();e.stopPropagation();
-});
-function endScaleDrag(e){
- if(!scaleDrag||scaleDrag.id!==e.pointerId)return;
- const tapped=e.type==='pointerup'&&Math.hypot(e.clientX-scaleDrag.startX,e.clientY-scaleDrag.startY)<9;
- scaleDrag=null;scaleLegend.classList.remove('dragging');
- if(tapped)revealScaleActions();
- showScaleTemporarily();e.stopPropagation();
-}
-scaleLegend.addEventListener('pointerup',endScaleDrag);
-scaleLegend.addEventListener('pointercancel',endScaleDrag);
-window.addEventListener('resize',()=>requestAnimationFrame(clampScaleLegend));
-new ResizeObserver(()=>clampScaleLegend()).observe(scaleLegend);
-new ResizeObserver(()=>clampScaleLegend()).observe(view);
-function showScaleTemporarily(){if(!document.getElementById('showScale').checked)return;clearTimeout(scaleHideTimer);scaleLegend.style.opacity='1';if(autoHideScale.checked&&!scaleDrag&&!scalePinned)scaleHideTimer=setTimeout(()=>{if(!scaleDrag&&!scalePinned&&!scaleLegend.classList.contains('scale-actions-open'))scaleLegend.style.opacity='0'},ChipUI.duration('autoHideScale'))}
-// Any interaction with the scale overlay restarts its inactivity countdown.
-for(const ev of ['pointerdown','pointermove','pointerup','click','wheel','focusin','touchstart']){scaleLegend.addEventListener(ev,()=>showScaleTemporarily(),{passive:true})}autoHideScale.addEventListener('change',()=>{syncScalePinHint();clearTimeout(scaleHideTimer);if(autoHideScale.checked&&!scalePinned)showScaleTemporarily();else scaleLegend.style.opacity='1'});document.getElementById('showScale').addEventListener('change',()=>{clearTimeout(scaleHideTimer);clearTimeout(scaleActionTimer);scaleLegend.classList.remove('scale-actions-open');if(autoHideScale.checked&&!scalePinned)showScaleTemporarily();else if(document.getElementById('showScale').checked)scaleLegend.style.opacity='1'});syncScalePinHint();function drawPackage(){if(!document.getElementById('showPackage').checked)return;/* Intel FCBGA1170 package: 27 mm along X, 25 mm along Y. */const hw=packageWidth/2,hh=packageHeight/2;const corners=[[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]];ctx.beginPath();corners.forEach(([x,y],i)=>{const q=xy([null,null,x,y]);if(i)ctx.lineTo(...q);else ctx.moveTo(...q)});ctx.closePath();const hex=document.getElementById('packageColor').value;const alpha=Number(document.getElementById('packageOpacity').value)/100;const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);ctx.fillStyle=`rgba(${r},${g},${b},${alpha})`;ctx.fill();ctx.strokeStyle='rgba(165,197,237,.85)';ctx.lineWidth=1.5;ctx.stroke()}function drawDimensions(){
+function reset(){mirrorX.checked=false;angle=0;scale=Math.min(w/(packageWidth+2),h/(packageHeight+2));referenceScale=scale;ox=w/2;oy=h/2;draw();showScaleTemporarily()}function xy(p){const q=chipCamera().toScreen({x:p[2],y:p[3]});return [q.x,q.y]}function centerOn(p){let x=p[2]*scale*(mirrorX.checked?-1:1),y=-p[3]*scale,c=Math.cos(angle),sn=Math.sin(angle);ox=w/2-(x*c-y*sn);oy=h/2-(x*sn+y*c)}function rotate(delta,cx=w/2,cy=h/2){applyChipCamera(chipCamera().rotateAt(delta,{x:cx,y:cy}));ChipUI.sync();draw();showScaleTemporarily()}function resize(){const r=view.getBoundingClientRect(),oldW=w,oldH=h;w=r.width;h=r.height;const dpr=Math.min(3,devicePixelRatio||1);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);if(!oldW)reset();else{ox+=(w-oldW)/2;oy+=(h-oldH)/2;draw()}updateGridOverflowUI()}function updateViewBubbles(active=false){ChipBubbles.update(chipCamera(),{status:Math.round(scale/Math.max(referenceScale,1e-9)*100)+'% · '+(selected?'已選取 '+selected[0]:'觀察'),active})}
+function updateScaleLegend(){updateViewBubbles(false)}
+function showScaleTemporarily(){updateViewBubbles(true)}
+function drawPackage(){if(!document.getElementById('showPackage').checked)return;/* Intel FCBGA1170 package: 27 mm along X, 25 mm along Y. */const hw=packageWidth/2,hh=packageHeight/2;const corners=[[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]];ctx.beginPath();corners.forEach(([x,y],i)=>{const q=xy([null,null,x,y]);if(i)ctx.lineTo(...q);else ctx.moveTo(...q)});ctx.closePath();const hex=document.getElementById('packageColor').value;const alpha=Number(document.getElementById('packageOpacity').value)/100;const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);ctx.fillStyle=`rgba(${r},${g},${b},${alpha})`;ctx.fill();ctx.strokeStyle='rgba(165,197,237,.85)';ctx.lineWidth=1.5;ctx.stroke()}function drawDimensions(){
  if(!document.getElementById('showDimensions').checked)return;
  const px=(x,y)=>xy([null,null,x,y]);
  const line=(a,b)=>{ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke()};
@@ -463,103 +479,8 @@ function recoverView(){
  viewRecovery.classList.remove('visible');draw();showScaleTemporarily();
 }
 viewRecovery.addEventListener('click',recoverView);
-function updateAxisCompass(){
- const polar=document.getElementById('coordinateMode').value==='polar';
- const mirror=mirrorX.checked?-1:1;
- const c=Math.cos(angle),sn=Math.sin(angle);
- const vector=(x,y)=>{const a=x*mirror,b=-y;return [a*c-b*sn,a*sn+b*c]};
- const norm=v=>{const d=Math.hypot(...v)||1;return [v[0]/d,v[1]/d]};
- const xaxis=norm(vector(1,0)),yaxis=norm(vector(0,1));
- const g=document.getElementById('axisCompassGeometry');
- const NS='http://www.w3.org/2000/svg';
- g.replaceChildren();
- const add=(tag,attrs)=>{const e=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,String(v));g.appendChild(e);return e};
- const O=[62,62],L=31;
- const arrow=(point,tangent,color,size=7)=>{
-  const back=[point[0]-tangent[0]*size,point[1]-tangent[1]*size];
-  const perp=[-tangent[1]*size*.43,tangent[0]*size*.43];
-  add('polygon',{points:`${point.join(',')} ${back[0]+perp[0]},${back[1]+perp[1]} ${back[0]-perp[0]},${back[1]-perp[1]}`,fill:color});
- };
- const line=(v,color,label,withArrow=true)=>{
-  const end=[O[0]+v[0]*L,O[1]+v[1]*L];
-  add('line',{x1:O[0],y1:O[1],x2:end[0]-(withArrow?v[0]*7:0),y2:end[1]-(withArrow?v[1]*7:0),stroke:color,'stroke-width':3,'stroke-linecap':'round'});
-  if(withArrow)arrow(end,v,color);
-  if(label)add('text',{x:end[0]+v[0]*11,y:end[1]+v[1]*11+4}).textContent=label;
- };
- // Positive polar angles increase counterclockwise in drawing-plane coordinates.
- // Mirroring reverses that direction on screen.
- const positive=mirror===1?-1:1;
- const angleOf=v=>Math.atan2(v[1],v[0]);
- const curvedArrow=(startAngle,endAngle,r,color)=>{
-  const n=Math.max(8,Math.ceil(Math.abs(endAngle-startAngle)/.045));
-  let d='';for(let i=0;i<=n;i++){
-   const t=startAngle+(endAngle-startAngle)*i/n;
-   d+=(i?' L ':'M ')+(O[0]+r*Math.cos(t)).toFixed(3)+' '+(O[1]+r*Math.sin(t)).toFixed(3);
-  }
-  // Stop the arc at the base of the arrowhead, not its tip.
-  const shortened=endAngle-positive*7/r;
-  const pathSteps=Math.max(8,Math.ceil(Math.abs(shortened-startAngle)/.045));
-  d='';for(let i=0;i<=pathSteps;i++){const t=startAngle+(shortened-startAngle)*i/pathSteps;d+=(i?' L ':'M ')+(O[0]+r*Math.cos(t)).toFixed(3)+' '+(O[1]+r*Math.sin(t)).toFixed(3)}
-  add('path',{d,fill:'none',stroke:color,'stroke-width':2.3,'stroke-linecap':'round'});
-  const e=[O[0]+r*Math.cos(endAngle),O[1]+r*Math.sin(endAngle)];
-  const t=positive===1?[-Math.sin(endAngle),Math.cos(endAngle)]:[Math.sin(endAngle),-Math.cos(endAngle)];
-  arrow(e,t,color,7);
-  return e;
- };
- if(!polar){line(xaxis,'#ff5969','x');line(yaxis,'#60a5fa','y')}
- else{
-  // ρ is the drawing plane's rotated X direction; θ is an angular annotation,
-  // never a perpendicular linear coordinate axis.
-  line(xaxis,'#60a5fa','ρ');
-  const rotated=Math.abs(Math.atan2(Math.sin(angle),Math.cos(angle)))>0.001;
-  if(rotated){
-   const reference=[mirror,0]; // unrotated X direction, not an independent θ axis
-   const delta=Math.atan2(reference[0]*xaxis[1]-reference[1]*xaxis[0],reference[0]*xaxis[0]+reference[1]*xaxis[1]);
-   // Display θ reference as a thin ray, with no arrowhead.
-   line(reference,'#42d98c','',false);
-   if(Math.abs(delta)>.025){
-    let sweep=delta;
-    if(positive===1&&sweep<0)sweep+=Math.PI*2;
-    if(positive===-1&&sweep>0)sweep-=Math.PI*2;
-    // Large rotations remain within the compass bounds.
-    curvedArrow(angleOf(reference),angleOf(reference)+sweep,18,'#42d98c');
-   }
-   add('text',{x:O[0]+Math.cos(angleOf(reference)+positive*.45)*28,y:O[1]+Math.sin(angleOf(reference)+positive*.45)*28+4}).textContent='θ';
-  }else{
-   // No θ ray at zero rotation: only a curved direction marker beyond ρ.
-   const base=angleOf(xaxis),start=base+positive*.15,end=base+positive*.9;
-   curvedArrow(start,end,47,'#42d98c');
-   add('text',{x:O[0]+Math.cos(end)*58,y:O[1]+Math.sin(end)*58+4}).textContent='θ';
-  }
- }
- add('circle',{cx:O[0],cy:O[1],r:3.2,fill:'#e8f1ff'});
- document.getElementById('axisCompass').setAttribute('aria-label',polar?'極座標方向：ρ 徑向，θ 為極角及其遞增方向':'正交座標方向：X 軸與 Y 軸');
-}
-// Floating compass: independent dragging, temporary action controls and auto-hide.
-const compass=document.getElementById('axisCompass'),pinCompass=document.getElementById('pinCompass');
-const showCompass=document.getElementById('showCompass'),autoHideCompass=document.getElementById('autoHideCompass'),compassAutoHideOption=document.getElementById('compassAutoHideOption');
-function syncCompassSettings(){compassAutoHideOption.hidden=!showCompass.checked;compassAutoHideOption.style.display=showCompass.checked?'':'none';if(!showCompass.checked){clearTimeout(compassHideTimer);compass.classList.add('compass-invisible');compass.classList.remove('compass-actions-open')}else{compassClosed=false;showCompassBriefly()}syncCompassPin()}
-showCompass.addEventListener('change',syncCompassSettings);autoHideCompass.addEventListener('change',()=>{syncCompassPin();showCompassBriefly()});
-let compassPinned=false,compassClosed=false,compassDrag=null,compassActionsTimer=null,compassHideTimer=null,compassPosition={x:12,y:12};
-function clampCompass(){const maxX=Math.max(0,view.clientWidth-compass.offsetWidth),maxY=Math.max(0,view.clientHeight-compass.offsetHeight);compassPosition.x=Math.max(0,Math.min(maxX,compassPosition.x));compassPosition.y=Math.max(0,Math.min(maxY,compassPosition.y));compass.style.left=compassPosition.x+'px';compass.style.top=compassPosition.y+'px'}
-function syncCompassPin(){pinCompass.classList.toggle('compass-auto-hint',autoHideCompass.checked&&!compassPinned);pinCompass.setAttribute('aria-pressed',String(compassPinned));pinCompass.title=compassPinned?'取消釘選':autoHideCompass.checked?'釘選方向指示器（自動隱藏已開啟）':'釘選方向指示器'}
-function showCompassBriefly(){if(compassClosed||!showCompass.checked)return;clearTimeout(compassHideTimer);compass.classList.remove('compass-invisible');if(autoHideCompass.checked&&!compassPinned)compassHideTimer=setTimeout(()=>{if(!compassDrag&&!compass.classList.contains('compass-actions-open'))compass.classList.add('compass-invisible')},Math.max(0,Number(ChipUI.duration('autoHideCompass'))))}
-function focusCompassActions(){if(compassClosed||!showCompass.checked)return;clearTimeout(compassActionsTimer);compass.classList.add('compass-actions-open');showCompassBriefly();compassActionsTimer=setTimeout(()=>{if(!compassDrag){compass.classList.remove('compass-actions-open');showCompassBriefly()}},1800)}
-compass.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;compassDrag={id:e.pointerId,x:e.clientX,y:e.clientY,ox:compassPosition.x,oy:compassPosition.y};compass.setPointerCapture(e.pointerId);compass.classList.add('compass-dragging');focusCompassActions();e.preventDefault();e.stopPropagation()});
-compass.addEventListener('pointermove',e=>{if(!compassDrag||e.pointerId!==compassDrag.id)return;compassPosition={x:compassDrag.ox+e.clientX-compassDrag.x,y:compassDrag.oy+e.clientY-compassDrag.y};clampCompass();e.stopPropagation()});
-function finishCompassDrag(e){if(!compassDrag||e.pointerId!==compassDrag.id)return;compassDrag=null;compass.classList.remove('compass-dragging');focusCompassActions();e.stopPropagation()}
-compass.addEventListener('pointerup',finishCompassDrag);compass.addEventListener('pointercancel',finishCompassDrag);
-compass.addEventListener('focusin',focusCompassActions);
-compass.addEventListener('click',e=>{if(!e.target.closest('button'))focusCompassActions()});
-for(const b of [pinCompass,document.getElementById('closeCompass')])b.addEventListener('pointerdown',e=>e.stopPropagation());
-pinCompass.addEventListener('click',e=>{e.stopPropagation();compassPinned=!compassPinned;syncCompassPin();focusCompassActions();showCompassBriefly()});
-document.getElementById('closeCompass').addEventListener('click',e=>{e.stopPropagation();compassClosed=true;compass.classList.add('compass-invisible');compass.classList.remove('compass-actions-open')});
-document.addEventListener('pointerdown',e=>{if(!compass.contains(e.target)){clearTimeout(compassActionsTimer);compass.classList.remove('compass-actions-open');showCompassBriefly()}});
-
-view.addEventListener('pointermove',()=>{if(!compassClosed&&compass.classList.contains('compass-invisible')&&!autoHideCompass.checked)showCompassBriefly()},{passive:true});
-new ResizeObserver(clampCompass).observe(view);syncCompassSettings();
-function draw(){updateAxisCompass();ctx.clearRect(0,0,w,h);ctx.fillStyle='#101a2b';ctx.fillRect(0,0,w,h);drawGrid();
-drawPackage();drawOrigin();document.getElementById('scaleLegend').style.display=document.getElementById('showScale').checked?'':'none';if(document.getElementById('showScale').checked)updateScaleLegend();const rad=(ballDiameter/2)*(syncBallZoom.checked ? scale/referenceScale : 1);for(const p of pts){const mode=groupMode[p[4]]||'default';const hidden=mode==='hidden';if(hidden&&!document.getElementById('outlineHidden').checked)continue;let [x,y]=xy(p);if(x< -20||x>w+20||y< -20||y>h+20)continue;ctx.beginPath();ctx.arc(x,y,rad,0,Math.PI*2);if(hidden){ctx.save();ctx.strokeStyle='rgba(170,187,210,.65)';ctx.lineWidth=1.1;ctx.setLineDash([2.5,2.5]);ctx.stroke();ctx.restore()}else{ctx.fillStyle=groupColor[p[4]]||colors[p[4]];ctx.globalAlpha=mode==='highlight'?1:(p[4]==='Ground'?.72:1);ctx.fill();ctx.globalAlpha=1;}if(mode==='highlight'&&!hidden){ctx.save();ctx.strokeStyle=groupColor[p[4]]||colors[p[4]];ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(x,y,rad+3,0,Math.PI*2);ctx.stroke();ctx.restore()}if(p===selected||searchMatches.has(p[0])){ctx.strokeStyle='#fff';ctx.lineWidth=2.2;ctx.stroke()}if(scale>38){ctx.fillStyle='#eaf2ff';ctx.textAlign='center';ctx.font='10px system-ui';ctx.fillText(p[0],x,y-rad-3)}}drawDimensions();scheduleViewContentCheck()}
+function draw(){updateViewBubbles(false);ctx.clearRect(0,0,w,h);ctx.fillStyle='#101a2b';ctx.fillRect(0,0,w,h);drawGrid();
+drawPackage();drawOrigin();const rad=(ballDiameter/2)*(syncBallZoom.checked ? scale/referenceScale : 1);for(const p of pts){const mode=groupMode[p[4]]||'default';const hidden=mode==='hidden';if(hidden&&!document.getElementById('outlineHidden').checked)continue;let [x,y]=xy(p);if(x< -20||x>w+20||y< -20||y>h+20)continue;ctx.beginPath();ctx.arc(x,y,rad,0,Math.PI*2);if(hidden){ctx.save();ctx.strokeStyle='rgba(170,187,210,.65)';ctx.lineWidth=1.1;ctx.setLineDash([2.5,2.5]);ctx.stroke();ctx.restore()}else{ctx.fillStyle=groupColor[p[4]]||colors[p[4]];ctx.globalAlpha=mode==='highlight'?1:(p[4]==='Ground'?.72:1);ctx.fill();ctx.globalAlpha=1;}if(mode==='highlight'&&!hidden){ctx.save();ctx.strokeStyle=groupColor[p[4]]||colors[p[4]];ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(x,y,rad+3,0,Math.PI*2);ctx.stroke();ctx.restore()}if(p===selected||searchMatches.has(p[0])){ctx.strokeStyle='#fff';ctx.lineWidth=2.2;ctx.stroke()}if(scale>38){ctx.fillStyle='#eaf2ff';ctx.textAlign='center';ctx.font='10px system-ui';ctx.fillText(p[0],x,y-rad-3)}}drawDimensions();scheduleViewContentCheck()}
 function zoom(f,cx=w/2,cy=h/2){applyChipCamera(chipCamera().zoomAt(f,{x:cx,y:cy},7,130));draw();showScaleTemporarily()}// Only display verified multiplexed aliases; a single Ball Name is not proof of pin multiplexing.
 const pinMuxAliases={}; // keyed by ball number, populated only from verified mux documentation
 function escapeInfo(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -594,60 +515,7 @@ function choose(p){
  info.classList.add('show');draw();
 }
 
-// View-owned overlays: remember their desired viewport coordinates, only displace
-// them temporarily when a dock takes space; restore after the dock retracts.
-(()=>{
- let desired=null, gesture=null, suppressClick=false, scheduled=false;
- const margin=8;
- const viewportRect=()=>view.getBoundingClientRect();
- function reposition(){
-   scheduled=false;
-   if(!info.classList.contains('show'))return;
-   const v=viewportRect();
-   const maxW=Math.max(90,v.width-2*margin),maxH=Math.max(60,v.height-2*margin);
-   info.style.maxWidth=Math.min(360,maxW)+'px';
-   info.style.maxHeight=maxH+'px';
-   if(!desired){
-     const r=info.getBoundingClientRect();
-     desired={x:r.left-v.left,y:r.top-v.top};
-   }
-   const x=Math.max(margin,Math.min(Math.max(margin,v.width-info.offsetWidth-margin),desired.x));
-   const y=Math.max(margin,Math.min(Math.max(margin,v.height-info.offsetHeight-margin),desired.y));
-   info.style.left=x+'px';info.style.top=y+'px';
-   info.style.right='auto';info.style.bottom='auto';
- }
- function schedule(){if(!scheduled){scheduled=true;requestAnimationFrame(reposition)}}
- const excluded=t=>t.closest('button,input,select,textarea,a,.muxList');
- info.addEventListener('pointerdown',e=>{
-   if(e.button!==0||excluded(e.target))return;
-   const r=info.getBoundingClientRect(),v=viewportRect();
-   desired={x:r.left-v.left,y:r.top-v.top};
-   gesture={id:e.pointerId,startX:e.clientX,startY:e.clientY,x:desired.x,y:desired.y,moved:false};
-   try{info.setPointerCapture(e.pointerId)}catch(_){}
- });
- info.addEventListener('pointermove',e=>{
-   if(!gesture||e.pointerId!==gesture.id)return;
-   const dx=e.clientX-gesture.startX,dy=e.clientY-gesture.startY;
-   if(!gesture.moved&&Math.hypot(dx,dy)<5)return;
-   gesture.moved=true;
-   desired={x:gesture.x+dx,y:gesture.y+dy};
-   info.classList.add('dragging');schedule();e.preventDefault();
- });
- function end(e){
-   if(!gesture||e.pointerId!==gesture.id)return;
-   if(gesture.moved){suppressClick=true;setTimeout(()=>suppressClick=false,0)}
-   gesture=null;info.classList.remove('dragging');schedule();
- }
- info.addEventListener('pointerup',end);info.addEventListener('pointercancel',end);
- info.addEventListener('click',e=>{if(suppressClick){e.stopImmediatePropagation();e.preventDefault();suppressClick=false}},true);
- // A newly selected pin keeps the previous drag anchor. Changing height clamps only temporarily.
- new ResizeObserver(schedule).observe(info);
- new ResizeObserver(schedule).observe(view);
- new MutationObserver(schedule).observe(info,{attributes:true,attributeFilter:['class'],childList:true,subtree:true,characterData:true});
- window.addEventListener('resize',schedule);
- // Expose a shared relayout signal for dock/MDI transitions.
- window.addEventListener('pinview-overlay-layout',schedule);
-})();
+info.addEventListener('bubbleclose',()=>{selected=null;draw()});
 function locate(){const raw=search.value.trim(),regex=document.getElementById('regexMode').checked,exact=document.getElementById('exactMode').checked,ic=document.getElementById('ignoreCase').checked,ball=document.getElementById('byBall').checked,name=document.getElementById('byName').checked;document.getElementById('searchPanel').hidden=false;searchMatches.clear();resultPins=[];if(!raw){document.getElementById('searchStatus').textContent='請輸入搜尋內容';renderResults();draw();return}if(!ball&&!name){document.getElementById('searchStatus').textContent='至少勾選一種搜尋欄位';renderResults();draw();return}let test;try{if(regex){const r=new RegExp(exact?'^(?:'+raw+')$':raw,ic?'i':'');test=v=>r.test(v)}else{const needle=ic?raw.toLowerCase():raw;test=v=>{const value=ic?v.toLowerCase():v;return exact?value===needle:value.includes(needle)}}}catch(e){document.getElementById('searchStatus').textContent='正規表達式錯誤：'+e.message;renderResults();draw();return}resultPins=pts.filter(p=>(ball&&test(p[0]))||(name&&test(p[1])));searchMatches=new Set(resultPins.map(p=>p[0]));document.getElementById('searchStatus').textContent=`找到 ${resultPins.length} 個管腳`+(resultPins.length>100?'（列表可捲動）':'');renderResults();draw();if(resultPins.length===1)focusPin(resultPins[0])}
 function focusPin(p){groupMode[p[4]]='default';visible.add(p[4]);refreshLegend();scale=Math.max(scale,32);centerOn(p);choose(p)}
 function renderResults(){const box=document.getElementById('searchResults');box.replaceChildren();for(const p of resultPins){const row=document.createElement('div');row.className='resultItem';const label=document.createElement('span');label.textContent=p[0]+' · '+p[1];const btn=document.createElement('button');btn.textContent='定位';btn.onclick=()=>{focusPin(p);document.getElementById('searchPanel').hidden=true};row.append(label,btn);box.append(row)}}
@@ -666,7 +534,7 @@ function renderManageDetail(){const box=document.getElementById('manageDetail');
 let heldGroup=null,holdTimer=null,dragGhost=null;
 function installHoldDrag(el,g){el.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;clearTimeout(holdTimer);heldGroup=null;const sx=e.clientX,sy=e.clientY;holdTimer=setTimeout(()=>{heldGroup=g;el.classList.add('dragging');try{el.setPointerCapture(e.pointerId)}catch(_){}},450);const move=ev=>{if(!heldGroup&&Math.hypot(ev.clientX-sx,ev.clientY-sy)>12)clearTimeout(holdTimer);if(heldGroup){const over=document.elementFromPoint(ev.clientX,ev.clientY)?.closest('.manageGroup');if(over&&over.dataset.group!==heldGroup){const target=over.dataset.group;if(!heldGroup.startsWith('custom:')&&!target.startsWith('custom:')){const from=groupOrder.indexOf(heldGroup),to=groupOrder.indexOf(target);if(from>=0&&to>=0){groupOrder.splice(from,1);groupOrder.splice(to,0,heldGroup);renderManage();refreshLegend()}}}}};const end=()=>{clearTimeout(holdTimer);if(heldGroup){el.dataset.suppress='1';heldGroup=null;renderManage()}el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',end);el.removeEventListener('pointercancel',end)};el.addEventListener('pointermove',move);el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end)})}
 document.getElementById('tabColor').onclick=()=>{document.getElementById('colorTab').hidden=false;document.getElementById('manageTab').hidden=true;document.getElementById('tabColor').classList.add('active');document.getElementById('tabManage').classList.remove('active')};document.getElementById('tabManage').onclick=()=>{document.getElementById('colorTab').hidden=true;document.getElementById('manageTab').hidden=false;document.getElementById('tabManage').classList.add('active');document.getElementById('tabColor').classList.remove('active');renderManage()};
-canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);touches.set(e.pointerId,[e.offsetX,e.offsetY]);if(touches.size===1)drag=[e.offsetX,e.offsetY,e.offsetX,e.offsetY];else if(touches.size===2){const a=[...touches.values()];pinch={dist:Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]),scale,distAngle:Math.atan2(a[1][1]-a[0][1],a[1][0]-a[0][0]),mid:[(a[0][0]+a[1][0])/2,(a[0][1]+a[1][1])/2]}}});canvas.addEventListener('pointermove',e=>{if(!touches.has(e.pointerId))return;touches.set(e.pointerId,[e.offsetX,e.offsetY]);if(touches.size===1&&drag){applyChipCamera(chipCamera().pan(e.offsetX-drag[0],e.offsetY-drag[1]));drag[0]=e.offsetX;drag[1]=e.offsetY;draw()}else if(touches.size===2&&pinch){const a=[...touches.values()];let dist=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);let mid=[(a[0][0]+a[1][0])/2,(a[0][1]+a[1][1])/2];zoom(dist/pinch.dist,mid[0],mid[1]);let nextAngle=Math.atan2(a[1][1]-a[0][1],a[1][0]-a[0][0]);let delta=nextAngle-pinch.distAngle;if(delta>Math.PI)delta-=2*Math.PI;if(delta< -Math.PI)delta+=2*Math.PI;rotate(delta,mid[0],mid[1]);pinch.distAngle=nextAngle;pinch.dist=dist}});function up(e){if(drag&&touches.size===1&&Math.hypot(e.offsetX-drag[2],e.offsetY-drag[3])<9){let nearest=null,best=Infinity;for(let p of pts){if(!visible.has(p[4]))continue;let [x,y]=xy(p),d=Math.hypot(x-e.offsetX,y-e.offsetY);if(d<best){best=d;nearest=p}}if(best<Math.max(15,scale*.34))choose(nearest)}touches.delete(e.pointerId);drag=null;pinch=null}canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);canvas.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.15:1/1.15,e.offsetX,e.offsetY)},{passive:false});document.getElementById('closeInfo').onclick=()=>{selected=null;info.classList.remove('show');draw()};document.getElementById('find').onclick=locate;const ballSizeInput=document.getElementById('ballSize'),ballSizeValue=document.getElementById('ballSizeValue');ballSizeInput.addEventListener('input',()=>{ballDiameter=Number(ballSizeInput.value);ballSizeValue.textContent=ballDiameter+' px';draw()});search.addEventListener('keydown',e=>{if(e.key==='Enter')locate()});function updateSettingsTop(){const t=document.getElementById('toolbar').getBoundingClientRect();document.documentElement.style.setProperty('--settings-top',Math.round(t.top)+'px');document.documentElement.style.setProperty('--search-panel-top',Math.round(t.bottom+5)+'px')};const searchToggle=document.getElementById('searchToggle');const toolbar=document.getElementById('toolbar');function toggleSearch(){const expand=toolbar.hidden;toolbar.hidden=!expand;searchToggle.classList.toggle('active',expand);searchToggle.setAttribute('aria-expanded',String(expand));searchToggle.setAttribute('aria-label',expand?'摺疊搜尋框':'展開搜尋框');if(!expand)document.getElementById('searchPanel').hidden=true;if(!document.body.classList.contains('settings-pinned'))document.getElementById('advanced').open=false;updateSettingsTop();requestAnimationFrame(()=>{resize();if(expand)search.focus()})}searchToggle.addEventListener('click',toggleSearch);window.addEventListener('resize',updateSettingsTop);updateSettingsTop();for(const id of ['showScale','outlineHidden','showPackage','showDimensions'])document.getElementById(id).addEventListener('change',draw);document.getElementById('unitSelect').addEventListener('change',()=>{draw();showScaleTemporarily()});refreshLegend();new ResizeObserver(resize).observe(view);
+canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);touches.set(e.pointerId,[e.offsetX,e.offsetY]);if(touches.size===1)drag=[e.offsetX,e.offsetY,e.offsetX,e.offsetY];else if(touches.size===2){const a=[...touches.values()];pinch={dist:Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]),scale,distAngle:Math.atan2(a[1][1]-a[0][1],a[1][0]-a[0][0]),mid:[(a[0][0]+a[1][0])/2,(a[0][1]+a[1][1])/2]}}});canvas.addEventListener('pointermove',e=>{if(!touches.has(e.pointerId))return;touches.set(e.pointerId,[e.offsetX,e.offsetY]);if(touches.size===1&&drag){applyChipCamera(chipCamera().pan(e.offsetX-drag[0],e.offsetY-drag[1]));drag[0]=e.offsetX;drag[1]=e.offsetY;draw()}else if(touches.size===2&&pinch){const a=[...touches.values()];let dist=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);let mid=[(a[0][0]+a[1][0])/2,(a[0][1]+a[1][1])/2];zoom(dist/pinch.dist,mid[0],mid[1]);let nextAngle=Math.atan2(a[1][1]-a[0][1],a[1][0]-a[0][0]);let delta=nextAngle-pinch.distAngle;if(delta>Math.PI)delta-=2*Math.PI;if(delta< -Math.PI)delta+=2*Math.PI;rotate(delta,mid[0],mid[1]);pinch.distAngle=nextAngle;pinch.dist=dist}});function up(e){if(drag&&touches.size===1&&Math.hypot(e.offsetX-drag[2],e.offsetY-drag[3])<9){let nearest=null,best=Infinity;for(let p of pts){if(!visible.has(p[4]))continue;let [x,y]=xy(p),d=Math.hypot(x-e.offsetX,y-e.offsetY);if(d<best){best=d;nearest=p}}if(best<Math.max(15,scale*.34))choose(nearest)}touches.delete(e.pointerId);drag=null;pinch=null}canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);canvas.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.15:1/1.15,e.offsetX,e.offsetY)},{passive:false});document.getElementById('find').onclick=locate;const ballSizeInput=document.getElementById('ballSize'),ballSizeValue=document.getElementById('ballSizeValue');ballSizeInput.addEventListener('input',()=>{ballDiameter=Number(ballSizeInput.value);ballSizeValue.textContent=ballDiameter+' px';draw()});search.addEventListener('keydown',e=>{if(e.key==='Enter')locate()});function updateSettingsTop(){const t=document.getElementById('toolbar').getBoundingClientRect();document.documentElement.style.setProperty('--settings-top',Math.round(t.top)+'px');document.documentElement.style.setProperty('--search-panel-top',Math.round(t.bottom+5)+'px')};const searchToggle=document.getElementById('searchToggle');const toolbar=document.getElementById('toolbar');function toggleSearch(){const expand=toolbar.hidden;toolbar.hidden=!expand;searchToggle.classList.toggle('active',expand);searchToggle.setAttribute('aria-expanded',String(expand));searchToggle.setAttribute('aria-label',expand?'摺疊搜尋框':'展開搜尋框');if(!expand)document.getElementById('searchPanel').hidden=true;if(!document.body.classList.contains('settings-pinned'))document.getElementById('advanced').open=false;updateSettingsTop();requestAnimationFrame(()=>{resize();if(expand)search.focus()})}searchToggle.addEventListener('click',toggleSearch);window.addEventListener('resize',updateSettingsTop);updateSettingsTop();for(const id of ['showScale','outlineHidden','showPackage','showDimensions'])document.getElementById(id).addEventListener('change',draw);document.getElementById('unitSelect').addEventListener('change',()=>{draw();showScaleTemporarily()});refreshLegend();new ResizeObserver(resize).observe(view);
 document.getElementById('showAllGroups').onclick=()=>{Object.keys(colors).forEach(g=>{visible.add(g);groupMode[g]='default'});refreshLegend();draw()};document.getElementById('hideAllGroups').onclick=()=>{visible.clear();Object.keys(colors).forEach(g=>groupMode[g]='hidden');refreshLegend();draw()};
 // Persistent split pane: tap grip to fully collapse/expand, drag to resize.
 (()=>{
