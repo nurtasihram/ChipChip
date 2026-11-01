@@ -2,7 +2,7 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;root.ChipViewport=api})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
 const colors=Object.freeze({rho:'#60a5fa',theta:'#42d98c',scale:'#ffd166',limit:'#ff5969'});
-const units=Object.freeze({m:1000,cm:10,mm:1,um:.001,inch:25.4,mil:.0254});
+let unitDpi=Number(globalThis.CHIP_CONTEXT_DPI)||96;function setDpi(value){if(Number.isFinite(value)&&value>0)unitDpi=value}const units=Object.freeze({get px(){return 25.4/unitDpi},m:1000,cm:10,mm:1,um:.001,inch:25.4,mil:.0254});
 class Camera{
  constructor({x=0,y=0,scale=1,angle=0,mirror=false}={}){if(![x,y,scale,angle].every(Number.isFinite)||scale<=0)throw Error('Invalid camera');Object.assign(this,{x,y,scale,angle,mirror})}
  matrix(){const c=Math.cos(this.angle),s=Math.sin(this.angle),m=this.mirror?-1:1,z=this.scale;return {a:z*m*c,b:z*m*s,c:z*s,d:-z*c,e:this.x,f:this.y}}
@@ -38,5 +38,5 @@ function floating(value){if(!Number.isFinite(value))throw new RangeError('Floati
 function numeric(value){return value?.kind==='rational'?value.numerator/value.denominator:value?.kind==='float'?value.value:Number(value)}
 function formatRational(value,{notation='fraction',reduce=true,precision=2,decimalRatioScale='auto'}={}){const number=numeric(value);if(!Number.isFinite(number))return '—';if(notation==='decimalRatio'){notation=decimalRatioScale==='auto'?(Math.abs(number)>=.01||number===0?'percent':Math.abs(number)>=.001?'permille':'permyriad'):decimalRatioScale}const factors={percent:[100,'%'],permille:[1000,'‰'],permyriad:[10000,'‱'],decimal:[1,'']};if(factors[notation]){const [factor,suffix]=factors[notation];return (number*factor).toFixed(Math.max(0,Math.min(9,precision)))+suffix}if(value?.kind!=='rational')return number.toFixed(Math.max(0,Math.min(9,precision)));let {numerator,denominator}=value;if(reduce){let a=Math.abs(numerator),b=denominator;while(b){const r=a%b;a=b;b=r}if(a){numerator/=a;denominator/=a}}return notation==='ratio'?numerator+':'+denominator:reduce&&denominator===1?String(numerator):numerator+'/'+denominator}
 
-return Object.freeze({Camera,rational,floating,numeric,formatRational,colors,units,snap,clipLine,gridGeometry,drawGrid});
+return Object.freeze({Camera,setDpi,rational,floating,numeric,formatRational,colors,units,snap,clipLine,gridGeometry,drawGrid});
 });
