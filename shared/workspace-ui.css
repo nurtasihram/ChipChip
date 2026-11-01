@@ -26,3 +26,5 @@ header.chip-ui.ui-header{padding-right:14px!important}#viewMenuButton{flex:none!
 
 /* Ring reference guides are in viewport pixels and never intercept drawing input. */
 .ring-guides{position:absolute!important;z-index:16;pointer-events:none!important;overflow:hidden;display:block;touch-action:none}.ring-guides[hidden]{display:none!important}.ring-guides line,.ring-guides circle{stroke-width:2;vector-effect:non-scaling-stroke}
+
+.ring-guides path{stroke-width:1.5;vector-effect:non-scaling-stroke}.ring-guides text{font:12px system-ui;paint-order:stroke;stroke:#0b1220;stroke-width:4px;stroke-linejoin:round;pointer-events:none;user-select:none}

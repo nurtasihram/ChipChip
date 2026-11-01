@@ -1,6 +1,7 @@
 /* Shared drawing viewport and grid engine. Both apps consume this file. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;root.ChipViewport=api})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
+const colors=Object.freeze({rho:'#60a5fa',theta:'#42d98c',scale:'#ffd166'});
 const units=Object.freeze({m:1000,cm:10,mm:1,um:.001,inch:25.4,mil:.0254});
 class Camera{
  constructor({x=0,y=0,scale=1,angle=0,mirror=false}={}){if(![x,y,scale,angle].every(Number.isFinite)||scale<=0)throw Error('Invalid camera');Object.assign(this,{x,y,scale,angle,mirror})}
@@ -31,5 +32,5 @@ function gridGeometry(camera,width,height,o={}){
  return primitives;
 }
 function drawGrid(ctx,camera,width,height,o){ctx.save();ctx.beginPath();ctx.rect(0,0,width,height);ctx.clip();ctx.strokeStyle=o.color||'#728cb1';ctx.fillStyle=o.color||'#728cb1';ctx.lineWidth=o.width||1;const geometry=o.show===false?[]:gridGeometry(camera,width,height,o);for(const p of geometry){ctx.globalAlpha=p.type==='point'?.5:.27;ctx.beginPath();if(p.type==='point'){ctx.arc(p.p.x,p.p.y,p.r,0,Math.PI*2);ctx.fill()}else{ctx.setLineDash(p.state==='dashed'?[6,5]:[]);ctx.lineDashOffset=-(p.dashOffset||0);ctx.moveTo(p.a.x,p.a.y);ctx.lineTo(p.b.x,p.b.y);ctx.stroke()}}if(o.showOrigin){const p=camera.toScreen({x:0,y:0}),r=9;ctx.globalAlpha=1;ctx.strokeStyle=o.originColor||'#92a9c6';ctx.lineWidth=o.originWidth||1;ctx.setLineDash([]);ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.moveTo(p.x-r*.58,p.y-r*.58);ctx.lineTo(p.x+r*.58,p.y+r*.58);ctx.moveTo(p.x+r*.58,p.y-r*.58);ctx.lineTo(p.x-r*.58,p.y+r*.58);ctx.stroke()}ctx.restore();return geometry.length}
-return Object.freeze({Camera,units,snap,clipLine,gridGeometry,drawGrid});
+return Object.freeze({Camera,colors,units,snap,clipLine,gridGeometry,drawGrid});
 });

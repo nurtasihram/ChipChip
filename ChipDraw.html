@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- GENERATED from src/chipdraw/index.html; shared workspace 8f6be0b4b9cc. Edit src/ and shared/, then rebuild. --><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><!-- ChipChip-derived settings UI and behavior.
+<!-- GENERATED from src/chipdraw/index.html; shared workspace 55d6ee4b6361. Edit src/ and shared/, then rebuild. --><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><!-- ChipChip-derived settings UI and behavior.
 MIT License
 
 Copyright (c) 2026 Nurtas Ihram
@@ -52,6 +52,8 @@ header.chip-ui.ui-header{padding-right:14px!important}#viewMenuButton{flex:none!
 /* Ring reference guides are in viewport pixels and never intercept drawing input. */
 .ring-guides{position:absolute!important;z-index:16;pointer-events:none!important;overflow:hidden;display:block;touch-action:none}.ring-guides[hidden]{display:none!important}.ring-guides line,.ring-guides circle{stroke-width:2;vector-effect:non-scaling-stroke}
 
+.ring-guides path{stroke-width:1.5;vector-effect:non-scaling-stroke}.ring-guides text{font:12px system-ui;paint-order:stroke;stroke:#0b1220;stroke-width:4px;stroke-linejoin:round;pointer-events:none;user-select:none}
+
 </style><style>*{box-sizing:border-box}body{margin:0;background:#0b1220;color:#eaf1ff;font:13px system-ui;overflow:hidden}button,input{background:#1c2a42;border:1px solid #40536e;color:inherit;border-radius:7px;padding:7px;font:inherit}button.active{background:#315b8d;border-color:#7cb4fa}#tools{display:flex;gap:4px;overflow-x:auto;padding:5px;background:#101a2b}#tools button{flex:none;min-width:38px}#view{height:calc(100dvh - 85px);position:relative;touch-action:none;overflow:hidden}svg{width:100%;height:100%;touch-action:none;display:block}#panel{position:absolute;right:7px;top:8px;width:190px;background:#152238ed;border:1px solid #40536e;border-radius:9px;padding:9px;display:none;box-shadow:0 6px 20px #0008}#panel.show{display:block}#panel label{display:flex;justify-content:space-between;align-items:center;margin:7px 0}#panel input{width:95px;min-width:0}#panel input[type=color]{height:32px;padding:2px}#panel input[type=number]{width:65px}#panel button{width:100%}#hint{position:absolute;left:7px;top:8px;color:#aebbd0;pointer-events:none;font-size:11px}#panel{position:fixed;z-index:20;right:8px;top:96px;width:210px;max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);padding:0;border-radius:16px;overflow:hidden;touch-action:auto;box-shadow:0 12px 36px #0008;backdrop-filter:blur(12px)}
 #panel.show{display:flex;flex-direction:column}
 #panelHeader{display:flex;align-items:center;gap:10px;flex:none;padding:13px 12px;border-bottom:1px solid #40536e;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -74,6 +76,7 @@ header.chip-ui.ui-header{padding-right:14px!important}#viewMenuButton{flex:none!
 /* Shared drawing viewport and grid engine. Both apps consume this file. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;root.ChipViewport=api})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
+const colors=Object.freeze({rho:'#60a5fa',theta:'#42d98c',scale:'#ffd166'});
 const units=Object.freeze({m:1000,cm:10,mm:1,um:.001,inch:25.4,mil:.0254});
 class Camera{
  constructor({x=0,y=0,scale=1,angle=0,mirror=false}={}){if(![x,y,scale,angle].every(Number.isFinite)||scale<=0)throw Error('Invalid camera');Object.assign(this,{x,y,scale,angle,mirror})}
@@ -104,7 +107,7 @@ function gridGeometry(camera,width,height,o={}){
  return primitives;
 }
 function drawGrid(ctx,camera,width,height,o){ctx.save();ctx.beginPath();ctx.rect(0,0,width,height);ctx.clip();ctx.strokeStyle=o.color||'#728cb1';ctx.fillStyle=o.color||'#728cb1';ctx.lineWidth=o.width||1;const geometry=o.show===false?[]:gridGeometry(camera,width,height,o);for(const p of geometry){ctx.globalAlpha=p.type==='point'?.5:.27;ctx.beginPath();if(p.type==='point'){ctx.arc(p.p.x,p.p.y,p.r,0,Math.PI*2);ctx.fill()}else{ctx.setLineDash(p.state==='dashed'?[6,5]:[]);ctx.lineDashOffset=-(p.dashOffset||0);ctx.moveTo(p.a.x,p.a.y);ctx.lineTo(p.b.x,p.b.y);ctx.stroke()}}if(o.showOrigin){const p=camera.toScreen({x:0,y:0}),r=9;ctx.globalAlpha=1;ctx.strokeStyle=o.originColor||'#92a9c6';ctx.lineWidth=o.originWidth||1;ctx.setLineDash([]);ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.moveTo(p.x-r*.58,p.y-r*.58);ctx.lineTo(p.x+r*.58,p.y+r*.58);ctx.moveTo(p.x+r*.58,p.y-r*.58);ctx.lineTo(p.x-r*.58,p.y+r*.58);ctx.stroke()}ctx.restore();return geometry.length}
-return Object.freeze({Camera,units,snap,clipLine,gridGeometry,drawGrid});
+return Object.freeze({Camera,colors,units,snap,clipLine,gridGeometry,drawGrid});
 });
 
 </script><script>
@@ -119,16 +122,20 @@ class Session{
  guides(){const dx=this.center.x-this.origin.x,dy=this.center.y-this.origin.y;return {a:{x:this.a.x+dx,y:this.a.y+dy},b:{x:this.b.x+dx,y:this.b.y+dy},c:this.currentA,d:this.currentB,center:this.center}}
  result(){if(!this.valid)return null;return this.camera.zoomAt(this.ratio,this.origin,this.min,this.max).rotateAt(this.delta,this.origin).pan(this.center.x-this.origin.x,this.center.y-this.origin.y)}
 }
+
+function annotationGeometry(session){const g=session.guides(),radius=session.length/2,angle=session.baseAngle+session.delta,end={x:g.center.x+radius*Math.cos(angle),y:g.center.y+radius*Math.sin(angle)},steps=Math.max(1,Math.min(1440,Math.ceil(Math.abs(session.delta)*32)));let arc='';for(let i=0;i<=steps;i++){const a=session.baseAngle+session.delta*i/steps;arc+=(i?' L ':'M ')+(g.center.x+radius*Math.cos(a))+' '+(g.center.y+radius*Math.sin(a))}const mid=session.baseAngle+session.delta/2;return {from:g.d,to:end,arc,scaleLabel:{x:(g.d.x+end.x)/2,y:(g.d.y+end.y)/2+19},angleLabel:{x:g.center.x+(radius+19)*Math.cos(mid),y:g.center.y+(radius+19)*Math.sin(mid)+4}}}
 function mount({surface,viewport=surface.parentNode,getCamera,applyCamera,onTouchStart=()=>{},onTouchEnd=()=>{},onStart=()=>{},onFinish=()=>{},limits={}}){
- const ns='http://www.w3.org/2000/svg',guide=document.createElementNS(ns,'svg');guide.setAttribute('class','ring-guides');guide.setAttribute('aria-hidden','true');guide.hidden=true;
+ const ns='http://www.w3.org/2000/svg',guide=document.createElementNS(ns,'svg');guide.setAttribute('class','ring-guides');guide.setAttribute('aria-hidden','true');guide.hidden=true;guide.setAttribute('hidden','');guide.style.display='none';
  const create=(tag,attrs)=>{const n=document.createElementNS(ns,tag);for(const [key,value]of Object.entries(attrs))n.setAttribute(key,value);guide.append(n);return n};
- const reference=create('line',{'data-ring-reference':'',stroke:'#80bfff','stroke-dasharray':'6 4'}),following=create('line',{'data-ring-following':'',stroke:'#ffd18a'}),center=create('circle',{'data-ring-center':'',r:4,fill:'#0b1220',stroke:'#ffffff'});viewport.append(guide);
+ const colors=ChipViewport.colors;
+ const reference=create('line',{'data-ring-reference':'',stroke:colors.rho,'stroke-dasharray':'6 4'}),following=create('line',{'data-ring-following':'',stroke:colors.theta}),extension=create('line',{'data-ring-extension':'',stroke:colors.scale}),arc=create('path',{'data-ring-angle-arc':'',stroke:colors.theta,fill:'none'}),scaleLabel=create('text',{'data-ring-scale-label':'',fill:colors.scale,'text-anchor':'middle'}),angleLabel=create('text',{'data-ring-angle-label':'',fill:colors.theta,'text-anchor':'middle'}),center=create('circle',{'data-ring-center':'',r:4,fill:'#0b1220',stroke:'#ffffff'});viewport.append(guide);
  let stage='idle',start=null,session=null,mouseId=null,touches=new Map(),swallowUp=null,suppressClick=false;
  const point=e=>{const r=surface.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}};
  const consume=e=>{e.preventDefault();e.stopImmediatePropagation()};
  function line(n,a,b){for(const [key,value]of Object.entries({x1:a.x,y1:a.y,x2:b.x,y2:b.y}))n.setAttribute(key,value)}
- function paint(g,second=true){const r=surface.getBoundingClientRect(),v=viewport.getBoundingClientRect();guide.setAttribute('viewBox','0 0 '+r.width+' '+r.height);guide.style.left=r.left-v.left+'px';guide.style.top=r.top-v.top+'px';guide.style.width=r.width+'px';guide.style.height=r.height+'px';line(reference,g.a,g.b);line(following,g.c||g.a,g.d||g.b);following.style.display=second?'':'none';center.setAttribute('cx',g.center.x);center.setAttribute('cy',g.center.y);guide.hidden=false}
- function finish(commit){const result=commit&&session?session.result():null;stage='idle';session=null;start=null;guide.hidden=true;if(result)applyCamera(result);onFinish(!!result)}
+ function showGuide(visible){guide.hidden=!visible;if(visible){guide.removeAttribute('hidden');guide.style.display='block'}else{guide.setAttribute('hidden','');guide.style.display='none';scaleLabel.textContent='';angleLabel.textContent='';arc.setAttribute('d','');for(const n of [reference,following,extension])line(n,{x:0,y:0},{x:0,y:0})}}
+ function paint(g,second=true){const r=surface.getBoundingClientRect(),v=viewport.getBoundingClientRect();guide.setAttribute('viewBox','0 0 '+r.width+' '+r.height);guide.style.left=r.left-v.left+'px';guide.style.top=r.top-v.top+'px';guide.style.width=r.width+'px';guide.style.height=r.height+'px';line(reference,g.a,g.b);line(following,g.c||g.a,g.d||g.b);following.style.display=second?'':'none';for(const n of [extension,arc,scaleLabel,angleLabel])n.style.display=second?'':'none';center.setAttribute('cx',g.center.x);center.setAttribute('cy',g.center.y);if(second&&session){const a=annotationGeometry(session);line(extension,a.from,a.to);arc.setAttribute('d',a.arc);scaleLabel.setAttribute('x',Math.max(20,Math.min(r.width-20,a.scaleLabel.x)));scaleLabel.setAttribute('y',Math.max(16,Math.min(r.height-8,a.scaleLabel.y)));angleLabel.setAttribute('x',Math.max(20,Math.min(r.width-20,a.angleLabel.x)));angleLabel.setAttribute('y',Math.max(16,Math.min(r.height-8,a.angleLabel.y)));const precision=document.getElementById('lengthPrecision'),digits=Math.max(0,Math.min(9,Number(precision?.value??2)));scaleLabel.textContent='×'+session.ratio.toFixed(digits);angleLabel.textContent=ChipUI.angle.format(session.delta*180/Math.PI,document.getElementById('angleMode').value,document.getElementById('anglePrecision').value)}showGuide(true)}
+ function finish(commit){const result=commit&&session?session.result():null;stage='idle';session=null;start=null;showGuide(false);if(result)applyCamera(result);onFinish(!!result)}
  function cancel(){const active=stage!=='idle';if(active)finish(false);stage=touches.size?'draining':'idle'}
  function updateTouches(){if(stage!=='touch-adjust'||touches.size!==2)return;const [a,b]=[...touches.values()];session.setSegment(a,b);paint(session.guides())}
  function down(e){
@@ -161,7 +168,7 @@ function mount({surface,viewport=surface.parentNode,getCamera,applyCamera,onTouc
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&stage!=='idle'){cancel();consume(e)}},true);window.addEventListener('blur',()=>{cancel();touches.clear();stage='idle';onTouchEnd()});window.addEventListener('resize',()=>{if(stage!=='idle')cancel()});
  return {cancel,get stage(){return stage},get session(){return session},guide};
 }
-root.ChipRing={Session,mount};
+root.ChipRing={Session,annotationGeometry,mount};
 })(globalThis);
 
 </script><script>
@@ -247,29 +254,29 @@ function renderCompass(camera,coordinate){
   arrow(e,t,color,7);
   return e;
  };
- if(!polar){line(xaxis,'#ff5969','x');line(yaxis,'#60a5fa','y')}
+ if(!polar){line(xaxis,'#ff5969','x');line(yaxis,ChipViewport.colors.rho,'y')}
  else{
   // ρ is the drawing plane's rotated X direction; θ is an angular annotation,
   // never a perpendicular linear coordinate axis.
-  line(xaxis,'#60a5fa','ρ');
+  line(xaxis,ChipViewport.colors.rho,'ρ');
   const rotated=Math.abs(Math.atan2(Math.sin(camera.angle),Math.cos(camera.angle)))>0.001;
   if(rotated){
    const reference=[mirror,0]; // unrotated X direction, not an independent θ axis
    const delta=Math.atan2(reference[0]*xaxis[1]-reference[1]*xaxis[0],reference[0]*xaxis[0]+reference[1]*xaxis[1]);
    // Display θ reference as a thin ray, with no arrowhead.
-   line(reference,'#42d98c','',false);
+   line(reference,ChipViewport.colors.theta,'',false);
    if(Math.abs(delta)>.025){
     let sweep=delta;
     if(positive===1&&sweep<0)sweep+=Math.PI*2;
     if(positive===-1&&sweep>0)sweep-=Math.PI*2;
     // Large rotations remain within the compass bounds.
-    curvedArrow(angleOf(reference),angleOf(reference)+sweep,18,'#42d98c');
+    curvedArrow(angleOf(reference),angleOf(reference)+sweep,18,ChipViewport.colors.theta);
    }
    add('text',{x:O[0]+Math.cos(angleOf(reference)+positive*.45)*28,y:O[1]+Math.sin(angleOf(reference)+positive*.45)*28+4}).textContent='θ';
   }else{
    // No θ ray at zero rotation: only a curved direction marker beyond ρ.
    const base=angleOf(xaxis),start=base+positive*.15,end=base+positive*.9;
-   curvedArrow(start,end,47,'#42d98c');
+   curvedArrow(start,end,47,ChipViewport.colors.theta);
    add('text',{x:O[0]+Math.cos(end)*58,y:O[1]+Math.sin(end)*58+4}).textContent='θ';
   }
  }

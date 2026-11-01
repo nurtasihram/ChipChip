@@ -80,29 +80,29 @@ function renderCompass(camera,coordinate){
   arrow(e,t,color,7);
   return e;
  };
- if(!polar){line(xaxis,'#ff5969','x');line(yaxis,'#60a5fa','y')}
+ if(!polar){line(xaxis,'#ff5969','x');line(yaxis,ChipViewport.colors.rho,'y')}
  else{
   // ρ is the drawing plane's rotated X direction; θ is an angular annotation,
   // never a perpendicular linear coordinate axis.
-  line(xaxis,'#60a5fa','ρ');
+  line(xaxis,ChipViewport.colors.rho,'ρ');
   const rotated=Math.abs(Math.atan2(Math.sin(camera.angle),Math.cos(camera.angle)))>0.001;
   if(rotated){
    const reference=[mirror,0]; // unrotated X direction, not an independent θ axis
    const delta=Math.atan2(reference[0]*xaxis[1]-reference[1]*xaxis[0],reference[0]*xaxis[0]+reference[1]*xaxis[1]);
    // Display θ reference as a thin ray, with no arrowhead.
-   line(reference,'#42d98c','',false);
+   line(reference,ChipViewport.colors.theta,'',false);
    if(Math.abs(delta)>.025){
     let sweep=delta;
     if(positive===1&&sweep<0)sweep+=Math.PI*2;
     if(positive===-1&&sweep>0)sweep-=Math.PI*2;
     // Large rotations remain within the compass bounds.
-    curvedArrow(angleOf(reference),angleOf(reference)+sweep,18,'#42d98c');
+    curvedArrow(angleOf(reference),angleOf(reference)+sweep,18,ChipViewport.colors.theta);
    }
    add('text',{x:O[0]+Math.cos(angleOf(reference)+positive*.45)*28,y:O[1]+Math.sin(angleOf(reference)+positive*.45)*28+4}).textContent='θ';
   }else{
    // No θ ray at zero rotation: only a curved direction marker beyond ρ.
    const base=angleOf(xaxis),start=base+positive*.15,end=base+positive*.9;
-   curvedArrow(start,end,47,'#42d98c');
+   curvedArrow(start,end,47,ChipViewport.colors.theta);
    add('text',{x:O[0]+Math.cos(end)*58,y:O[1]+Math.sin(end)*58+4}).textContent='θ';
   }
  }

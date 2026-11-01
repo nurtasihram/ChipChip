@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- GENERATED from src/chipchip/index.html; shared workspace 8f6be0b4b9cc. Edit src/ and shared/, then rebuild. --><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><title>E38xx 摺疊設定 · 功能分佈圖</title><style>
+<!-- GENERATED from src/chipchip/index.html; shared workspace 55d6ee4b6361. Edit src/ and shared/, then rebuild. --><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><title>E38xx 摺疊設定 · 功能分佈圖</title><style>
 /* Shared UI primitives and view/grid panel. App styles must not redefine these components. */
 :root{--ui-bg:#152238;--ui-control:#1c2a42;--ui-border:#40536e;--ui-text:#eaf1ff;--ui-accent:#7cb4fa;--ui-panel-size:340px;--ui-header-bottom:68px}
 .chip-ui,.chip-ui *{box-sizing:border-box;font-family:system-ui,sans-serif}
@@ -28,6 +28,8 @@ header.chip-ui.ui-header{padding-right:14px!important}#viewMenuButton{flex:none!
 
 /* Ring reference guides are in viewport pixels and never intercept drawing input. */
 .ring-guides{position:absolute!important;z-index:16;pointer-events:none!important;overflow:hidden;display:block;touch-action:none}.ring-guides[hidden]{display:none!important}.ring-guides line,.ring-guides circle{stroke-width:2;vector-effect:non-scaling-stroke}
+
+.ring-guides path{stroke-width:1.5;vector-effect:non-scaling-stroke}.ring-guides text{font:12px system-ui;paint-order:stroke;stroke:#0b1220;stroke-width:4px;stroke-linejoin:round;pointer-events:none;user-select:none}
 
 </style><style>
 :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0b1220;color:#f1f5ff;font:14px system-ui,'Noto Sans',sans-serif}h1{font-size:19px;margin:0 0 4px}small{color:#aebbd0}#toolbar{display:flex;gap:7px;padding:8px 12px;flex-wrap:wrap;align-items:center}button,input{background:#1c2a42;border:1px solid #41536d;border-radius:9px;color:white;padding:9px 11px;font:inherit}button:active{background:#345071}input{flex:1;min-width:140px}#viewport{height:64dvh;min-height:360px;position:relative;overflow:hidden;background:#101a2b;touch-action:none;border-block:1px solid #34465e}canvas{display:block;width:100%;height:100%}#hint{position:absolute;top:10px;left:10px;background:#0b1220c9;padding:7px 10px;border-radius:7px;font-size:12px;pointer-events:none}#legend{display:flex;flex-wrap:wrap;gap:7px;padding:8px 12px 16px}.chip{display:flex;gap:6px;align-items:center;border:1px solid #43536b;border-radius:30px;padding:7px 10px;background:#18263a;color:#e9f0ff;cursor:pointer}.chip.off{opacity:.32}.dot{width:11px;height:11px;border-radius:50%}#sizeControl{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#152238;border-block:1px solid #34465e;flex-wrap:wrap}#ballSize{flex:1;min-width:160px;accent-color:#60a5fa;padding:0;height:32px}#ballSizeValue{font-variant-numeric:tabular-nums;min-width:54px;text-align:right;color:#bfdbfe}#notice{padding:0 12px 15px;color:#9fb0c8;font-size:12px}strong{color:#fff}#sizeControl{border:0!important;padding:10px!important;background:transparent!important}.syncOption{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-size:13px;color:#dce8ff}.syncOption input{flex:none;min-width:0;width:18px;height:18px;padding:0;margin:0;accent-color:#60a5fa}.settingNote{color:#aebbd0;font-size:12px;padding:4px 12px 8px}details#categoryDrawer{margin:8px 12px 10px;background:#152238;border:1px solid #34465e;border-radius:12px;overflow:hidden}#categoryDrawer summary{list-style:none;cursor:pointer;padding:13px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:650;user-select:none}#categoryDrawer summary::-webkit-details-marker{display:none}#categoryDrawer summary:after{content:"⌃";font-size:19px;color:#bfdbfe}#categoryDrawer[open] summary:after{content:"⌄"}#categoryDrawer .drawerSub{color:#aebbd0;font-size:12px;font-weight:400}#categoryDrawer #legend{padding-top:6px}#categoryDrawer .drawerActions{display:flex;gap:8px;padding:0 12px 12px}#categoryDrawer .drawerActions button{flex:1}#categoryDrawer .drawerActions button:active{background:#345071}
@@ -160,6 +162,7 @@ select:focus-visible{outline:2px solid #60a5fa!important;outline-offset:1px!impo
 /* Shared drawing viewport and grid engine. Both apps consume this file. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;root.ChipViewport=api})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
+const colors=Object.freeze({rho:'#60a5fa',theta:'#42d98c',scale:'#ffd166'});
 const units=Object.freeze({m:1000,cm:10,mm:1,um:.001,inch:25.4,mil:.0254});
 class Camera{
  constructor({x=0,y=0,scale=1,angle=0,mirror=false}={}){if(![x,y,scale,angle].every(Number.isFinite)||scale<=0)throw Error('Invalid camera');Object.assign(this,{x,y,scale,angle,mirror})}
@@ -190,7 +193,7 @@ function gridGeometry(camera,width,height,o={}){
  return primitives;
 }
 function drawGrid(ctx,camera,width,height,o){ctx.save();ctx.beginPath();ctx.rect(0,0,width,height);ctx.clip();ctx.strokeStyle=o.color||'#728cb1';ctx.fillStyle=o.color||'#728cb1';ctx.lineWidth=o.width||1;const geometry=o.show===false?[]:gridGeometry(camera,width,height,o);for(const p of geometry){ctx.globalAlpha=p.type==='point'?.5:.27;ctx.beginPath();if(p.type==='point'){ctx.arc(p.p.x,p.p.y,p.r,0,Math.PI*2);ctx.fill()}else{ctx.setLineDash(p.state==='dashed'?[6,5]:[]);ctx.lineDashOffset=-(p.dashOffset||0);ctx.moveTo(p.a.x,p.a.y);ctx.lineTo(p.b.x,p.b.y);ctx.stroke()}}if(o.showOrigin){const p=camera.toScreen({x:0,y:0}),r=9;ctx.globalAlpha=1;ctx.strokeStyle=o.originColor||'#92a9c6';ctx.lineWidth=o.originWidth||1;ctx.setLineDash([]);ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.moveTo(p.x-r*.58,p.y-r*.58);ctx.lineTo(p.x+r*.58,p.y+r*.58);ctx.moveTo(p.x+r*.58,p.y-r*.58);ctx.lineTo(p.x-r*.58,p.y+r*.58);ctx.stroke()}ctx.restore();return geometry.length}
-return Object.freeze({Camera,units,snap,clipLine,gridGeometry,drawGrid});
+return Object.freeze({Camera,colors,units,snap,clipLine,gridGeometry,drawGrid});
 });
 
 </script><script>
@@ -205,16 +208,20 @@ class Session{
  guides(){const dx=this.center.x-this.origin.x,dy=this.center.y-this.origin.y;return {a:{x:this.a.x+dx,y:this.a.y+dy},b:{x:this.b.x+dx,y:this.b.y+dy},c:this.currentA,d:this.currentB,center:this.center}}
  result(){if(!this.valid)return null;return this.camera.zoomAt(this.ratio,this.origin,this.min,this.max).rotateAt(this.delta,this.origin).pan(this.center.x-this.origin.x,this.center.y-this.origin.y)}
 }
+
+function annotationGeometry(session){const g=session.guides(),radius=session.length/2,angle=session.baseAngle+session.delta,end={x:g.center.x+radius*Math.cos(angle),y:g.center.y+radius*Math.sin(angle)},steps=Math.max(1,Math.min(1440,Math.ceil(Math.abs(session.delta)*32)));let arc='';for(let i=0;i<=steps;i++){const a=session.baseAngle+session.delta*i/steps;arc+=(i?' L ':'M ')+(g.center.x+radius*Math.cos(a))+' '+(g.center.y+radius*Math.sin(a))}const mid=session.baseAngle+session.delta/2;return {from:g.d,to:end,arc,scaleLabel:{x:(g.d.x+end.x)/2,y:(g.d.y+end.y)/2+19},angleLabel:{x:g.center.x+(radius+19)*Math.cos(mid),y:g.center.y+(radius+19)*Math.sin(mid)+4}}}
 function mount({surface,viewport=surface.parentNode,getCamera,applyCamera,onTouchStart=()=>{},onTouchEnd=()=>{},onStart=()=>{},onFinish=()=>{},limits={}}){
- const ns='http://www.w3.org/2000/svg',guide=document.createElementNS(ns,'svg');guide.setAttribute('class','ring-guides');guide.setAttribute('aria-hidden','true');guide.hidden=true;
+ const ns='http://www.w3.org/2000/svg',guide=document.createElementNS(ns,'svg');guide.setAttribute('class','ring-guides');guide.setAttribute('aria-hidden','true');guide.hidden=true;guide.setAttribute('hidden','');guide.style.display='none';
  const create=(tag,attrs)=>{const n=document.createElementNS(ns,tag);for(const [key,value]of Object.entries(attrs))n.setAttribute(key,value);guide.append(n);return n};
- const reference=create('line',{'data-ring-reference':'',stroke:'#80bfff','stroke-dasharray':'6 4'}),following=create('line',{'data-ring-following':'',stroke:'#ffd18a'}),center=create('circle',{'data-ring-center':'',r:4,fill:'#0b1220',stroke:'#ffffff'});viewport.append(guide);
+ const colors=ChipViewport.colors;
+ const reference=create('line',{'data-ring-reference':'',stroke:colors.rho,'stroke-dasharray':'6 4'}),following=create('line',{'data-ring-following':'',stroke:colors.theta}),extension=create('line',{'data-ring-extension':'',stroke:colors.scale}),arc=create('path',{'data-ring-angle-arc':'',stroke:colors.theta,fill:'none'}),scaleLabel=create('text',{'data-ring-scale-label':'',fill:colors.scale,'text-anchor':'middle'}),angleLabel=create('text',{'data-ring-angle-label':'',fill:colors.theta,'text-anchor':'middle'}),center=create('circle',{'data-ring-center':'',r:4,fill:'#0b1220',stroke:'#ffffff'});viewport.append(guide);
  let stage='idle',start=null,session=null,mouseId=null,touches=new Map(),swallowUp=null,suppressClick=false;
  const point=e=>{const r=surface.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}};
  const consume=e=>{e.preventDefault();e.stopImmediatePropagation()};
  function line(n,a,b){for(const [key,value]of Object.entries({x1:a.x,y1:a.y,x2:b.x,y2:b.y}))n.setAttribute(key,value)}
- function paint(g,second=true){const r=surface.getBoundingClientRect(),v=viewport.getBoundingClientRect();guide.setAttribute('viewBox','0 0 '+r.width+' '+r.height);guide.style.left=r.left-v.left+'px';guide.style.top=r.top-v.top+'px';guide.style.width=r.width+'px';guide.style.height=r.height+'px';line(reference,g.a,g.b);line(following,g.c||g.a,g.d||g.b);following.style.display=second?'':'none';center.setAttribute('cx',g.center.x);center.setAttribute('cy',g.center.y);guide.hidden=false}
- function finish(commit){const result=commit&&session?session.result():null;stage='idle';session=null;start=null;guide.hidden=true;if(result)applyCamera(result);onFinish(!!result)}
+ function showGuide(visible){guide.hidden=!visible;if(visible){guide.removeAttribute('hidden');guide.style.display='block'}else{guide.setAttribute('hidden','');guide.style.display='none';scaleLabel.textContent='';angleLabel.textContent='';arc.setAttribute('d','');for(const n of [reference,following,extension])line(n,{x:0,y:0},{x:0,y:0})}}
+ function paint(g,second=true){const r=surface.getBoundingClientRect(),v=viewport.getBoundingClientRect();guide.setAttribute('viewBox','0 0 '+r.width+' '+r.height);guide.style.left=r.left-v.left+'px';guide.style.top=r.top-v.top+'px';guide.style.width=r.width+'px';guide.style.height=r.height+'px';line(reference,g.a,g.b);line(following,g.c||g.a,g.d||g.b);following.style.display=second?'':'none';for(const n of [extension,arc,scaleLabel,angleLabel])n.style.display=second?'':'none';center.setAttribute('cx',g.center.x);center.setAttribute('cy',g.center.y);if(second&&session){const a=annotationGeometry(session);line(extension,a.from,a.to);arc.setAttribute('d',a.arc);scaleLabel.setAttribute('x',Math.max(20,Math.min(r.width-20,a.scaleLabel.x)));scaleLabel.setAttribute('y',Math.max(16,Math.min(r.height-8,a.scaleLabel.y)));angleLabel.setAttribute('x',Math.max(20,Math.min(r.width-20,a.angleLabel.x)));angleLabel.setAttribute('y',Math.max(16,Math.min(r.height-8,a.angleLabel.y)));const precision=document.getElementById('lengthPrecision'),digits=Math.max(0,Math.min(9,Number(precision?.value??2)));scaleLabel.textContent='×'+session.ratio.toFixed(digits);angleLabel.textContent=ChipUI.angle.format(session.delta*180/Math.PI,document.getElementById('angleMode').value,document.getElementById('anglePrecision').value)}showGuide(true)}
+ function finish(commit){const result=commit&&session?session.result():null;stage='idle';session=null;start=null;showGuide(false);if(result)applyCamera(result);onFinish(!!result)}
  function cancel(){const active=stage!=='idle';if(active)finish(false);stage=touches.size?'draining':'idle'}
  function updateTouches(){if(stage!=='touch-adjust'||touches.size!==2)return;const [a,b]=[...touches.values()];session.setSegment(a,b);paint(session.guides())}
  function down(e){
@@ -247,7 +254,7 @@ function mount({surface,viewport=surface.parentNode,getCamera,applyCamera,onTouc
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&stage!=='idle'){cancel();consume(e)}},true);window.addEventListener('blur',()=>{cancel();touches.clear();stage='idle';onTouchEnd()});window.addEventListener('resize',()=>{if(stage!=='idle')cancel()});
  return {cancel,get stage(){return stage},get session(){return session},guide};
 }
-root.ChipRing={Session,mount};
+root.ChipRing={Session,annotationGeometry,mount};
 })(globalThis);
 
 </script><script>
@@ -333,29 +340,29 @@ function renderCompass(camera,coordinate){
   arrow(e,t,color,7);
   return e;
  };
- if(!polar){line(xaxis,'#ff5969','x');line(yaxis,'#60a5fa','y')}
+ if(!polar){line(xaxis,'#ff5969','x');line(yaxis,ChipViewport.colors.rho,'y')}
  else{
   // ρ is the drawing plane's rotated X direction; θ is an angular annotation,
   // never a perpendicular linear coordinate axis.
-  line(xaxis,'#60a5fa','ρ');
+  line(xaxis,ChipViewport.colors.rho,'ρ');
   const rotated=Math.abs(Math.atan2(Math.sin(camera.angle),Math.cos(camera.angle)))>0.001;
   if(rotated){
    const reference=[mirror,0]; // unrotated X direction, not an independent θ axis
    const delta=Math.atan2(reference[0]*xaxis[1]-reference[1]*xaxis[0],reference[0]*xaxis[0]+reference[1]*xaxis[1]);
    // Display θ reference as a thin ray, with no arrowhead.
-   line(reference,'#42d98c','',false);
+   line(reference,ChipViewport.colors.theta,'',false);
    if(Math.abs(delta)>.025){
     let sweep=delta;
     if(positive===1&&sweep<0)sweep+=Math.PI*2;
     if(positive===-1&&sweep>0)sweep-=Math.PI*2;
     // Large rotations remain within the compass bounds.
-    curvedArrow(angleOf(reference),angleOf(reference)+sweep,18,'#42d98c');
+    curvedArrow(angleOf(reference),angleOf(reference)+sweep,18,ChipViewport.colors.theta);
    }
    add('text',{x:O[0]+Math.cos(angleOf(reference)+positive*.45)*28,y:O[1]+Math.sin(angleOf(reference)+positive*.45)*28+4}).textContent='θ';
   }else{
    // No θ ray at zero rotation: only a curved direction marker beyond ρ.
    const base=angleOf(xaxis),start=base+positive*.15,end=base+positive*.9;
-   curvedArrow(start,end,47,'#42d98c');
+   curvedArrow(start,end,47,ChipViewport.colors.theta);
    add('text',{x:O[0]+Math.cos(end)*58,y:O[1]+Math.sin(end)*58+4}).textContent='θ';
   }
  }
