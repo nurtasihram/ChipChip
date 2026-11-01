@@ -1,0 +1,9 @@
+{
+  "name": "chip-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "test": "node tests/viewport.test.mjs"
+  }
+}
