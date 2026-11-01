@@ -28,5 +28,11 @@ function createSelection({candidates,allowed,bounds}){
  function box(rect,additive=false){const found=candidates().filter(n=>{if(!allowed(n))return false;const b=bounds(n);return b.left>=rect.left&&b.right<=rect.right&&b.top>=rect.top&&b.bottom<=rect.bottom});return replace(additive?[...items,...found]:found)}
  return {replace,prune,pick,box,clear:()=>{items=[]},get items(){return [...items]},get primary(){return items.at(-1)||null}};
 }
-root.ChipDrawingLayers={create,createSelection};
+function selectionGeometry(node){
+ const points=[];
+ function collect(n){if(n.children?.length){for(const child of n.children)collect(child);return}try{const m=n.getScreenCTM(),style=getComputedStyle(n),width=style.stroke==='none'?0:parseFloat(style.strokeWidth)||0,screenStroke=style.vectorEffect==='non-scaling-stroke',rx=width/2*(screenStroke?1:Math.hypot(m.a,m.c))+3,ry=width/2*(screenStroke?1:Math.hypot(m.b,m.d))+3,length=n.getTotalLength(),count=Math.max(2,Math.min(512,Math.ceil(length/4)));for(let i=0;i<=count;i++){const p=n.getPointAtLength(length*i/count),x=m.a*p.x+m.c*p.y+m.e,y=m.b*p.x+m.d*p.y+m.f;for(let j=0;j<16;j++){const a=j*Math.PI/8;points.push({x:x+rx*Math.cos(a),y:y+ry*Math.sin(a)})}}}catch{const b=n.getBoundingClientRect();points.push({x:b.left-3,y:b.top-3},{x:b.right+3,y:b.top-3},{x:b.right+3,y:b.bottom+3},{x:b.left-3,y:b.bottom+3})}}
+ collect(node);points.sort((a,b)=>a.x-b.x||a.y-b.y);const cross=(a,b,c)=>(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x),half=values=>{const h=[];for(const p of values){while(h.length>1&&cross(h.at(-2),h.at(-1),p)<=0)h.pop();h.push(p)}return h},lower=half(points),upper=half([...points].reverse()),hull=lower.slice(0,-1).concat(upper.slice(0,-1));return {points:hull,left:points.reduce((v,p)=>Math.min(v,p.x),Infinity),top:points.reduce((v,p)=>Math.min(v,p.y),Infinity),right:points.reduce((v,p)=>Math.max(v,p.x),-Infinity),bottom:points.reduce((v,p)=>Math.max(v,p.y),-Infinity)};
+}
+function roundedOutline(points){if(points.length<3)return '';const toward=(p,q)=>{const distance=Math.hypot(q.x-p.x,q.y-p.y),t=Math.min(.5,6/Math.max(distance,1e-9));return {x:p.x+(q.x-p.x)*t,y:p.y+(q.y-p.y)*t}};let path='';for(let i=0;i<points.length;i++){const p=points[i],a=toward(p,points[(i+points.length-1)%points.length]),b=toward(p,points[(i+1)%points.length]);path+=(i?' L ':'M ')+a.x+' '+a.y+' Q '+p.x+' '+p.y+' '+b.x+' '+b.y}return path+' Z'}
+root.ChipDrawingLayers={create,createSelection,selectionGeometry,roundedOutline};
 })(globalThis);
