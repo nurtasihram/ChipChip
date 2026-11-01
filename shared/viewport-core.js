@@ -1,7 +1,7 @@
 /* Shared drawing viewport and grid engine. Both apps consume this file. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;root.ChipViewport=api})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
-const colors=Object.freeze({rho:'#60a5fa',theta:'#42d98c',scale:'#ffd166'});
+const colors=Object.freeze({rho:'#60a5fa',theta:'#42d98c',scale:'#ffd166',limit:'#ff5969'});
 const units=Object.freeze({m:1000,cm:10,mm:1,um:.001,inch:25.4,mil:.0254});
 class Camera{
  constructor({x=0,y=0,scale=1,angle=0,mirror=false}={}){if(![x,y,scale,angle].every(Number.isFinite)||scale<=0)throw Error('Invalid camera');Object.assign(this,{x,y,scale,angle,mirror})}
