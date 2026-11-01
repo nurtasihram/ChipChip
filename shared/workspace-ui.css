@@ -38,3 +38,7 @@ header.chip-ui.ui-header{padding-right:14px!important}#viewMenuButton{flex:none!
 .chip-ui .property-tabs{display:flex;gap:6px;padding:10px 0}.chip-ui .property-tabs button{flex:1}.chip-ui .measurement-scope{display:block;margin:8px 0;color:#aebbd0;font-size:11px}.chip-ui #measurementFormatPreview{padding:6px 10px;border:1px solid var(--ui-border);border-radius:7px;min-width:65px;text-align:center}
 
 .chip-icon-tooltip{position:fixed;z-index:10000;max-width:min(320px,calc(100vw - 16px));padding:7px 10px;border:1px solid #526989;border-radius:8px;background:#101d30;color:#e9f0fc;box-shadow:0 4px 16px #0005;font:13px/1.4 system-ui,sans-serif;pointer-events:none;overflow-wrap:anywhere}.chip-icon-tooltip[hidden]{display:none}
+
+/* Interface/object text is not copyable unless explicitly opted in. */
+body,body *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}
+body input,body textarea,body [contenteditable="true"],body [contenteditable="true"] *,body [data-copyable="true"],body [data-copyable="true"] *{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important}
