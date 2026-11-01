@@ -7,6 +7,7 @@ class WorkerBridge{constructor(source){this.worker=new NodeWorker("const {parent
 const context=vm.createContext({Worker:WorkerBridge,Blob:class{constructor(parts){this.text=parts.join('')}},URL:{createObjectURL:blob=>blob.text,revokeObjectURL(){}},setTimeout,clearTimeout});
 vm.runInContext(await readFile(new URL('../shared/quantity-editor.js',import.meta.url),'utf8'),context);
 const api=context.ChipQuantity;
+const fifth=api.decimalPair('0.2');assert.equal(fifth.numerator,1n);assert.equal(fifth.denominator,5n);const converted=api.convertPair(api.decimalPair('12.95'),'cm','mm');assert.equal(converted.numerator,259n);assert.equal(converted.denominator,2n);const inches=api.convertPair(api.decimalPair('129'),'mm','inch');const back=api.convertPair(inches,'inch','mm');assert.equal(back.numerator,129n);assert.equal(back.denominator,1n);
 assert.equal(api.calculate('2 + 3 * 4'),14);assert.equal(api.calculate('2 ** 3 ** 2'),512);assert.equal(api.calculate('Math.max(value, 7) + Math.sqrt(9)',5),10);assert.equal(api.calculate('Math.sin(Math.PI/2)'),1);
 for(const expression of ['globalThis','fetch(1)','while(true){}','Math.constructor(1)','1/0','value=2','Math.random()'])assert.throws(()=>api.calculate(expression));
 assert.equal(await api.run('value * 2 + Math.sqrt(16)',5),14);await assert.rejects(api.run('Math.constructor(1)',1));assert.equal(terminated,2);
