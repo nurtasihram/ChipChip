@@ -96,3 +96,5 @@ input[type=color]{border-radius:12px!important;padding:4px!important;overflow:hi
 .selectionEmptyRow>b,.selectionPromptRow>b{width:100%;font-size:12px;color:#b7d4fc}
 
 .chip-ui label.selection-option-heading{width:100%;font-weight:600!important;color:#b7d4fc}.selection-dependent-options{display:flex;flex-wrap:wrap;align-items:center;gap:9px;max-width:100%;min-width:0}.selection-dependent-options[hidden]{display:none!important}
+
+.chip-ui label.selection-option-heading{width:auto!important;flex:none;white-space:nowrap}.selection-dependent-options{flex:0 1 auto}.chip-ui .selectionEmptyRow,.chip-ui .selectionPromptRow{align-items:center!important}#selectionNoticePermanent{font-size:12px;color:#a9c8ed;white-space:nowrap}#selectionNoticePermanent[hidden]{display:none!important}
