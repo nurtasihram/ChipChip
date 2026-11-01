@@ -36,3 +36,5 @@ header.chip-ui.ui-header{padding-right:14px!important}#viewMenuButton{flex:none!
 .ring-guides [data-ring-scale-ticks]{stroke-width:1;opacity:.65}.ring-guides .ring-scale-tick-label{font-size:10px;stroke-width:3px;opacity:.8}
 
 .chip-ui .property-tabs{display:flex;gap:6px;padding:10px 0}.chip-ui .property-tabs button{flex:1}.chip-ui .measurement-scope{display:block;margin:8px 0;color:#aebbd0;font-size:11px}.chip-ui #measurementFormatPreview{padding:6px 10px;border:1px solid var(--ui-border);border-radius:7px;min-width:65px;text-align:center}
+
+.chip-icon-tooltip{position:fixed;z-index:10000;max-width:min(320px,calc(100vw - 16px));padding:7px 10px;border:1px solid #526989;border-radius:8px;background:#101d30;color:#e9f0fc;box-shadow:0 4px 16px #0005;font:13px/1.4 system-ui,sans-serif;pointer-events:none;overflow-wrap:anywhere}.chip-icon-tooltip[hidden]{display:none}
