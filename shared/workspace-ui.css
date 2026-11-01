@@ -32,3 +32,5 @@ header.chip-ui.ui-header{padding-right:14px!important}#viewMenuButton{flex:none!
 .ring-guides .ring-tick-label{font-size:10px;stroke-width:3px}.ring-guides [data-ring-ticks]{stroke-width:1}.ring-guides [data-ring-direction-arrow]{stroke:none}
 
 .ring-guides [data-ring-limit-extension]{stroke-width:2;vector-effect:non-scaling-stroke}
+
+.ring-guides [data-ring-scale-ticks]{stroke-width:1;opacity:.65}.ring-guides .ring-scale-tick-label{font-size:10px;stroke-width:3px;opacity:.8}
