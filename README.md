@@ -2,7 +2,7 @@
 
 **ChipChip** 是面向電子封裝與晶片管腳資料的互動視覺化專案。目前的主要介面是 **PinView**：可離線執行、手機及桌面可使用的單檔 HTML 管腳視圖工具。
 
-> 狀態：開發原型（截至 v23）。尚未發佈 GitHub 遠端倉庫；本目錄是本地 Git 專案。
+> 狀態：開發原型（v23 後視圖修訂）。已發佈於 https://github.com/nurtasihram/ChipChip 。
 
 ## 立即使用
 
@@ -23,7 +23,7 @@
 
 ```text
 ChipChip/
-├── index.html                 # 最新 PinView 應用（v23）
+├── index.html                 # 最新 PinView 應用（含視圖系統修訂）
 ├── examples/                  # E38xx、STM32F103C8Tx JSON 示例
 ├── docs/PINVIEW_FORMAT.md     # PinView 格式草案
 ├── README.md                  # 本文
@@ -41,14 +41,7 @@ git show HEAD~1:index.html > previous.html
 git diff HEAD~1 HEAD -- index.html
 ```
 
-目前預設分支 `main` 對應 v23。若要將專案上傳 GitHub，先在 GitHub 建立空倉庫，再自行設定 `origin` 並推送：
-
-```bash
-git remote add origin https://github.com/<owner>/ChipChip.git
-git push -u origin main
-```
-
-以上網址僅為命令範例，並非已存在的倉庫。
+目前預設分支 `main` 包含 v23 後的視圖系統修訂，詳見 [`CHANGELOG.md`](CHANGELOG.md)。遠端倉庫為 https://github.com/nurtasihram/ChipChip 。
 
 ## 資料格式
 
@@ -64,4 +57,4 @@ git push -u origin main
 
 E38xx 管腳資料參考 Intel E3800 Datasheet Rev. 4.3；STM32 範例是專案測試資料，正式電路設計前請對照原廠資料手冊核實。
 
-目前尚未設定正式開源授權；若要公開散布或接受外部貢獻，應先確定程式碼與資料的授權條件。
+本專案採用 MIT License；原有說明中的「尚未設定正式開源授權」已過時；若要公開散布或接受外部貢獻，應先確定程式碼與資料的授權條件。
