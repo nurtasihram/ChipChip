@@ -317,7 +317,7 @@ document.getElementById('showAllGroups').onclick=()=>{Object.keys(colors).forEac
  window.addEventListener('resize',()=>{if(!dock.classList.contains('is-collapsed'))apply(Math.min(lastOpen,maxHeight()))});
 })();
 
-const ringGesture=ChipRing.mount({surface:canvas,viewport:view,getCamera:chipCamera,applyCamera:camera=>{applyChipCamera(camera);ChipUI.sync();draw();showScaleTemporarily()},limits:{min:7,max:130},onStart:()=>{touches.clear();drag=null},onFinish:()=>{touches.clear();drag=null}});
+const ringGesture=ChipRing.mount({surface:canvas,viewport:view,getCamera:chipCamera,applyCamera:camera=>{applyChipCamera(camera);ChipUI.sync();draw();showScaleTemporarily()},limits:{min:7,max:130},onStart:()=>{touches.clear();drag=null},onCancel:()=>{touches.clear();drag=null},onFinish:()=>{touches.clear();drag=null}});
 </script><script>
 (()=>{
  const title=document.getElementById('projectTitle'),menu=document.getElementById('fileMenu'),picker=document.getElementById('projectFileInput');

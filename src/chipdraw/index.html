@@ -122,6 +122,7 @@ const ringGesture=ChipRing.mount({surface:svg,viewport:$('view'),getCamera:drawC
  onTouchStart:()=>{ringTouchCheckpoint={html:art.innerHTML,history:[...history],future:[...future],points:[...points],selectedIndex:[...art.children].indexOf(selected),anchor:clickAnchor}},
  onTouchEnd:()=>{ringTouchCheckpoint=null},
  onStart:kind=>{if(kind==='touch'&&ringTouchCheckpoint){art.innerHTML=ringTouchCheckpoint.html;history=ringTouchCheckpoint.history;future=ringTouchCheckpoint.future;points=ringTouchCheckpoint.points;selected=art.children[ringTouchCheckpoint.selectedIndex]||null;clickAnchor=ringTouchCheckpoint.anchor;renderSelection()}drag=null;pointers.clear();preview.innerHTML=''},
+ onCancel:()=>{if(drag&&(drag.kind==='pen'||drag.kind==='move')){const before=history.pop();if(before!==undefined)restore(before)}if(points.length){points=[];if(tool==='poly')history.pop()}drag=null;clickAnchor=null;pointers.clear();preview.innerHTML=''},
  onFinish:()=>{drag=null;pointers.clear();ringTouchCheckpoint=null;if(points.length>1)polyPreview()}
 });
 </script></html>
