@@ -20,5 +20,13 @@ function create({art,beforeChange=()=>{},changed=()=>{}}){
  function move(node,id){const destination=groups().find(n=>n.getAttribute('data-drawing-layer')===id);if(!node||!owner(node)||!destination||!editable(destination)||!editable(owner(node))||node.parentNode===destination)return false;beforeChange();destination.append(node);activate(destination);return true}
  normalize();return {groups,active,owner,editable,selectable,normalize,activate,add,rename,toggle,state,setAll,reorder,reorderTo,remove,move};
 }
-root.ChipDrawingLayers={create};
+function createSelection({candidates,allowed,bounds}){
+ let items=[];
+ function replace(nodes){items=[...new Set(nodes)].filter(n=>allowed(n));return items}
+ function prune(){return replace(items)}
+ function pick(node,additive=false){prune();if(!node){if(!additive)items=[];return items}if(!allowed(node))return items;if(additive){items=items.includes(node)?items.filter(n=>n!==node):[...items,node]}else if(!items.includes(node))items=[node];return items}
+ function box(rect,additive=false){const found=candidates().filter(n=>{if(!allowed(n))return false;const b=bounds(n);return b.left>=rect.left&&b.right<=rect.right&&b.top>=rect.top&&b.bottom<=rect.bottom});return replace(additive?[...items,...found]:found)}
+ return {replace,prune,pick,box,clear:()=>{items=[]},get items(){return [...items]},get primary(){return items.at(-1)||null}};
+}
+root.ChipDrawingLayers={create,createSelection};
 })(globalThis);
