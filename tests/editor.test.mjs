@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import vm from 'node:vm';
+const source=await readFile(new URL('../src/chipdraw/index.html',import.meta.url),'utf8');
+const context=vm.createContext({});
+vm.runInContext(source.slice(source.indexOf('function pathModel('),source.indexOf('function vectorModel(')),context);
+const model=text=>context.pathModel(text);
+const relative=model('m10 20 5 6 h7 v-2 c1 2 3 4 5 6 q1 2 3 4 a5 6 30 0 1 8 9 z m2 3 l4 5');
+assert.ok(relative);assert.equal(relative.write(),'M 10 20 L 15 26 L 22 26 L 22 24 C 23 26 25 28 27 30 Q 28 32 30 34 A 5 6 30 0 1 38 43 Z  M 12 23 L 16 28');
+const moved=model('M0 0 l10 10 l5 5');moved.anchors[1].entry.values[0]=20;
+assert.equal(moved.write(),'M 0 0 L 20 10 L 15 15','moving one relative endpoint must leave its successor fixed');
+assert.equal(model('M1e2,-2e-1 L.5 +6').anchors[0].x,100);
+for(const invalid of ['M 1','M 1 2 R 3 4','M 1 2 garbage','M 1 Infinity'])assert.equal(model(invalid),null);
+assert.equal(model('M0 0 C1 2 3 4 5 6 S7 8 9 10 Q11 12 13 14 T15 16').anchors.filter(a=>a.control).length,4);
+for(const [path,closed]of [['M0 0 L10 10',false],['M0 0 L10 0 L10 10 Z',true],['M0 0 L10 0 L0 0',true],['M0 0 L10 0 Z M20 0 L30 10',false]])assert.equal(model(path).closed,closed);
+export const results=['ChipDraw path normalization: relative, repeated, close, curves, arcs, invalid input and isolated point edits'];
