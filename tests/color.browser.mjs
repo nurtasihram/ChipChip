@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+const {chromium}=await import(process.env.CHIPDRAW_PLAYWRIGHT||'playwright');
+const browser=await chromium.launch({headless:true,...(process.env.CHIPDRAW_BROWSER?{executablePath:process.env.CHIPDRAW_BROWSER}:{})});
+try{
+ const page=await browser.newPage({viewport:{width:1200,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(new URL('../ChipDraw.html',import.meta.url).href);
+ assert.equal(await page.locator('.chip-color-button').count(),0,'no proxy color buttons');assert.equal(await page.locator('input[type=color][hidden]').count(),0,'original color fields remain the only entry');
+ await page.evaluate(()=>{const input=$('selectionOutlineColor');input.value='#ff0000';input.click()});assert.equal(await page.locator('.chip-color-popup').count(),1);assert.ok((await page.locator('.color-heading').boundingBox()).height<=26,'compact color heading');assert.equal(await page.locator('.color-sliders').count(),0);
+ const plane=page.locator('.color-plane'),r=await plane.boundingBox();await page.mouse.click(r.x+r.width*.5,r.y+r.height*.5);assert.equal(await page.locator('#selectionOutlineColor').inputValue(),'#804040');
+ await page.locator('.color-hue').evaluate(n=>{n.value='120';n.dispatchEvent(new Event('input',{bubbles:true}))});assert.equal(await page.locator('#selectionOutlineColor').inputValue(),'#408040');
+ await plane.focus();await page.keyboard.press('ArrowRight');assert.ok(Number(await plane.getAttribute('aria-valuenow'))>50);await page.keyboard.press('Escape');assert.equal(await page.locator('#selectionOutlineColor').inputValue(),'#ff0000');assert.equal(await page.locator('.chip-color-popup').count(),0);
+ await page.evaluate(()=>$('selectionOutlineColor').click());await page.locator('.color-format select').selectOption('RGB');await page.locator('[aria-label="RGB R"]').fill('10');await page.locator('[aria-label="RGB G"]').fill('20');await page.locator('[aria-label="RGB B"]').fill('30');assert.equal(await page.locator('#selectionOutlineColor').inputValue(),'#0a141e');await page.locator('[data-done]').click();assert.equal(await page.locator('#selectionOutlineColor').inputValue(),'#0a141e');
+ await page.evaluate(()=>document.querySelector('[data-anchor-color=grid]').click());assert.equal(await page.locator('.chip-color-popup').count(),1,'dynamic color controls share the same picker');await page.locator('.color-fields [aria-label=HEX]').fill('#123456');await page.locator('[data-done]').click();assert.equal(await page.locator('[data-anchor-color=grid]').inputValue(),'#123456');await page.reload();assert.equal(await page.locator('[data-anchor-color=grid]').inputValue(),'#123456');
+ if(process.env.CHIPDRAW_COLOR_SCREENSHOT){await page.evaluate(()=>{$('selectionOutlineColor').click()});await page.screenshot({path:process.env.CHIPDRAW_COLOR_SCREENSHOT})}
+ assert.deepEqual(errors,[]);console.log('PASS: original color fields share HSV plane/hue picker, live edits, formats, keyboard, cancellation and dynamic color persistence without proxy buttons');
+}finally{await browser.close()}

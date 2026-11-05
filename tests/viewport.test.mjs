@@ -18,3 +18,10 @@ export async function checkApps(){const checks=[];for(const app of ['chipchip','
  const chipAdapter=chip.slice(chip.indexOf('function chipCamera()'),chip.indexOf('function chipGridOptions()')),xy=chip.slice(chip.indexOf('function xy(p)'),chip.indexOf('function centerOn('));const chipState={ChipViewport:api,ox:camera.x,oy:camera.y,scale:camera.scale,angle:camera.angle,mirrorX:{checked:camera.mirror}};vm.createContext(chipState);vm.runInContext(chipAdapter+xy,chipState);const chipPoint=chipState.xy([null,null,native.x,-native.y]);close(chipPoint[0],p.x);close(chipPoint[1],p.y);checks.push('both app adapters place the same world point at identical screen coordinates');
  for(const name of ['ChipChip','ChipDraw']){const html=await readFile(new URL(name+'.html',base),'utf8');assert.ok(html.includes('GENERATED from src/'));assert.ok(!html.includes('src="../../shared/viewport-core.js"'));const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];for(const script of scripts)new vm.Script(script[1]);assert.equal(html.split('/* Shared drawing viewport and grid engine.').length,2)}checks.push('offline builds embed exactly one shared core');return checks}
 export const results=[...run(),...await checkApps()];
+
+// One affine conic model covers circles, ellipses, rotations and sheared imports.
+for(const matrix of [{a:1,b:0,c:0,d:1,e:2,f:3},{a:1.2,b:.4,c:.3,d:.8,e:20,f:-7},{a:-2,b:.7,c:.2,d:1.3,e:0,f:0}]){
+ const g=api.conicGeometry({cx:3,cy:4,rx:5,ry:3,matrix});
+ for(let i=0;i<24;i++){const t=i*Math.PI/12,x=3+5*Math.cos(t),y=4+3*Math.sin(t),p={x:matrix.a*x+matrix.c*y+matrix.e,y:matrix.b*x+matrix.d*y+matrix.f};close(g.foci.reduce((sum,f)=>sum+Math.hypot(p.x-f.x,p.y-f.y),0),2*g.major)}
+}
+const conic=api.conicGeometry({rx:5,ry:3});close(conic.focalDistance,8);close(conic.foci[0].x,-4);assert.equal(api.conicGeometry({rx:5,ry:5}).isCircle,true);

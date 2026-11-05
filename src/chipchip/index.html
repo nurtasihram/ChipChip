@@ -211,7 +211,7 @@ function recoverView(){
  viewRecovery.classList.remove('visible');draw();showScaleTemporarily();
 }
 viewRecovery.addEventListener('click',recoverView);
-function draw(){updateViewBubbles(false);ctx.clearRect(0,0,w,h);ctx.fillStyle='#101a2b';ctx.fillRect(0,0,w,h);drawGrid();
+function draw(){ringGesture?.refresh();updateViewBubbles(false);ctx.clearRect(0,0,w,h);ctx.fillStyle='#101a2b';ctx.fillRect(0,0,w,h);drawGrid();
 drawPackage();drawOrigin();const rad=(ballDiameter/2)*(syncBallZoom.checked ? scale/referenceScale : 1);for(const p of pts){const mode=groupMode[p[4]]||'default';const hidden=mode==='hidden';if(hidden&&!document.getElementById('outlineHidden').checked)continue;let [x,y]=xy(p);if(x< -20||x>w+20||y< -20||y>h+20)continue;ctx.beginPath();ctx.arc(x,y,rad,0,Math.PI*2);if(hidden){ctx.save();ctx.strokeStyle='rgba(170,187,210,.65)';ctx.lineWidth=1.1;ctx.setLineDash([2.5,2.5]);ctx.stroke();ctx.restore()}else{ctx.fillStyle=groupColor[p[4]]||colors[p[4]];ctx.globalAlpha=mode==='highlight'?1:(p[4]==='Ground'?.72:1);ctx.fill();ctx.globalAlpha=1;}if(mode==='highlight'&&!hidden){ctx.save();ctx.strokeStyle=groupColor[p[4]]||colors[p[4]];ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(x,y,rad+3,0,Math.PI*2);ctx.stroke();ctx.restore()}if(p===selected||searchMatches.has(p[0])){ctx.strokeStyle='#fff';ctx.lineWidth=2.2;ctx.stroke()}if(scale>38){ctx.fillStyle='#eaf2ff';ctx.textAlign='center';ctx.font='10px system-ui';ctx.fillText(p[0],x,y-rad-3)}}drawDimensions();scheduleViewContentCheck()}
 function zoom(f,cx=w/2,cy=h/2){applyChipCamera(chipCamera().zoomAt(f,{x:cx,y:cy},7,130));draw();showScaleTemporarily()}// Only display verified multiplexed aliases; a single Ball Name is not proof of pin multiplexing.
 const pinMuxAliases={}; // keyed by ball number, populated only from verified mux documentation
@@ -317,7 +317,7 @@ document.getElementById('showAllGroups').onclick=()=>{Object.keys(colors).forEac
  window.addEventListener('resize',()=>{if(!dock.classList.contains('is-collapsed'))apply(Math.min(lastOpen,maxHeight()))});
 })();
 
-const ringGesture=ChipRing.mount({surface:canvas,viewport:view,getCamera:chipCamera,applyCamera:camera=>{applyChipCamera(camera);ChipUI.sync();draw();showScaleTemporarily()},limits:{min:7,max:130},onStart:()=>{touches.clear();drag=null},onCancel:()=>{touches.clear();drag=null},onFinish:()=>{touches.clear();drag=null}});
+var ringGesture=ChipRing.mount({surface:canvas,viewport:view,getCamera:chipCamera,applyCamera:camera=>{applyChipCamera(camera);ChipUI.sync();draw();showScaleTemporarily()},limits:{min:7,max:130},onStart:()=>{touches.clear();drag=null},onCancel:()=>{touches.clear();drag=null},onFinish:()=>{touches.clear();drag=null}});
 </script><script>
 (()=>{
  const title=document.getElementById('projectTitle'),menu=document.getElementById('fileMenu'),picker=document.getElementById('projectFileInput');

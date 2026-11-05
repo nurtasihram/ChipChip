@@ -4,19 +4,20 @@ const browser=await chromium.launch({headless:true,ignoreDefaultArgs:['--hide-sc
 try{
  const page=await browser.newPage({viewport:{width:1200,height:850}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(new URL('../ChipDraw.html',import.meta.url).href);
- await page.evaluate(()=>{selected=el('line',{x1:0,y1:0,x2:80,y2:40,stroke:'#69b8ff','stroke-width':2,fill:'none',transform:'translate(15 20) rotate(20)'});renderSelection();$('panel').classList.add('show');scale=2;viewAngle=35;viewMirrored=true;view()});
+ await page.evaluate(()=>{$('selectionFirstIndependent').checked=true;$('selectionFirstIndependent').dispatchEvent(new Event('change',{bubbles:true}))});
+ await page.evaluate(()=>{selected=el('line',{x1:0,y1:0,x2:80,y2:40,stroke:'#69b8ff','stroke-width':2,fill:'none',transform:'translate(15 20) rotate(20)'});detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('panel').classList.add('show');scale=2;viewAngle=35;viewMirrored=true;view()});
  const start=await page.evaluate(()=>{const p=transformPoint({x:0,y:0},selected.getScreenCTM());return {...p,history:history.length}});
  await page.mouse.move(start.x,start.y);await page.mouse.down();await page.mouse.move(start.x+35,start.y+20);await page.mouse.up();
  const moved=await page.evaluate(()=>({x:+selected.getAttribute('x1'),y:+selected.getAttribute('y1'),history:history.length,html:art.innerHTML,screen:transformPoint({x:+selected.getAttribute('x1'),y:+selected.getAttribute('y1')},selected.getScreenCTM())}));
  assert.equal(moved.history,start.history+1);assert.ok(Math.abs(moved.screen.x-start.x-35)<.01);assert.ok(Math.abs(moved.screen.y-start.y-20)<.01);
  await page.evaluate(()=>$('undo').click());assert.equal(await page.evaluate(()=>+art.querySelector('line').getAttribute('x1')),0);
  await page.evaluate(()=>$('redo').click());assert.equal(await page.evaluate(()=>+art.querySelector('line').getAttribute('x1')),moved.x);
- await page.evaluate(()=>{selected=art.querySelector('line');renderSelection()});
+ await page.evaluate(()=>{selected=art.querySelector('line');(detailedAnchorTarget=selected,renderSelection())});
  const a=await page.evaluate(()=>transformPoint({x:+selected.getAttribute('x1'),y:+selected.getAttribute('y1')},selected.getScreenCTM()));
  const beforeCancel=await page.evaluate(()=>({html:art.innerHTML.replace(/class="[^"]*"/g,''),h:history.length,f:future.length}));
  await page.mouse.move(a.x,a.y);await page.mouse.down();await page.mouse.move(a.x+15,a.y+10);await page.keyboard.press('Escape');await page.mouse.up();
  assert.deepEqual(await page.evaluate(()=>({html:art.innerHTML.replace(/class="[^"]*"/g,''),h:history.length,f:future.length})),beforeCancel);
- await page.evaluate(()=>{selected=art.querySelector('line');renderSelection();$('objectVertex0x').value='50';$('objectVertex0x').dispatchEvent(new Event('change'))});
+ await page.evaluate(()=>{selected=art.querySelector('line');detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('objectVertex0x').value='50';$('objectVertex0x').dispatchEvent(new Event('change'))});
  assert.ok(Math.abs(await page.evaluate(()=>lineEndpoints(selected)[0].x)-50)<1e-4);
  assert.equal(await page.locator('#objectWidthRow').isVisible(),false);
  assert.equal(await page.locator('#objectHeightRow').isVisible(),false);
@@ -32,10 +33,10 @@ try{
  await page.evaluate(()=>{$('angleMode').value='deg'});
  const fill=await page.evaluate(()=>selected.getAttribute('fill'));
  await page.evaluate(()=>{$('stroke').value='#ff0000';$('stroke').dispatchEvent(new Event('change'))});assert.equal(await page.evaluate(()=>selected.getAttribute('fill')),fill);
- await page.evaluate(()=>{const n=selected;layers.add({type:'vector'});selected=n;renderSelection();$('objectLayer').value=layers.active().getAttribute('data-drawing-layer');$('objectLayer').dispatchEvent(new Event('change'))});
+ await page.evaluate(()=>{const n=selected;layers.add({type:'vector'});selected=n;detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('objectLayer').value=layers.active().getAttribute('data-drawing-layer');$('objectLayer').dispatchEvent(new Event('change'))});
  assert.equal(await page.evaluate(()=>layers.owner(selected)===layers.active()),true);
- await page.evaluate(()=>{selected=el('path',{d:'m0 0 c10 10 20 20 30 10 l20 10',stroke:'#ff0000',fill:'none'});renderSelection()});
- assert.equal(await page.locator('#anchorHandles > *').count(),5);
+ await page.evaluate(()=>{selected=el('path',{d:'m0 0 c10 10 20 20 30 10 l20 10',stroke:'#ff0000',fill:'none'});(detailedAnchorTarget=selected,renderSelection())});
+ assert.equal(await page.locator('#anchorHandles > [data-anchor]').count(),5);
  const first=await page.evaluate(()=>transformPoint({x:0,y:0},selected.getScreenCTM()));
  await page.mouse.move(first.x,first.y);await page.mouse.down();await page.mouse.move(first.x+10,first.y+10);await page.mouse.up();
  assert.equal(await page.evaluate(()=>pathModel(selected.getAttribute('d')).anchors.at(-1).x),50,'relative successor stays fixed during actual drag');
@@ -44,7 +45,7 @@ try{
  await page.evaluate(()=>{layers.toggle(layers.owner(selected),'locked')});
  assert.equal(await page.locator('#anchorHandles > *').count(),0);assert.equal(await page.evaluate(()=>selection.items.length),0);
 
- await page.evaluate(()=>{layers.toggle(layers.active(),'locked');selected=el('rect',{x:0,y:0,width:94.67,height:246,stroke:'#69b8ff',fill:'none'});renderSelection();$('panel').classList.add('show')});
+ await page.evaluate(()=>{layers.toggle(layers.active(),'locked');selected=el('rect',{x:0,y:0,width:94.67,height:246,stroke:'#69b8ff',fill:'none'});detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('panel').classList.add('show')});
  for(const width of [270,650]){
   await page.evaluate(width=>{$('panel').style.width=width+'px'},width);
   const controls=await page.evaluate(()=>[...$('panelBody').querySelectorAll('input[type=number]')].filter(input=>input.getClientRects().length).map(input=>{const group=input.closest('[data-conversion-component]'),unit=input.nextElementSibling,r=input.getBoundingClientRect(),u=unit?.getBoundingClientRect(),row=input.closest('label').getBoundingClientRect();return {id:input.id,group:!!group,unit:unit?.textContent,gap:u?u.left-r.right:null,width:r.width,needed:parseFloat(input.style.getPropertyValue('--coordinate-value-width'))||0,coordinate:!!input.closest('[data-coordinate-editor]'),labelGap:group?group.getBoundingClientRect().left-row.left:null}}));
@@ -62,7 +63,7 @@ try{
  assert.equal(await page.locator('#measurementCoordinates').evaluate(n=>!!n.closest('.settingGroup,.ui-control-group')),false);
  assert.equal((await page.locator('label[for=showCompass]').textContent()).trim(),'座標系指示器');
  assert.equal(await page.locator('#uiViewTab').textContent(),'視圖');
- await page.evaluate(()=>{selected=el('polyline',{points:'0,0 30,-40 60,-80 90,-120',stroke:'#69b8ff',fill:'none'});renderSelection()});
+ await page.evaluate(()=>{selected=el('polyline',{points:'0,0 30,-40 60,-80 90,-120',stroke:'#69b8ff',fill:'none'});(detailedAnchorTarget=selected,renderSelection())});
  assert.equal(await page.locator('#objectVertices > .vertex-row').count(),4);
  await page.evaluate(()=>{$('advanced').open=true;$('uiMeasurementTab').click()});
  await page.selectOption('#coordinateMode','polar');
@@ -92,7 +93,7 @@ try{
  assert.equal(await page.evaluate(()=>{const p=$('panel').getBoundingClientRect(),h=document.querySelector('header').getBoundingClientRect();return p.top>=h.bottom&&p.bottom<=innerHeight}),true);
  if(process.env.CHIPDRAW_SCREENSHOT)await page.screenshot({path:process.env.CHIPDRAW_SCREENSHOT});
 
- await page.evaluate(()=>{$('advanced').open=false;const a=el('rect',{x:0,y:0,width:60,height:40,...style()}),b=el('rect',{x:10,y:10,width:60,height:40,...style()});selection.replace([a,b]);selected=selection.primary;renderSelection()});
+ await page.evaluate(()=>{$('advanced').open=false;const a=el('rect',{x:0,y:0,width:60,height:40,...style()}),b=el('rect',{x:10,y:10,width:60,height:40,...style()});selection.replace([a,b]);selected=selection.primary;(detailedAnchorTarget=selected,renderSelection())});
  assert.equal(await page.locator('#panelTitle').textContent(),'物件');
  const palette=await page.evaluate(()=>({draw:$('stroke').value,normal:$('selectionOutlineColor').value,first:$('selectionFirstColor').value}));
  assert.notEqual(palette.draw,palette.normal);assert.notEqual(palette.draw,palette.first);
@@ -103,7 +104,7 @@ try{
  const firstStyle=await page.locator('#selectionOverlay [data-selection-kind=first]').evaluate(n=>({stroke:n.getAttribute('stroke'),fill:n.getAttribute('fill'),opacity:n.getAttribute('fill-opacity'),width:n.getAttribute('stroke-width'),dash:n.getAttribute('stroke-dasharray')}));
  assert.equal(firstStyle.stroke,'#ff00ff');assert.equal(firstStyle.fill,'#aa00aa');assert.equal(firstStyle.opacity,'0.31');assert.notEqual(firstStyle.dash,'none');
  assert.equal(await page.locator('#selectionOverlay [data-selection-kind=selection]').getAttribute('stroke'),palette.normal);
- await page.evaluate(()=>{const first=selection.items[0];selection.pick(first,true);selected=selection.primary;renderSelection()});
+ await page.evaluate(()=>{const first=selection.items[0];selection.pick(first,true);selected=selection.primary;(detailedAnchorTarget=selected,renderSelection())});
  assert.equal(await page.locator('#selectionOverlay [data-selection-kind=first]').count(),1);
  assert.equal(await page.locator('#selectionOverlay [data-selection-kind=selection]').count(),0);
  if(process.env.CHIPDRAW_SCREENSHOT){await page.evaluate(()=>{$('advanced').open=true;$('uiViewTab').click()});await page.locator('#selectionFirstColor').scrollIntoViewIfNeeded();await page.screenshot({path:process.env.CHIPDRAW_SCREENSHOT})}
@@ -112,7 +113,7 @@ try{
  assert.equal(await page.locator('.selection-first-settings').evaluate(n=>n.tagName),'FIELDSET');
  assert.equal(await page.locator('#objectCoordinates #objectLayer').count(),1);
  for(const id of ['stroke','fill','noFill','sw'])assert.equal(await page.locator('#objectArtwork #'+id).count(),1);
- await page.evaluate(()=>{$('advanced').open=false;selected=el('rect',{'data-name':'live-preview',x:0,y:0,width:60,height:40,...style()});renderSelection();$('panel').style.width='420px'});
+ await page.evaluate(()=>{$('advanced').open=false;selected=el('rect',{'data-name':'live-preview',x:0,y:0,width:60,height:40,...style()});detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('panel').style.width='420px'});
  const historyBeforePreview=await page.evaluate(()=>history.length);
  await page.locator('#objectX').fill('5');
  assert.ok(Math.abs(await page.evaluate(()=>objectBounds(selected).x)-5)<1e-4,'coordinates must preview before blur');
@@ -121,7 +122,7 @@ try{
  assert.equal(await page.evaluate(()=>history.length),historyBeforePreview+1,'typing belongs to one undo entry');
  await page.locator('#objectX').blur();await page.evaluate(()=>$('undo').click());
  assert.ok(Math.abs(await page.evaluate(()=>objectBounds(art.querySelector('[data-name="live-preview"]')).x))<1e-4);
- await page.evaluate(()=>{$('redo').click();selected=art.querySelector('[data-name="live-preview"]');renderSelection()});
+ await page.evaluate(()=>{$('redo').click();selected=art.querySelector('[data-name="live-preview"]');(detailedAnchorTarget=selected,renderSelection())});
  await page.locator('#objectWidth').fill('100');
  assert.ok(Math.abs(await page.evaluate(()=>objectBounds(selected).width)-100)<1e-4,'size previews immediately');
  await page.locator('#objectWidth').blur();
@@ -139,7 +140,7 @@ try{
 
  for(const viewportWidth of [320,375,430]){
   await page.setViewportSize({width:viewportWidth,height:820});
-  await page.evaluate(()=>{$('coordinateMode').value='cart';$('coordinateMode').dispatchEvent(new Event('change',{bubbles:true}));selected=el('line',{x1:-270.1234,y1:321.85,x2:-92.22,y2:38.88,...style()});renderSelection();$('panel').style.width=Math.min(270,innerWidth-16)+'px';clampPanel()});
+  await page.evaluate(()=>{$('coordinateMode').value='cart';$('coordinateMode').dispatchEvent(new Event('change',{bubbles:true}));selected=el('line',{x1:-270.1234,y1:321.85,x2:-92.22,y2:38.88,...style()});detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('panel').style.width=Math.min(270,innerWidth-16)+'px';clampPanel()});
   for(const editor of await page.locator('#objectVertices [data-coordinate-editor]').all()){
    // Wrapping depends on the displayed values, not a fixed field width.
    const metrics=await editor.evaluate(n=>({overflow:n.scrollWidth>n.clientWidth+1,widths:[...n.querySelectorAll('input')].map(n=>({actual:n.getBoundingClientRect().width,needed:parseFloat(n.style.getPropertyValue('--coordinate-value-width'))||0}))}));
@@ -151,7 +152,7 @@ try{
  if(process.env.CHIPDRAW_SCREENSHOT)await page.screenshot({path:process.env.CHIPDRAW_SCREENSHOT});
 
  await page.setViewportSize({width:900,height:850});
- await page.evaluate(()=>{$('coordinateMode').value='cart';$('coordinateMode').dispatchEvent(new Event('change',{bubbles:true}));$('lengthPrecision').value='2';$('lengthPrecision').dispatchEvent(new Event('change',{bubbles:true}));selected=el('line',{x1:-504.07,y1:-215.18,x2:-306.30,y2:4.08,...style()});renderSelection();$('panel').style.width='420px';clampPanel()});
+ await page.evaluate(()=>{$('coordinateMode').value='cart';$('coordinateMode').dispatchEvent(new Event('change',{bubbles:true}));$('lengthPrecision').value='2';$('lengthPrecision').dispatchEvent(new Event('change',{bubbles:true}));selected=el('line',{x1:-504.07,y1:-215.18,x2:-306.30,y2:4.08,...style()});detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('panel').style.width='420px';clampPanel()});
  for(const editor of await page.locator('#objectVertices [data-coordinate-editor]').all())assert.equal(await pairOnOneLine(editor),true,'short coordinate values must stay on one row');
  await page.evaluate(()=>{$('lengthPrecision').value='9';$('lengthPrecision').dispatchEvent(new Event('change',{bubbles:true}));$('panel').style.width='270px';clampPanel()});
  for(const editor of await page.locator('#objectVertices [data-coordinate-editor]').all()){assert.equal(await pairOnOneLine(editor),false,'wrap only when full displayed values cannot fit');assert.equal(await editor.evaluate(n=>n.scrollWidth<=n.clientWidth+1),true)}
@@ -174,15 +175,15 @@ try{
 
  const fillCases=[['line',{x1:0,y1:0,x2:20,y2:20},false],['polyline',{points:'0,0 20,0 20,20'},false],['polyline',{points:'0,0 20,0 20,20 0,0'},true],['path',{d:'M0 0 L20 0 L20 20'},false],['path',{d:'M0 0 L20 0 L20 20 Z'},true],['path',{d:'M0 0 L20 0 L20 20 Z M30 0 L40 10'},false],['path',{d:'M0 0 L20 0 L20 20 L0 0'},true],['rect',{x:0,y:0,width:20,height:20},true]];
  for(const [tag,attributes,closed]of fillCases){
-  await page.evaluate(({tag,attributes})=>{setTool('select');selected=el(tag,{...attributes,stroke:'#69b8ff',fill:'#aa00aa'});renderSelection();$('panel').classList.add('show')},{tag,attributes});
+  await page.evaluate(({tag,attributes})=>{setTool('select');selected=el(tag,{...attributes,stroke:'#69b8ff',fill:'#aa00aa'});detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('panel').classList.add('show')},{tag,attributes});
   assert.equal(await page.locator('#objectFillRow').isVisible(),closed,tag+' fill availability');assert.equal(await page.locator('#objectNoFillRow').isVisible(),closed);
   if(!closed){assert.equal(await page.evaluate(()=>selected.getAttribute('fill')),'none');await page.evaluate(()=>{$('noFill').checked=false;$('fill').dispatchEvent(new Event('change'))});assert.equal(await page.evaluate(()=>selected.getAttribute('fill')),'none','hidden fill controls must never fill open geometry')}
  }
- await page.evaluate(()=>{const line=el('line',{x1:0,y1:0,x2:10,y2:10,fill:'none'});selection.replace([selected,line]);selected=selection.primary;renderSelection()});
+ await page.evaluate(()=>{const line=el('line',{x1:0,y1:0,x2:10,y2:10,fill:'none'});selection.replace([selected,line]);selected=selection.primary;(detailedAnchorTarget=selected,renderSelection())});
  assert.equal(await page.locator('#objectFillRow').isVisible(),false,'mixed open/closed selection has no fill control');
 
  await page.setViewportSize({width:1100,height:850});
- await page.evaluate(()=>{setTool('select');$('coordinateMode').value='cart';$('lengthPrecision').value='2';selected=el('polyline',{points:'149.26,-432.96 -59.63,208.52 -287.04,-60.36 -268.52,-303.33 414.44,55.93',stroke:'#69b8ff',fill:'none'});renderSelection();$('panel').classList.add('show');$('panel').style.width='650px';clampPanel()});
+ await page.evaluate(()=>{setTool('select');$('coordinateMode').value='cart';$('lengthPrecision').value='2';selected=el('polyline',{points:'149.26,-432.96 -59.63,208.52 -287.04,-60.36 -268.52,-303.33 414.44,55.93',stroke:'#69b8ff',fill:'none'});detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('panel').classList.add('show');$('panel').style.width='650px';clampPanel()});
  const columns=await page.locator('#objectVertices [data-coordinate-editor]').evaluateAll(nodes=>nodes.map(n=>[...n.querySelectorAll('input')].map(n=>({left:n.getBoundingClientRect().left,width:n.getBoundingClientRect().width}))));
  for(let axis=0;axis<2;axis++){assert.ok(Math.max(...columns.map(n=>n[axis].left))-Math.min(...columns.map(n=>n[axis].left))<1,'node coordinate columns must align');assert.ok(Math.max(...columns.map(n=>n[axis].width))-Math.min(...columns.map(n=>n[axis].width))<1)}
  await page.evaluate(()=>{$('panel').classList.remove('show');setTool('poly')});
@@ -194,7 +195,7 @@ try{
  await page.mouse.click(130,370);await page.mouse.move(160,330);assert.equal(await page.evaluate(()=>points.length),2);assert.equal((await page.locator('#preview [data-poly-preview]').getAttribute('points')).split(' ').length,3);
  await page.keyboard.press('Escape');assert.equal(await page.locator('#preview > *').count(),0);assert.equal(await page.locator('#art polyline').count(),previewArtCount);
 
- await page.evaluate(()=>{setTool('select');selected=el('polyline',{'data-name':'node-actions',points:'0,0 10,20 30,40 50,60 70,80',stroke:'#69b8ff',fill:'none'});renderSelection();$('panel').classList.add('show');$('panel').style.width='650px';clampPanel()});
+ await page.evaluate(()=>{setTool('select');selected=el('polyline',{'data-name':'node-actions',points:'0,0 10,20 30,40 50,60 70,80',stroke:'#69b8ff',fill:'none'});detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('panel').classList.add('show');$('panel').style.width='650px';clampPanel()});
  assert.equal(await page.locator('#objectVertices fieldset').count(),0,'node rows must not use nested groups');
  assert.deepEqual(await page.locator('#objectVertices .vertex-number').allTextContents(),['起點','錨點 1','錨點 2','錨點 3','終點']);
  assert.equal(await page.locator('#objectVertices .vertex-lock').first().getAttribute('aria-label'),'鎖定起點');assert.equal(await page.locator('#objectVertices .vertex-delete').first().getAttribute('aria-label'),'刪除起點');
@@ -205,47 +206,47 @@ try{
  await page.locator('#objectVertices .vertex-row').nth(0).locator('.vertex-delete').click();
  assert.equal(await page.evaluate(()=>layerVertices(selected).length),4);assert.deepEqual(await page.evaluate(()=>nodeLocks(selected)),[0]);assert.equal(await page.locator('#objectVertex0x').isDisabled(),true);
  assert.deepEqual(await page.locator('#objectVertices .vertex-number').allTextContents(),['起點','錨點 1','錨點 2','終點']);
- await page.evaluate(()=>{$('undo').click();selected=art.querySelector('[data-name="node-actions"]');renderSelection()});assert.equal(await page.evaluate(()=>layerVertices(selected).length),5);assert.deepEqual(await page.evaluate(()=>nodeLocks(selected)),[1]);
- await page.evaluate(()=>{$('redo').click();selected=art.querySelector('[data-name="node-actions"]');renderSelection()});assert.equal(await page.evaluate(()=>layerVertices(selected).length),4);assert.deepEqual(await page.evaluate(()=>nodeLocks(selected)),[0]);
+ await page.evaluate(()=>{$('undo').click();selected=art.querySelector('[data-name="node-actions"]');(detailedAnchorTarget=selected,renderSelection())});assert.equal(await page.evaluate(()=>layerVertices(selected).length),5);assert.deepEqual(await page.evaluate(()=>nodeLocks(selected)),[1]);
+ await page.evaluate(()=>{$('redo').click();selected=art.querySelector('[data-name="node-actions"]');(detailedAnchorTarget=selected,renderSelection())});assert.equal(await page.evaluate(()=>layerVertices(selected).length),4);assert.deepEqual(await page.evaluate(()=>nodeLocks(selected)),[0]);
  await page.locator('#objectVertices .vertex-row').nth(0).locator('.vertex-lock').click();assert.equal(await page.locator('#objectVertex0x').isDisabled(),false);
- await page.evaluate(()=>{selected=el('path',{d:'M0 0 C3 4 7 8 10 10 L20 20',stroke:'#69b8ff',fill:'none'});renderSelection()});
+ await page.evaluate(()=>{selected=el('path',{d:'M0 0 C3 4 7 8 10 10 L20 20',stroke:'#69b8ff',fill:'none'});(detailedAnchorTarget=selected,renderSelection())});
  await page.locator('#objectVertices .vertex-row').nth(0).locator('.vertex-delete').click();
  assert.equal(await page.evaluate(()=>selected.localName),'line');assert.deepEqual(await page.evaluate(()=>vectorModel(selected).anchors),[{x:10,y:10},{x:20,y:20}]);
  assert.equal(await page.locator('#objectVertices .vertex-row').count(),2);assert.equal(await page.locator('#objectVertices .vertex-delete:disabled').count(),0,'two endpoints can be reduced to a point');
  if(process.env.CHIPDRAW_SCREENSHOT)await page.screenshot({path:process.env.CHIPDRAW_SCREENSHOT});
 
- await page.evaluate(()=>{selected=el('path',{d:'M -59.19 26.5',stroke:'#69b8ff',fill:'none'});renderSelection()});
+ await page.evaluate(()=>{selected=el('path',{d:'M -59.19 26.5',stroke:'#69b8ff',fill:'none'});(detailedAnchorTarget=selected,renderSelection())});
  assert.equal(await page.locator('#objectVertices .vertex-row').count(),0,'a single point uses no list');
  assert.equal(await page.locator('#objectPosition').isVisible(),true);
  assert.equal(await page.locator('#objectPosition input').count(),2);
  assert.equal(await page.locator('#objectX').inputValue(),'-59.19');
  assert.equal(await page.locator('#objectSummary').textContent(),'1 個物件 · 點');assert.equal(await page.locator('#objectRotationRow').isVisible(),false);
  const pointTransform=await page.evaluate(()=>selected.getAttribute('transform'));await page.evaluate(()=>rotateObject(45));assert.equal(await page.evaluate(()=>selected.getAttribute('transform')),pointTransform);
- await page.evaluate(()=>{selected=el('rect',{x:10,y:20,width:40,height:30,stroke:'#69b8ff',fill:'none'});renderSelection()});
+ await page.evaluate(()=>{selected=el('rect',{x:10,y:20,width:40,height:30,stroke:'#69b8ff',fill:'none'});(detailedAnchorTarget=selected,renderSelection())});
  assert.equal(await page.locator('#objectVertices .vertex-row').count(),0);assert.equal(await page.locator('#objectPosition').isVisible(),true);assert.equal(await page.locator('#objectRotationRow').isVisible(),true);
 
  await page.evaluate(()=>{$('panel').classList.remove('show');$('advanced').open=false});
- for(const drawingTool of ['line','rect','ellipse','pen']){
+ for(const drawingTool of ['line','rect','ellipse']){
   await page.evaluate(t=>setTool(t),drawingTool);const before=await page.evaluate(()=>history.length);await page.mouse.move(70,300);await page.mouse.down();await page.mouse.move(150,370);await page.mouse.up();assert.equal(await page.evaluate(()=>tool),'select',drawingTool+' drag returns to select');assert.equal(await page.evaluate(()=>history.length),before+1,'automatic tool return must not create another undo entry');assert.equal(await page.evaluate(()=>!!selection.primary),true);
  }
  await page.evaluate(()=>setTool('rect'));await page.mouse.click(70,300);await page.mouse.move(150,370);await page.mouse.click(150,370);assert.equal(await page.evaluate(()=>tool),'rect','two-click mode remains available for repeated placement');
 
- await page.evaluate(()=>{setTool('select');selected=el('polyline',{'data-name':'type-conversion',points:'10,20 60,80',stroke:'#2468ac','stroke-width':3,fill:'none',transform:'translate(15 25) rotate(30)'});renderSelection();$('panel').classList.add('show')});
+ await page.evaluate(()=>{setTool('select');selected=el('polyline',{'data-name':'type-conversion',points:'10,20 60,80',stroke:'#2468ac','stroke-width':3,fill:'none',transform:'translate(15 25) rotate(30)'});detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('panel').classList.add('show')});
  assert.equal(await page.evaluate(()=>selected.localName),'line');assert.equal(await page.locator('#objectSummary').textContent(),'1 個物件 · 直綫');
  const originalEnd=await page.evaluate(()=>({point:lineEndpoints(selected)[1],layer:layers.owner(selected).getAttribute('data-drawing-layer'),transform:selected.getAttribute('transform')}));
  await page.locator('#objectVertices .vertex-row').nth(0).locator('.vertex-delete').click();
  assert.equal(await page.locator('#objectSummary').textContent(),'1 個物件 · 點');assert.equal(await page.locator('#objectVertices .vertex-row').count(),0);assert.equal(await page.locator('#objectRotationRow').isVisible(),false);
  const convertedPoint=await page.evaluate(()=>({point:objectOrigin(selected),layer:layers.owner(selected).getAttribute('data-drawing-layer'),transform:selected.getAttribute('transform'),stroke:selected.getAttribute('stroke')}));
  assert.ok(Math.hypot(convertedPoint.point.x-originalEnd.point.x,convertedPoint.point.y-originalEnd.point.y)<1e-4);assert.equal(convertedPoint.layer,originalEnd.layer);assert.equal(convertedPoint.transform,originalEnd.transform);assert.equal(convertedPoint.stroke,'#2468ac');
- await page.evaluate(()=>{$('undo').click();selected=art.querySelector('[data-name="type-conversion"]');renderSelection()});assert.equal(await page.evaluate(()=>isPointObject(selected)),false);assert.equal(await page.evaluate(()=>vectorModel(selected).anchors.length),2);
- await page.evaluate(()=>{$('redo').click();selected=art.querySelector('[data-name="type-conversion"]');renderSelection()});assert.equal(await page.evaluate(()=>isPointObject(selected)),true);
+ await page.evaluate(()=>{$('undo').click();selected=art.querySelector('[data-name="type-conversion"]');(detailedAnchorTarget=selected,renderSelection())});assert.equal(await page.evaluate(()=>isPointObject(selected)),false);assert.equal(await page.evaluate(()=>vectorModel(selected).anchors.length),2);
+ await page.evaluate(()=>{$('redo').click();selected=art.querySelector('[data-name="type-conversion"]');(detailedAnchorTarget=selected,renderSelection())});assert.equal(await page.evaluate(()=>isPointObject(selected)),true);
  await page.evaluate(()=>{$('languageSelect').value='en';$('languageSelect').dispatchEvent(new Event('change'))});assert.match(await page.locator('#objectSummary').textContent(),/Point$/);
- await page.evaluate(()=>{$('languageSelect').value='zh-Hant';$('languageSelect').dispatchEvent(new Event('change'));selected=el('line',{x1:12,y1:34,x2:56,y2:78,stroke:'#69b8ff',fill:'none'});renderSelection()});
+ await page.evaluate(()=>{$('languageSelect').value='zh-Hant';$('languageSelect').dispatchEvent(new Event('change'));selected=el('line',{x1:12,y1:34,x2:56,y2:78,stroke:'#69b8ff',fill:'none'});(detailedAnchorTarget=selected,renderSelection())});
  await page.locator('#objectVertices .vertex-row').nth(1).locator('.vertex-delete').click();assert.deepEqual(await page.evaluate(()=>objectOrigin(selected)),{x:12,y:34});
- for(const [d,type]of [['M0 0 L10 0 L20 10','折綫'],['M0 0 A10 10 0 0 1 20 20','圓弧'],['M0 0 C5 0 10 5 20 20','貝塞爾綫']]){await page.evaluate(d=>{selected=el('path',{d,stroke:'#69b8ff',fill:'none'});renderSelection()},d);assert.equal(await page.locator('#objectSummary').textContent(),'1 個物件 · '+type)}
- await page.evaluate(()=>{selected=el('polyline',{points:'0,0 10,10 20,20',stroke:'#69b8ff',fill:'none'});renderSelection()});await page.locator('#objectVertices .vertex-row').nth(1).locator('.vertex-delete').click();assert.equal(await page.evaluate(()=>selected.localName),'line');
+ for(const [d,type]of [['M0 0 L10 0 L20 10','折綫'],['M0 0 A10 10 0 0 1 20 20','圓弧'],['M0 0 C5 0 10 5 20 20','貝塞爾綫']]){await page.evaluate(d=>{selected=el('path',{d,stroke:'#69b8ff',fill:'none'});(detailedAnchorTarget=selected,renderSelection())},d);assert.equal(await page.locator('#objectSummary').textContent(),'1 個物件 · '+type)}
+ await page.evaluate(()=>{selected=el('polyline',{points:'0,0 10,10 20,20',stroke:'#69b8ff',fill:'none'});(detailedAnchorTarget=selected,renderSelection())});await page.locator('#objectVertices .vertex-row').nth(1).locator('.vertex-delete').click();assert.equal(await page.evaluate(()=>selected.localName),'line');
 
- assert.deepEqual(await page.locator('#toolsButtons > [data-tool]').evaluateAll(nodes=>nodes.map(n=>n.dataset.tool)),['select','pan','point','line','poly','pen','rect','circle','ellipse']);
+ assert.deepEqual(await page.locator('#toolsButtons > [data-tool]').evaluateAll(nodes=>nodes.map(n=>n.dataset.tool)),['select','pan','point','line','poly','bezier','rect','circle','ellipse']);
  await page.evaluate(()=>{$('panel').classList.remove('show');setTool('select')});
  const moveButton=page.locator('#toolsButtons [data-tool=pan]'),selectButton=page.locator('#toolsButtons [data-tool=select]'),moveRect=await moveButton.boundingBox(),selectRect=await selectButton.boundingBox();
  await page.mouse.move(moveRect.x+moveRect.width/2,moveRect.y+moveRect.height/2);await page.mouse.down();await page.mouse.move(selectRect.x+2,selectRect.y+selectRect.height/2,{steps:8});await page.mouse.up();
@@ -266,7 +267,7 @@ try{
  const beforeSortCancel=await page.locator('#toolsButtons > [data-tool]').evaluateAll(nodes=>nodes.map(n=>n.dataset.tool));const rectangleRect=await page.locator('#toolsButtons [data-tool=rect]').boundingBox(),topRect=await page.locator('#toolsButtons > :first-child').boundingBox();await page.mouse.move(rectangleRect.x+rectangleRect.width/2,rectangleRect.y+rectangleRect.height/2);await page.mouse.down();await page.mouse.move(topRect.x+topRect.width/2,topRect.y+2,{steps:8});await page.keyboard.press('Escape');await page.mouse.up();assert.deepEqual(await page.locator('#toolsButtons > [data-tool]').evaluateAll(nodes=>nodes.map(n=>n.dataset.tool)),beforeSortCancel,'Escape cancels a reorder without changing the saved default');
  if(process.env.CHIPDRAW_SCREENSHOT)await page.screenshot({path:process.env.CHIPDRAW_SCREENSHOT});
 
- await page.evaluate(()=>{$('tools').classList.remove('vertical');setTool('select');selected=el('polyline',{points:'0,0 20,10 40,30',stroke:'#69b8ff',fill:'none'});renderSelection();$('advanced').open=true;$('uiViewTab').click()});
+ await page.evaluate(()=>{$('tools').classList.remove('vertical');setTool('select');selected=el('polyline',{points:'0,0 20,10 40,30',stroke:'#69b8ff',fill:'none'});detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('advanced').open=true;$('uiViewTab').click()});
  assert.equal(await page.locator('#anchorProperties #anchorSettings').count(),1);assert.equal(await page.locator('#anchorShape option').allTextContents().then(x=>x.join(',')),'圓形,矩形,綫條');
  assert.equal(await page.locator('#anchorSettings .anchor-first-settings').evaluate(n=>n.tagName),'FIELDSET');
  assert.equal(await page.locator('#anchorHandles [data-anchor-kind=first]').count(),1);
@@ -278,15 +279,15 @@ try{
  const direction=page.locator('#anchorDirections [data-anchor-direction=horizontal]');await direction.click();assert.equal(await direction.getAttribute('data-state'),'dashed');assert.notEqual(await page.locator('#anchorHandles > line[data-anchor="1"]').first().getAttribute('stroke-dasharray'),'none');
  await page.evaluate(()=>{$('anchorShape').value='circle';$('anchorFirstShape').value='circle';$('anchorShape').dispatchEvent(new Event('change'))});
  assert.equal(await page.locator('.anchorFillRow').isVisible(),true);assert.equal(await page.locator('.anchorFirstFillRow').isVisible(),true);
- await page.evaluate(()=>{const n=el('rect',{x:60,y:20,width:40,height:30,stroke:'#69b8ff',fill:'none'});selection.replace([selected,n]);selected=selection.primary;renderSelection()});
+ await page.evaluate(()=>{const n=el('rect',{x:60,y:20,width:40,height:30,stroke:'#69b8ff',fill:'none'});selection.replace([selected,n]);selected=selection.primary;(detailedAnchorTarget=selected,renderSelection())});
  assert.equal(await page.locator('#anchorHandles [data-anchor-kind=first]').count(),2,'each selected object has its own first coordinate anchor');
- await page.evaluate(()=>{selected=selection.primary;selection.replace([selected]);renderSelection();$('advanced').open=false});
+ await page.evaluate(()=>{selected=selection.primary;selection.replace([selected]);detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('advanced').open=false});
  const originBeforeAnchor=await page.evaluate(()=>objectOrigin(selected)),genericAnchor=await page.evaluate(()=>{const h=$('anchorHandles').querySelector('[data-anchor-kind=first]'),r=h.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}});
  await page.mouse.move(genericAnchor.x,genericAnchor.y);await page.mouse.down();await page.mouse.move(genericAnchor.x+20,genericAnchor.y+15);await page.mouse.up();
  const originAfterAnchor=await page.evaluate(()=>objectOrigin(selected));assert.ok(Math.hypot(originAfterAnchor.x-originBeforeAnchor.x,originAfterAnchor.y-originBeforeAnchor.y)>1,'the first coordinate anchor of a shape is editable');
  if(process.env.CHIPDRAW_SCREENSHOT){await page.evaluate(()=>{$('advanced').open=true;$('uiViewTab').click()});await page.locator('#anchorShape').scrollIntoViewIfNeeded();await page.screenshot({path:process.env.CHIPDRAW_SCREENSHOT})}
 
- await page.evaluate(()=>{setTool('select');selected=el('polyline',{points:'0,0 20,10 40,30',stroke:'#69b8ff',fill:'none'});renderSelection();$('anchorShape').value='circle';$('anchorFirstShape').value='rect';$('anchorFirstShape').dispatchEvent(new Event('change'));$('advanced').open=true;$('uiViewTab').click()});
+ await page.evaluate(()=>{setTool('select');selected=el('polyline',{points:'0,0 20,10 40,30',stroke:'#69b8ff',fill:'none'});detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('anchorShape').value='circle';$('anchorFirstShape').value='rect';$('anchorFirstShape').dispatchEvent(new Event('change'));$('advanced').open=true;$('uiViewTab').click()});
  assert.equal(await page.locator('#anchorHandles [data-anchor-kind=first]').evaluate(n=>n.localName),'rect');assert.equal(await page.locator('#anchorHandles circle[data-anchor-kind=coordinate]').count(),2);
  assert.equal(await page.locator('.anchorFillRow').isVisible(),true);assert.equal(await page.locator('.anchorFirstFillRow').isVisible(),true);
  await page.evaluate(()=>{$('anchorFirstShape').value='line';$('anchorFirstShape').dispatchEvent(new Event('change'))});
@@ -301,7 +302,7 @@ try{
  assert.equal(await page.locator('#anchorFirstOverflow').evaluate(n=>n.closest('[data-conversion-component]')?.getAttribute('data-conversion-component')),'slider');
 
  await page.locator('#anchorFirstOverflowUnit').click();assert.equal(await page.locator('#anchorFirstOverflowUnit').textContent(),'%');assert.equal(await page.evaluate(()=>ChipUI.measurements.value('anchorOverflow')),7);assert.ok(Math.abs(Number(await page.locator('#anchorHandles [data-anchor-kind=first]').getAttribute('width'))-24)<1e-4);
- await page.locator('#anchorFirstOverflowUnit').click();await page.evaluate(()=>{$('unitSelect').value='cm';$('unitSelect').dispatchEvent(new Event('change',{bubbles:true}))});assert.equal(await page.locator('#anchorFirstOverflowUnit').textContent(),'cm');assert.ok(Math.abs(Number(await page.locator('#anchorHandles [data-anchor-kind=first]').getAttribute('width'))-24)<1e-4);assert.equal(await page.locator('#anchorHandles [data-anchor="1"]').getAttribute('r'),'7');
+ await page.locator('#anchorFirstOverflowUnit').click();await page.evaluate(()=>{$('unitSelect').value='cm';$('unitSelect').dispatchEvent(new Event('change',{bubbles:true}));detailedAnchorTarget=selected;paintAnchors()});assert.equal(await page.locator('#anchorFirstOverflowUnit').textContent(),'cm');assert.ok(Math.abs(Number(await page.locator('#anchorHandles [data-anchor-kind=first]').getAttribute('width'))-24)<1e-4);assert.equal(await page.locator('#anchorHandles [data-anchor="1"]').getAttribute('r'),'7');
  assert.equal(await page.locator('#anchorProperties').isVisible(),true);assert.equal(await page.locator('#viewProperties').isVisible(),true);assert.equal(await page.locator('#propertyPageTitle').textContent(),'視圖');assert.equal(await page.locator('#viewProperties #anchorShape').count(),1);assert.equal(await page.locator('#uiAnchorTab').count(),0);assert.equal(await page.locator('#anchorProperties').evaluate(n=>n.previousElementSibling.querySelector('summary')?.textContent),'選取');
 
  for(const [normal,first]of [['circle','line'],['line','rect'],['rect','circle'],['line','line']]){
@@ -324,14 +325,14 @@ try{
  await page.locator('#scrollbar-probe').evaluate(n=>n.remove());
 
  // Merge only secondary selection displays; primary geometry and style remain independent.
- await page.setViewportSize({width:1200,height:1000});await page.evaluate(()=>{setTool('select');art.innerHTML='';layers.normalize();renderLayers();scale=2;viewAngle=0;viewMirrored=false;view();const a=el('rect',{x:-60,y:0,width:10,height:10,stroke:'#fff'}),b=el('rect',{x:0,y:0,width:10,height:10,stroke:'#fff'}),c=el('rect',{x:30,y:20,width:10,height:10,stroke:'#fff'});selection.replace([a,b,c]);selected=selection.primary;renderSelection();$('advanced').open=true;$('uiViewTab').click();$('selectionOutlineColor').value='#22cc88';$('selectionOutlineFill').value='#118855';$('selectionOutlineOpacity').value='35';$('selectionFirstColor').value='#ee3377';$('selectionFirstFill').value='#661144';$('selectionFirstOpacity').value='70';$('selectionOutlineMode').value='rect';window.dispatchEvent(new Event('selectionstylechange'))});
+ await page.setViewportSize({width:1200,height:1000});await page.evaluate(()=>{setTool('select');art.innerHTML='';layers.normalize();renderLayers();scale=2;viewAngle=0;viewMirrored=false;view();const a=el('rect',{x:-60,y:0,width:10,height:10,stroke:'#fff'}),b=el('rect',{x:0,y:0,width:10,height:10,stroke:'#fff'}),c=el('rect',{x:30,y:20,width:10,height:10,stroke:'#fff'});selection.replace([a,b,c]);selected=selection.primary;detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('advanced').open=true;$('uiViewTab').click();$('selectionOutlineColor').value='#22cc88';$('selectionOutlineFill').value='#118855';$('selectionOutlineOpacity').value='35';$('selectionFirstColor').value='#ee3377';$('selectionFirstFill').value='#661144';$('selectionFirstOpacity').value='70';$('selectionOutlineMode').value='rect';window.dispatchEvent(new Event('selectionstylechange'))});
  const mergeFirstBefore=await page.locator('[data-selection-kind=first]').evaluate(n=>n.outerHTML),mergeArtBefore=await page.evaluate(()=>({html:art.innerHTML,history:history.length}));assert.equal(await page.locator('#selectionMerge').getAttribute('aria-pressed'),'false');assert.equal(await page.locator('#selectionMerge svg rect').count(),2);assert.equal(await page.locator('#selectionOverlay [data-selection-kind]').count(),3);await page.locator('#selectionMerge').click();await page.locator('#uiChoicePopup [data-value=all-simple]').click();assert.equal(await page.locator('#selectionMerge').getAttribute('aria-pressed'),'true');assert.equal(await page.locator('#selectionMerge svg rect').count(),1);assert.equal(await page.locator('#selectionMerge svg').getAttribute('stroke'),'#22cc88');assert.equal(await page.locator('#selectionMerge svg').getAttribute('fill'),'#118855');assert.equal(await page.locator('#selectionMerge svg').getAttribute('fill-opacity'),'0.35');assert.equal(await page.locator('#selectionOverlay [data-selection-kind]').count(),2);assert.equal(await page.locator('[data-selection-kind=merged]').count(),1);assert.equal(await page.locator('[data-selection-kind=first]').evaluate(n=>n.outerHTML),mergeFirstBefore,'first selection remains identical when other displays merge');assert.deepEqual(await page.evaluate(()=>({html:art.innerHTML,history:history.length})),mergeArtBefore,'display merge does not merge objects or add history');
  await page.selectOption('#selectionOutlineMode','contour');assert.equal(await page.locator('path[data-selection-kind=merged]').count(),1,'fan outline supports the combined secondary selection');await page.locator('#selectionMerge').click();await page.locator('#uiChoicePopup [data-value=independent]').click();assert.equal(await page.locator('#selectionOverlay [data-selection-kind]').count(),3);assert.equal(await page.locator('#selectionMerge svg rect').count(),2);
  await page.setViewportSize({width:375,height:900});await page.locator('#selectionMerge').scrollIntoViewIfNeeded();assert.equal(await page.locator('.selection-shape-row').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true,'merge control stays within the compact row');const mergeRowBounds=await page.locator('.selection-shape-row').boundingBox(),mergeButtonBounds=await page.locator('#selectionMerge').boundingBox();assert.ok(mergeButtonBounds.x>=mergeRowBounds.x&&mergeButtonBounds.x+mergeButtonBounds.width<=mergeRowBounds.x+mergeRowBounds.width+1);await page.locator('#selectionMerge').click();await page.locator('#uiChoicePopup [data-value=all-simple]').click();if(process.env.CHIPDRAW_MERGE_SCREENSHOT)await page.screenshot({path:process.env.CHIPDRAW_MERGE_SCREENSHOT});await page.reload();await page.locator('#viewMenuButton').click();assert.equal(await page.locator('#selectionMerge').getAttribute('aria-pressed'),'true','merge preference persists');
  // Display topology: all regions vs adjacent groups, simplified hull vs true union.
- await page.setViewportSize({width:1200,height:1000});await page.evaluate(()=>{art.innerHTML='';layers.normalize();renderLayers();scale=1;view();const nodes=[[-50,50,10,10],[0,0,20,10],[10,5,20,10],[70,0,10,10]].map(([x,y,width,height])=>el('rect',{x,y,width,height,fill:'#fff',stroke:'none'}));selection.replace(nodes);selected=selection.primary;renderSelection();$('advanced').open=true;$('uiViewTab').click();$('selectionOutlineMode').value='rect';$('selectionOverflowUnit').setAttribute('data-unit','px');ChipUI.measurements.setValue('selectionOverflow',0,'px');window.dispatchEvent(new Event('selectionstylechange'))});
+ await page.setViewportSize({width:1200,height:1000});await page.evaluate(()=>{art.innerHTML='';layers.normalize();renderLayers();scale=1;view();const nodes=[[-50,50,10,10],[0,0,20,10],[10,5,20,10],[70,0,10,10]].map(([x,y,width,height])=>el('rect',{x,y,width,height,fill:'#fff',stroke:'none'}));selection.replace(nodes);selected=selection.primary;detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('advanced').open=true;$('uiViewTab').click();$('selectionOutlineMode').value='rect';$('selectionOverflowUnit').setAttribute('data-unit','px');ChipUI.measurements.setValue('selectionOverflow',0,'px');window.dispatchEvent(new Event('selectionstylechange'))});
  async function chooseDisplay(mode){await page.locator('#selectionMerge').click();await page.locator('#uiChoicePopup [data-value='+mode+']').click()}
- await chooseDisplay('independent');assert.equal(await page.locator('#selectionMerge').getAttribute('aria-label'),'選區展示方式');assert.ok((await page.locator('#selectionMerge').getAttribute('data-tooltip')).includes('獨立展示'));assert.equal(await page.locator('#selectionOverlay > *').count(),4);const topologyFirst=await page.locator('[data-selection-kind=first]').evaluate(n=>n.outerHTML),topologyArt=await page.evaluate(()=>({html:art.innerHTML,history:history.length}));await chooseDisplay('all-simple');assert.equal(await page.locator('#selectionOverlay > *').count(),2);await chooseDisplay('adjacent-simple');assert.equal(await page.locator('#selectionOverlay > *').count(),3,'adjacent display does not bridge the distant object');await chooseDisplay('adjacent-union');assert.equal(await page.locator('path[data-selection-kind=merged]').count(),2);assert.equal(await page.evaluate(()=>{const node=[...$('selectionOverlay').querySelectorAll('[data-selection-kind=merged]')].find(n=>n.getBBox().width>20),r=svg.getBoundingClientRect(),p=transformPoint({x:5,y:12},$('world').getScreenCTM());return node.isPointInFill(new DOMPoint(p.x-r.left,p.y-r.top))}),false,'true union preserves the concavity instead of filling its bounding box');assert.equal(await page.locator('[data-selection-kind=first]').evaluate(n=>n.outerHTML),topologyFirst);assert.deepEqual(await page.evaluate(()=>({html:art.innerHTML,history:history.length})),topologyArt,'display modes leave objects and history unchanged');await chooseDisplay('independent');await page.reload();await page.locator('#viewMenuButton').click();assert.equal(await page.locator('#selectionDisplayMode').inputValue(),'independent');assert.ok((await page.locator('#selectionMerge').getAttribute('data-tooltip')).includes('獨立展示'));
+ await chooseDisplay('independent');assert.equal(await page.locator('#selectionMerge').getAttribute('aria-label'),'選區展示方式');assert.ok((await page.locator('#selectionMerge').getAttribute('data-tooltip')).includes('獨立展示'));assert.equal(await page.locator('#selectionOverlay > *').count(),4);const topologyFirst=await page.locator('[data-selection-kind=first]').evaluate(n=>n.outerHTML),topologyArt=await page.evaluate(()=>({html:art.innerHTML,history:history.length}));await chooseDisplay('all-simple');assert.equal(await page.locator('#selectionOverlay > *').count(),2);await chooseDisplay('adjacent-simple');assert.equal(await page.locator('#selectionOverlay > *').count(),3,'adjacent display does not bridge the distant object');await chooseDisplay('adjacent-union');assert.equal(await page.locator('path[data-selection-kind=merged]').count(),2);assert.equal(await page.evaluate(()=>{const node=[...$('selectionOverlay').querySelectorAll('[data-selection-kind=merged]')].find(n=>n.getBBox().width>20),r=svg.getBoundingClientRect(),p=transformPoint({x:5,y:12},$('world').getScreenCTM());const local=transformPoint(p,node.getScreenCTM().inverse());return node.isPointInFill(new DOMPoint(local.x,local.y))}),false,'true union preserves the concavity instead of filling its bounding box');assert.equal(await page.locator('[data-selection-kind=first]').evaluate(n=>n.outerHTML),topologyFirst);assert.deepEqual(await page.evaluate(()=>({html:art.innerHTML,history:history.length})),topologyArt,'display modes leave objects and history unchanged');await chooseDisplay('independent');await page.reload();await page.locator('#viewMenuButton').click();assert.equal(await page.locator('#selectionDisplayMode').inputValue(),'independent');assert.ok((await page.locator('#selectionMerge').getAttribute('data-tooltip')).includes('獨立展示'));
  assert.deepEqual(errors,[]);
  console.log('PASS: browser startup, transformed/mirrored anchor drag, one-step undo/redo, Escape rollback, position/size/style/layer properties, curve handles, locked layer pruning compact number/unit components, typed geometry, polar/Cartesian editing, clock/radian/degree angles shared settings layout and independent first-selection rendering');
 }finally{await browser.close()}
