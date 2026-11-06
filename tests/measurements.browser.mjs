@@ -13,8 +13,8 @@ try{
  assert.equal(await page.locator('[data-measurement-ruler=triangle]').count(),1);
  const triangle=await page.evaluate(()=>({x:triangleMeasurement.corner.x,y:triangleMeasurement.corner.y,dx:$('moveRuler').querySelector('[data-move-x]').textContent,dy:$('moveRuler').querySelector('[data-move-y]').textContent,xColor:$('moveRuler').querySelector('[data-move-x-line]').getAttribute('stroke'),yColor:$('moveRuler').querySelector('[data-move-y-line]').getAttribute('stroke')}));
  close(triangle.x,3);close(triangle.y,0);assert.ok(triangle.dx.includes('3.00'));assert.ok(triangle.dy.includes('4.00'));assert.equal(triangle.xColor,'#ff6464');assert.equal(triangle.yColor,'#54d987');
- await categories(['ruler']);const hit=await query({x:3.1,y:.1});close(hit.x,0);close(hit.y,0);assert.equal(await page.evaluate(()=>snapRuntime.lastHit.source),'三角板');
- await page.evaluate(()=>document.querySelector('#snapRulerKinds [data-option-id=triangle]').click());const fixed=await query({x:3.1,y:.1});close(fixed.x,0);close(fixed.y,0);await page.evaluate(()=>document.querySelector('#snapRulerKinds [data-option-id=triangle]').click());
+ await categories(['ruler']);const hit=await query({x:3.1,y:.1});close(hit.x,3.1);close(hit.y,.1);assert.equal(await page.evaluate(()=>snapRuntime.lastHit),null,'an operational triangle is not a placed annotation reference');
+ await page.evaluate(()=>document.querySelector('#snapRulerKinds [data-option-id=triangle]').click());const fixed=await query({x:3.1,y:.1});close(fixed.x,3.1);close(fixed.y,.1);await page.evaluate(()=>document.querySelector('#snapRulerKinds [data-option-id=triangle]').click());
  if(process.env.CHIPDRAW_TRIANGLE_SCREENSHOT)await page.screenshot({path:process.env.CHIPDRAW_TRIANGLE_SCREENSHOT});
  await page.mouse.up();assert.equal(await page.locator('#moveRuler').count(),0);assert.deepEqual(await query({x:3.1,y:.1}),{x:3.1,y:.1},'finished triangles are not snap targets');
  // Selection bounds can be targets independently of drawing-object categories.

@@ -1,0 +1,19 @@
+(function(root){
+'use strict';
+const normalize=angle=>(angle%360+360)%360;
+function span(data){const delta=data.end.value-data.start.value;const angle=normalize(delta);return Math.abs(delta)>=360-1e-9||angle<1e-10?360:angle}
+function point(data,angle){const t=angle*Math.PI/180;return {x:data.center.x+data.radius.value*Math.cos(t),y:data.center.y-data.radius.value*Math.sin(t)}}
+function path(data){const r=data.radius.value,a=point(data,data.start.value),sweep=span(data),b=sweep===360?a:point(data,data.start.value+sweep),head='M '+a.x+' '+a.y;if(!sweep||!r)return head;const segment=p=>' A '+r+' '+r+' 0 '+(sweep>180&&sweep<360?1:0)+' 0 '+p.x+' '+p.y;return sweep===360?head+segment(point(data,data.start.value+180))+segment(a):head+segment(b)}
+function model(center,radius,start,end){return {version:1,center:{x:center.x,y:center.y},radius:ChipUI.measurements.archiveQuantity({value:radius,unit:'mm'}),start:ChipUI.measurements.archiveQuantity({value:start,unit:'°'}),end:ChipUI.measurements.archiveQuantity({value:end,unit:'°'})}}
+function read(node){if(node?.localName!=='path')return null;let data;try{data=JSON.parse(node.getAttribute('data-arc')||'null')}catch{return null}if(!data||![data.center?.x,data.center?.y,data.radius?.value,data.start?.value,data.end?.value].every(Number.isFinite)||data.radius.unit!=='mm'||data.radius.value<=0||data.start.unit!=='°'||data.end.unit!=='°')return null;if(node.getAttribute('d')!==path(data))return null;return data}
+function write(node,data){node.setAttribute('d',path(data));node.setAttribute('data-arc',JSON.stringify(data));node.setAttribute('data-object-type','arc');return node}
+function vector(node){const data=read(node);if(!data)return null;const full=span(data)===360,anchors=full?[point(data,data.start.value),point(data,data.start.value+180),point(data,data.end.value)]:[point(data,data.start.value),point(data,data.end.value)],centerIndex=anchors.length;anchors.push({...data.center,reference:'center'});return {anchors,set(index,p){if(index===centerIndex)data.center={...p};else{const angle=normalize(Math.atan2(data.center.y-p.y,p.x-data.center.x)*180/Math.PI);if(index===0||full&&index===1){const r=Math.hypot(p.x-data.center.x,p.y-data.center.y);if(r<=1e-12)return;data.radius={value:r,unit:'mm'};data.start={value:full&&index===1?normalize(angle+180):angle,unit:'°'};if(full)data.end={value:data.start.value+360,unit:'°'};else data.end={value:angle+normalize(data.end.value-angle),unit:'°'}}else data.end={value:angle,unit:'°'}}write(node,data)}}}
+
+function properties(host,{selected,editable,beforeChange,changed}){const section=document.createElement('div');section.id='objectArcProperties';section.hidden=true;section.innerHTML='<label>半徑 <span id="objectArcRadiusField" aria-label="圓弧半徑"></span></label><label>起始角 <span id="objectArcStartFields" class="object-angle"></span></label><label>結束角 <span id="objectArcEndFields" class="object-angle"></span></label>';host.append(section);const find=id=>section.querySelector('#'+id);let target=null;
+ function commit(patch){if(!target||selected()!==target||!editable(target))return;const data=read(target);if(!data)return;beforeChange();write(target,{...data,...patch});changed()}
+ const radius=ChipUI.physicalQuantityComponent(find('objectArcRadiusField'),{id:'objectArcRadius',value:1,min:1e-12,onChange:q=>commit({radius:q})});
+ function refresh(node){target=node;const data=read(node);section.hidden=!data;if(!data)return;radius.refresh(data.radius.value);ChipUI.angle.control(find('objectArcStartFields'),data.start.value,value=>commit({start:ChipUI.measurements.archiveQuantity({value,unit:'°'})}));ChipUI.angle.control(find('objectArcEndFields'),data.end.value,value=>commit({end:ChipUI.measurements.archiveQuantity({value,unit:'°'})}));for(const input of section.querySelectorAll('input'))input.disabled=!editable(node)}
+ return {refresh};
+}
+root.ChipArc={normalize,span,point,path,model,read,write,vector,properties};
+})(globalThis);

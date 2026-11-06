@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+const {chromium}=await import(process.env.CHIPDRAW_PLAYWRIGHT||'playwright');
+const browser=await chromium.launch({headless:true,...(process.env.CHIPDRAW_BROWSER?{executablePath:process.env.CHIPDRAW_BROWSER}:{})});
+const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-7,`${a} != ${b}`);
+try{
+ const page=await browser.newPage({viewport:{width:1200,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(new URL('../ChipDraw.html',import.meta.url).href);
+ await page.evaluate(()=>{setTool('select');selected=el('path',{d:'M 10 20 C 15 12 35 18 40 30',transform:'matrix(0 2 -3 0 100 200)',stroke:'#69b8ff',fill:'none'});selection.replace([selected]);$('panel').classList.add('show');renderSelection()});
+ assert.equal(await page.locator('[data-control-offset]').count(),2);
+ let offsets=await page.evaluate(()=>[1,2].map(i=>$('objectControl'+i+'Coordinates').coordinatePoint));
+ assert.deepEqual(offsets,[{x:24,y:-10},{x:36,y:10}],'offsets include linear transform, exclude translation, and use display Y');
+ const original=await page.evaluate(()=>selected.getAttribute('d'));
+ await page.evaluate(()=>{const host=$('objectControl1Coordinates');host.coordinateChange({x:30,y:-14})});
+ let geometry=await page.evaluate(()=>pathModel(selected.getAttribute('d')).anchors.map(p=>({x:p.x,y:p.y})));
+ close(geometry[1].x,17);close(geometry[1].y,10);assert.deepEqual(geometry[0],{x:10,y:20});
+ await page.evaluate(()=>$('undo').click());assert.equal(await page.evaluate(()=>selected?.getAttribute('d')||art.querySelector('path').getAttribute('d')),original);
+ await page.evaluate(()=>{selected=art.querySelector('path');selection.replace([selected]);renderSelection();const host=$('objectVertex0Coordinates');host.coordinateChange({x:55,y:-226})});
+ geometry=await page.evaluate(()=>pathModel(selected.getAttribute('d')).anchors.map(p=>({x:p.x,y:p.y})));
+ close(geometry[0].x,13);close(geometry[0].y,15);close(geometry[1].x,18);close(geometry[1].y,7);
+ await page.evaluate(()=>toggleVertexLock(selected,0));assert.equal(await page.locator('#objectControl1x').isDisabled(),true);assert.equal(await page.locator('#objectControl2x').isDisabled(),false);
+ const locked=await page.evaluate(()=>selected.getAttribute('d'));await page.evaluate(()=>$('objectControl1Coordinates').coordinateChange({x:999,y:999}));assert.equal(await page.evaluate(()=>selected.getAttribute('d')),locked);
+ await page.evaluate(()=>{toggleVertexLock(selected,0);$('coordinateMode').value='polar';$('coordinateMode').dispatchEvent(new Event('change',{bubbles:true}))});
+ assert.equal(await page.locator('#objectControl1Coordinates').getAttribute('data-coordinate-editor'),'polar');assert.equal(await page.locator('#objectControl1radius').count(),1);
+ await page.evaluate(()=>{$('coordinateMode').value='cartesian';$('coordinateMode').dispatchEvent(new Event('change',{bubbles:true}));$('unitSelect').value='cm';$('unitSelect').dispatchEvent(new Event('change',{bubbles:true}))});
+ close(await page.evaluate(()=>ChipUI.measurements.value('objectControl1x')),2.4);
+ await page.evaluate(()=>{selected.setAttribute('d','M 0 0 C 5 10 15 10 20 0 C 30 -5 35 -5 40 0');renderSelection()});
+ assert.equal(await page.locator('[data-control-offset]').count(),4,'legacy independent controls remain editable without changing the curve');
+ assert.equal(await page.locator('[data-vertex-index="3"] [data-control-offset]').count(),2);
+ await page.evaluate(()=>{selected.setAttribute('d','M 0 0 C 5 10 25 -5 20 0 C 25 -5 35 -5 40 0');renderSelection()});
+ assert.equal(await page.locator('[data-vertex-index="3"] [data-control-offset]').count(),1,'a single control shared by adjacent segments has one offset editor');
+ await page.evaluate(()=>$('objectControl2Coordinates').coordinateChange({x:12,y:-8}));
+ const joined=await page.evaluate(()=>pathModel(selected.getAttribute('d')).anchors);close(joined[2].x,joined[4].x);close(joined[2].y,joined[4].y);
+ if(process.env.CHIPDRAW_SCREENSHOT)await page.screenshot({path:process.env.CHIPDRAW_SCREENSHOT,fullPage:true});
+ assert.deepEqual(errors,[]);console.log('PASS: Bezier control offsets, transformed coordinates, anchor movement, undo, locks, polar mode, units and existing independent controls');
+}finally{await browser.close()}

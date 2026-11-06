@@ -113,7 +113,7 @@ try{
  assert.equal(await page.locator('.selection-first-settings').evaluate(n=>n.tagName),'FIELDSET');
  assert.equal(await page.locator('#objectCoordinates #objectLayer').count(),1);
  for(const id of ['stroke','fill','noFill','sw'])assert.equal(await page.locator('#objectArtwork #'+id).count(),1);
- await page.evaluate(()=>{$('advanced').open=false;selected=el('rect',{'data-name':'live-preview',x:0,y:0,width:60,height:40,...style()});detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('panel').style.width='420px'});
+ await page.evaluate(()=>{$('advanced').open=false;layers.activate(layers.groups().find(g=>ChipDrawingLayers.layerType(g)==='artwork'));selected=el('rect',{'data-name':'live-preview',x:0,y:0,width:60,height:40,...style()});detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('panel').style.width='420px'});
  const historyBeforePreview=await page.evaluate(()=>history.length);
  await page.locator('#objectX').fill('5');
  assert.ok(Math.abs(await page.evaluate(()=>objectBounds(selected).x)-5)<1e-4,'coordinates must preview before blur');
@@ -176,7 +176,7 @@ try{
  const fillCases=[['line',{x1:0,y1:0,x2:20,y2:20},false],['polyline',{points:'0,0 20,0 20,20'},false],['polyline',{points:'0,0 20,0 20,20 0,0'},true],['path',{d:'M0 0 L20 0 L20 20'},false],['path',{d:'M0 0 L20 0 L20 20 Z'},true],['path',{d:'M0 0 L20 0 L20 20 Z M30 0 L40 10'},false],['path',{d:'M0 0 L20 0 L20 20 L0 0'},true],['rect',{x:0,y:0,width:20,height:20},true]];
  for(const [tag,attributes,closed]of fillCases){
   await page.evaluate(({tag,attributes})=>{setTool('select');selected=el(tag,{...attributes,stroke:'#69b8ff',fill:'#aa00aa'});detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('panel').classList.add('show')},{tag,attributes});
-  assert.equal(await page.locator('#objectFillRow').isVisible(),closed,tag+' fill availability');assert.equal(await page.locator('#objectNoFillRow').isVisible(),closed);
+  assert.equal(await page.locator('#objectFillRow').isVisible(),closed,tag+' fill availability');assert.equal(await page.locator('#fillEnabled').isVisible(),closed);
   if(!closed){assert.equal(await page.evaluate(()=>selected.getAttribute('fill')),'none');await page.evaluate(()=>{$('noFill').checked=false;$('fill').dispatchEvent(new Event('change'))});assert.equal(await page.evaluate(()=>selected.getAttribute('fill')),'none','hidden fill controls must never fill open geometry')}
  }
  await page.evaluate(()=>{const line=el('line',{x1:0,y1:0,x2:10,y2:10,fill:'none'});selection.replace([selected,line]);selected=selection.primary;(detailedAnchorTarget=selected,renderSelection())});
@@ -246,7 +246,7 @@ try{
  for(const [d,type]of [['M0 0 L10 0 L20 10','折綫'],['M0 0 A10 10 0 0 1 20 20','圓弧'],['M0 0 C5 0 10 5 20 20','貝塞爾綫']]){await page.evaluate(d=>{selected=el('path',{d,stroke:'#69b8ff',fill:'none'});(detailedAnchorTarget=selected,renderSelection())},d);assert.equal(await page.locator('#objectSummary').textContent(),'1 個物件 · '+type)}
  await page.evaluate(()=>{selected=el('polyline',{points:'0,0 10,10 20,20',stroke:'#69b8ff',fill:'none'});(detailedAnchorTarget=selected,renderSelection())});await page.locator('#objectVertices .vertex-row').nth(1).locator('.vertex-delete').click();assert.equal(await page.evaluate(()=>selected.localName),'line');
 
- assert.deepEqual(await page.locator('#toolsButtons > [data-tool]').evaluateAll(nodes=>nodes.map(n=>n.dataset.tool)),['select','pan','point','line','poly','bezier','rect','circle','ellipse']);
+ assert.deepEqual(await page.locator('#toolsButtons > [data-tool]').evaluateAll(nodes=>nodes.map(n=>n.dataset.tool)),['select','pan','point','line','poly','bezier','rect','circle','ellipse','arc']);
  await page.evaluate(()=>{$('panel').classList.remove('show');setTool('select')});
  const moveButton=page.locator('#toolsButtons [data-tool=pan]'),selectButton=page.locator('#toolsButtons [data-tool=select]'),moveRect=await moveButton.boundingBox(),selectRect=await selectButton.boundingBox();
  await page.mouse.move(moveRect.x+moveRect.width/2,moveRect.y+moveRect.height/2);await page.mouse.down();await page.mouse.move(selectRect.x+2,selectRect.y+selectRect.height/2,{steps:8});await page.mouse.up();
