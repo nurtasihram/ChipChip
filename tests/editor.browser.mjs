@@ -4,6 +4,7 @@ const browser=await chromium.launch({headless:true,ignoreDefaultArgs:['--hide-sc
 try{
  const page=await browser.newPage({viewport:{width:1200,height:850}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(new URL('../ChipDraw.html',import.meta.url).href);
+ await page.waitForFunction(()=>$('panel').style.height);await page.evaluate(()=>{$('advanced').open=false;$('layersPanel').hidden=true;objectPanel.place(innerWidth-428,96)});
  await page.evaluate(()=>{$('selectionFirstIndependent').checked=true;$('selectionFirstIndependent').dispatchEvent(new Event('change',{bubbles:true}))});
  await page.evaluate(()=>{selected=el('line',{x1:0,y1:0,x2:80,y2:40,stroke:'#69b8ff','stroke-width':2,fill:'none',transform:'translate(15 20) rotate(20)'});detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('panel').classList.add('show');scale=2;viewAngle=35;viewMirrored=true;view()});
  const start=await page.evaluate(()=>{const p=transformPoint({x:0,y:0},selected.getScreenCTM());return {...p,history:history.length}});
@@ -21,7 +22,7 @@ try{
  assert.ok(Math.abs(await page.evaluate(()=>lineEndpoints(selected)[0].x)-50)<1e-4);
  assert.equal(await page.locator('#objectWidthRow').isVisible(),false);
  assert.equal(await page.locator('#objectHeightRow').isVisible(),false);
- assert.equal(await page.locator('#objectDimensions #sw').count(),1);assert.equal(await page.locator('#objectArtwork #sw').count(),0);
+ assert.equal(await page.locator('#objectDimensions #sw').count(),0);assert.equal(await page.locator('#objectStrokeProperties #sw').count(),1);
  await page.evaluate(()=>{$('objectLength').value='120';$('objectLength').dispatchEvent(new Event('change'))});
  assert.ok(Math.abs(await page.evaluate(()=>{const p=lineEndpoints(selected);return Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y)})-120)<1e-4);
  const rotationStart=await page.evaluate(()=>lineEndpoints(selected)[0]);
@@ -257,12 +258,12 @@ try{
  await page.evaluate(()=>setTool('poly'));await page.mouse.click(70,300);await page.mouse.click(140,360);await page.mouse.down({button:'right'});await page.mouse.up({button:'right'});assert.equal(await page.evaluate(()=>tool),'pan','secondary click uses reordered default');
  await page.evaluate(()=>setTool('point'));await page.mouse.click(90,320);assert.equal(await page.evaluate(()=>isPointObject(selected)),true);assert.equal(await page.locator('#objectRotationRow').isVisible(),false);
  await page.evaluate(()=>setTool('circle'));const expectedRadius=await page.evaluate(()=>{const a=pos({clientX:100,clientY:350}),b=pos({clientX:130,clientY:390});return Math.hypot(b.x-a.x,b.y-a.y)});await page.mouse.move(100,350);await page.mouse.down();await page.mouse.move(130,390);await page.mouse.up();assert.equal(await page.evaluate(()=>selected.localName),'circle');assert.ok(Math.abs(await page.evaluate(()=>+selected.getAttribute('r'))-expectedRadius)<1e-4);assert.equal(await page.evaluate(()=>tool),'pan');
- await page.reload();assert.equal(await page.evaluate(()=>defaultTool()),'pan');assert.equal(await page.evaluate(()=>tool),'pan','saved default initializes the next session');
+ await page.reload();await page.waitForFunction(()=>$('panel').style.height);await page.evaluate(()=>{$('advanced').open=false;$('layersPanel').hidden=true;$('panel').classList.remove('show')});assert.equal(await page.evaluate(()=>defaultTool()),'pan');assert.equal(await page.evaluate(()=>tool),'pan','saved default initializes the next session');
  // Restore the standard order through keyboard reordering, then test wrapped layout dragging.
  await page.locator('#toolsButtons [data-tool=select]').focus();await page.keyboard.press('Alt+ArrowLeft');assert.equal(await page.evaluate(()=>defaultTool()),'select');
  await page.setViewportSize({width:375,height:820});
  const pointButton=page.locator('#toolsButtons [data-tool=point]'),pointRect=await pointButton.boundingBox(),firstRect=await page.locator('#toolsButtons > :first-child').boundingBox();await page.mouse.move(pointRect.x+pointRect.width/2,pointRect.y+pointRect.height/2);await page.mouse.down();await page.mouse.move(firstRect.x+2,firstRect.y+firstRect.height/2,{steps:8});await page.mouse.up();assert.equal(await page.evaluate(()=>defaultTool()),'point','wrapped toolbar supports reordering');
- await page.setViewportSize({width:1000,height:850});await page.evaluate(()=>{$('tools').classList.add('vertical');$('tools').style.maxHeight='700px';clampTools()});
+ await page.setViewportSize({width:1000,height:850});await page.evaluate(()=>{$('tools').classList.add('vertical');$('tools').style.maxHeight='700px';toolsWindow.clamp()});
  const lineButton=page.locator('#toolsButtons [data-tool=line]'),lineRect=await lineButton.boundingBox(),verticalFirst=await page.locator('#toolsButtons > :first-child').boundingBox();await page.mouse.move(lineRect.x+lineRect.width/2,lineRect.y+lineRect.height/2);await page.mouse.down();await page.mouse.move(verticalFirst.x+verticalFirst.width/2,verticalFirst.y+2,{steps:8});await page.mouse.up();assert.equal(await page.evaluate(()=>defaultTool()),'line','vertical toolbar supports reordering');
  const beforeSortCancel=await page.locator('#toolsButtons > [data-tool]').evaluateAll(nodes=>nodes.map(n=>n.dataset.tool));const rectangleRect=await page.locator('#toolsButtons [data-tool=rect]').boundingBox(),topRect=await page.locator('#toolsButtons > :first-child').boundingBox();await page.mouse.move(rectangleRect.x+rectangleRect.width/2,rectangleRect.y+rectangleRect.height/2);await page.mouse.down();await page.mouse.move(topRect.x+topRect.width/2,topRect.y+2,{steps:8});await page.keyboard.press('Escape');await page.mouse.up();assert.deepEqual(await page.locator('#toolsButtons > [data-tool]').evaluateAll(nodes=>nodes.map(n=>n.dataset.tool)),beforeSortCancel,'Escape cancels a reorder without changing the saved default');
  if(process.env.CHIPDRAW_SCREENSHOT)await page.screenshot({path:process.env.CHIPDRAW_SCREENSHOT});

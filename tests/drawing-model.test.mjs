@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFile} from 'node:fs/promises';
+const context=vm.createContext({assert});
+for(const file of ['shared/viewport-core.js','shared/quantity-editor.js','shared/json-store.js','shared/drawing-model.js'])vm.runInContext(await readFile(new URL('../'+file,import.meta.url),'utf8'),context);
+vm.runInContext(`
+const M=ChipDrawingModel;
+const ids=M.createIds(()=> 'same-random-seed'),generated=Array.from({length:1000},()=>ids.next());assert.equal(new Set(generated).size,1000);assert.equal(ids.reserve(generated[0]),false);
+const object={id:'rect-1',name:'test',type:'rect',reference:'center',point:[10,4],width:8,height:8,rotation:90,stroke:{opacity:0,color:null}};
+const layer={id:'layer-1',name:'layer',type:'art',hiden:true,stroke:{color:'#123456',width:4},fill:{type:'solid',color:'#abcdef'}};
+const result=M.inspect(object,{layer});assert.equal(result.issues.length,0);assert.equal(result.geometry.point[0],6);assert.ok(Math.abs(result.geometry.point[1])<1e-12);assert.equal(result.paint.stroke.color,'#123456');assert.equal(result.sources['stroke.color'],'layer');assert.equal(result.paint.stroke.opacity,0);assert.equal(result.sources['stroke.opacity'],'object');assert.equal(result.paint.stroke.width,4);assert.equal(result.hiden,true);
+assert.equal(Object.hasOwn(result.data.stroke,'color'),false);assert.equal(Object.hasOwn(result.data,'hiden'),false);assert.equal(object.stroke.color,null);assert.equal(M.resolve({}, {width:999}, {}, 'width').value,undefined);
+assert.equal(M.visibility({hiden:false},[{hiden:true}]).hiden,true);
+const units=M.units({localized:false,length_precision:0});assert.equal(units.localized,false);assert.equal(units.length_precision,0);assert.throws(()=>M.units({length_approx:'inch'}));
+const precision=M.inspect({type:'point',point:[1.234567890123,-.000000123456]});assert.equal(precision.data.point[0],1.234567890123);assert.equal(precision.geometry.point[1],-.000000123456);
+const relative=M.inspect({type:'line',point_ref:'start',points:[[10,20],[3,4]]});assert.deepEqual(relative.geometry.points,[[10,20],[13,24]]);assert.deepEqual(relative.data.points,[[10,20],[3,4]]);
+const corners=M.inspect({type:'rect',reference:'top-left-bottom-right',points:[[0,10],[8,2]]});assert.equal(corners.geometry.width,8);assert.equal(corners.geometry.height,8);assert.equal(Object.hasOwn(corners.data,'width'),false);
+const circle=M.inspect({type:'circle',reference:'three-points',points:[[0,1],[-1,0],[1,0]]});assert.equal(circle.geometry.radius,1);
+const impossible={id:'invalid-circle',name:'bad',type:'circle',reference:'three-points',points:[[0,0],[1,0],[2,0]]},unsolved=M.inspect(impossible);assert.equal(unsolved.geometry,null);assert.ok(unsolved.issues.some(i=>i.code==='geometry'));assert.deepEqual(unsolved.data,impossible);
+const missing=M.inspect({type:'bezier',points:[[0,0],[10,10]]});assert.equal(missing.data.type,'bezier');assert.equal(missing.geometry.type,'polyline');assert.ok(missing.issues.some(i=>i.code==='missing-controls'));
+const mismatch=M.inspect({type:'bezier',points:[[0,0],[10,10]],control_points:[[1,1]]});assert.equal(mismatch.geometry,null);assert.ok(mismatch.issues.some(i=>i.message.includes('長度必須相同')));
+const pcb=M.inspect({type:'point',point:[0,0],stroke:{color:'#ff0000'}},{layer:{type:'pcb',stroke:{color:'#00ff00'}}});assert.equal(pcb.paint.stroke.color,'#00ff00');assert.equal(pcb.data.stroke.color,'#ff0000');assert.ok(pcb.issues.some(i=>i.code==='inactive-color'));
+const specialized=M.specialize({stroke:{opacity:0}},['stroke.color'],{layer});assert.equal(specialized.stroke.color,'#123456');assert.equal(specialized.stroke.opacity,0);assert.equal(Object.hasOwn(specialized.stroke,'width'),false);assert.throws(()=>M.specialize({},['point'],{layer}));
+const empty=M.inspectLayer({id:'empty',name:'empty',type:'art'});assert.equal(empty.items.length,0);assert.equal(Object.hasOwn(empty.data,'items'),false);
+const bundle=M.selection({items:[{id:'one',type:'point',point:[0,0]}]});assert.equal(bundle.items[0].id,'one');assert.throws(()=>M.selection({items:[{id:'same'},{id:'same'}]}));
+const missingIdentity=M.inspect({type:'point',point:[0,0]});assert.equal(Object.hasOwn(missingIdentity.data,'id'),false);assert.ok(missingIdentity.issues.some(i=>i.code==='missing-id'));
+`,context);
+export const results=['issue #54 IDs are collision checked at generation, including deterministic collisions','compact geometry, relative points, reference-defined rectangles and circles retain original parameters','implicit paint inheritance has explicit sources, preserves zero and omits null without materializing defaults','empty layers, ancestor hiding, PCB inactive colors and unsolved geometry are preserved and diagnosed'];

@@ -1,0 +1,11 @@
+{
+  "name": "monaco-editor",
+  "version": "0.57.0",
+  "source": "https://github.com/microsoft/monaco-editor",
+  "license": "MIT",
+  "features": [
+    "editor",
+    "json"
+  ],
+  "offline": true
+}

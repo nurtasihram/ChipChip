@@ -3,7 +3,7 @@ const {chromium}=await import(process.env.CHIPDRAW_PLAYWRIGHT||'playwright');
 const browser=await chromium.launch({headless:true,...(process.env.CHIPDRAW_BROWSER?{executablePath:process.env.CHIPDRAW_BROWSER}:{})});
 const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-4,`${a} != ${b}`);
 try{
- const page=await browser.newPage({viewport:{width:1200,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(new URL('../ChipDraw.html',import.meta.url).href);
+ const page=await browser.newPage({viewport:{width:1200,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(new URL('../ChipDraw.html',import.meta.url).href);await page.waitForFunction(()=>typeof constructionTools!=='undefined'&&constructionTools);await page.evaluate(()=>{$('advanced').open=false;$('panel').classList.remove('show');$('layersPanel').hidden=true});
  assert.equal(await page.locator('#toolsButtons button').last().getAttribute('data-tool'),'arc');assert.equal(await page.locator('#toolsButtons [data-tool=arc] svg').evaluate(n=>n.outerHTML),await page.evaluate(()=>{const host=document.createElement('div');host.innerHTML=ChipUI.objectTypeIcon('arc');return host.querySelector('svg').outerHTML}));
  const click=async p=>{const q=await page.evaluate(p=>transformPoint(p,$('world').getScreenCTM()),p);await page.mouse.click(q.x,q.y)},move=async p=>{const q=await page.evaluate(p=>transformPoint(p,$('world').getScreenCTM()),p);await page.mouse.move(q.x,q.y)},model=()=>page.evaluate(()=>ChipArc.read(selected));
  for(const mirror of [false,true]){

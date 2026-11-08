@@ -3,7 +3,7 @@ import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 export async function build(){
  const base=new URL('../',import.meta.url);
- const files=['shared/drawing-layers.js','shared/viewport-core.js','shared/ring-gesture.js','shared/bubbles.js','shared/quantity-editor.js','shared/workspace-ui.js','shared/workspace-ui.css','src/chipdraw/snap-core.js','src/chipdraw/selection-tools.js','src/chipdraw/pcb-fill-properties.js','src/chipdraw/arc.js'];
+ const files=['shared/drawing-layers.js','shared/viewport-core.js','shared/ring-gesture.js','shared/bubbles.js','shared/quantity-editor.js','shared/json-store.js','shared/drawing-model.js','shared/json-test-ui.js','shared/code-editor.js','vendor/monaco/workers.js','vendor/monaco/editor.js','vendor/monaco/editor.css','shared/workspace-ui.js','shared/workspace-ui.css','src/chipdraw/snap-core.js','src/chipdraw/selection-tools.js','src/chipdraw/pcb-fill-properties.js','src/chipdraw/stroke-properties.js','src/chipdraw/arc.js','src/chipdraw/drawing-json.js','src/chipdraw/construction.js'];
  const sources=await Promise.all(files.map(file=>readFile(new URL(file,base),'utf8')));
  const version=createHash('sha256').update(sources.join('\n')).digest('hex').slice(0,12),outputs=[];
  for(const [name,source]of [['ChipChip','src/chipchip/index.html'],['ChipDraw','src/chipdraw/index.html']]){
@@ -12,7 +12,7 @@ export async function build(){
    const file=files[i],css=file.endsWith('.css'),marker=css?'<link rel="stylesheet" href="../../'+file+'">':'<script src="../../'+file+'"></script>';
    if((file==='shared/drawing-layers.js'||file.startsWith('src/chipdraw/'))&&!html.includes(marker))continue;
    if(html.split(marker).length!==2)throw Error(source+': expected exactly one reference to '+file);
-   html=html.replace(marker,()=>css?'<style>\n'+sources[i]+'\n</style>':'<script>\n'+sources[i]+'\n</script>');
+   html=html.replace(marker,()=>css?'<style>\n'+sources[i].replace(/<\/style/gi,'<\\/style')+'\n</style>':'<script>\n'+sources[i].replace(/<\/script/gi,'<\\/script')+'\n</script>');
   }
   html=html.replace('<!doctype html>','<!doctype html>\n<!-- GENERATED from '+source+'; shared workspace '+version+'. Edit src/ and shared/, then rebuild. -->');
   const output=new URL(name+'.html',base);await writeFile(output,html,'utf8');if(name==='ChipChip')await writeFile(new URL('index.html',base),html,'utf8');outputs.push({name,path:fileURLToPath(output),sharedVersion:version});

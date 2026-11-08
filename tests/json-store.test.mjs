@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFile} from 'node:fs/promises';
+const context=vm.createContext({assert});
+vm.runInContext(await readFile(new URL('../shared/json-store.js',import.meta.url),'utf8'),context);
+vm.runInContext(`
+const api=ChipJson;
+const quantity={value:1/3,unit:'mm',rational:{numerator:1,denominator:3}};
+assert.deepEqual(api.parse(api.stringify(quantity)),quantity);
+assert.equal(api.parse('\uFEFF{"unit":"mm"}').unit,'mm');
+for(const value of [NaN,Infinity,undefined,1n,()=>{},new Date(),{x:undefined},[,,]])assert.throws(()=>api.stringify(value));
+const circular={};circular.self=circular;assert.throws(()=>api.stringify(circular));
+const prototype=api.parse('{"__proto__":{"polluted":true}}');assert.equal(prototype.polluted,undefined);assert.ok(Object.hasOwn(prototype,'__proto__'));
+const registry=api.createRegistry().register('drawing',{version:2,validate:data=>{if(!data||!Array.isArray(data.objects))throw Error('objects required')},migrations:{1:data=>({...data,objects:[]})}});
+const original={format:'chip-workspace',type:'drawing',version:1,title:'test',data:{quantity,extension:{custom:true}}};
+const migrated=registry.read(api.stringify(original));assert.equal(migrated.version,2);assert.equal(original.version,1);assert.deepEqual(migrated.data.quantity,quantity);assert.equal(migrated.data.extension.custom,true);
+assert.throws(()=>registry.read(api.stringify({...original,version:3})));
+assert.throws(()=>registry.create('drawing',{}));
+const manager=api.createManager({validate:registry.validate});
+const first=manager.open(migrated,{filename:'one.json'}),second=manager.open(migrated,{filename:'two.json'});
+first.data.title='outside';assert.equal(manager.get(first.id).data.title,'test');
+const edited=manager.get(first.id).data;edited.title='edited';manager.update(first.id,edited);assert.equal(manager.get(first.id).dirty,true);assert.equal(manager.get(second.id).dirty,false);
+assert.throws(()=>manager.close(first.id));
+manager.markSaved(first.id,migrated);assert.equal(manager.get(first.id).dirty,true);
+manager.markSaved(first.id,edited);assert.equal(manager.get(first.id).dirty,false);
+const reordered={data:edited.data,title:edited.title,type:edited.type,version:edited.version,format:edited.format};manager.update(first.id,reordered);assert.equal(manager.get(first.id).dirty,false);
+const before=api.stringify(manager.list());assert.throws(()=>manager.update(first.id,{...edited,version:99}));assert.equal(api.stringify(manager.list()),before);
+manager.activate(first.id);manager.close(first.id);assert.equal(manager.active().id,second.id);manager.close(second.id);assert.equal(manager.active(),null);
+
+`,context);
+export const results=['JSON preserves quantities and exact fractions, rejects lossy values and isolates prototypes','versioned codecs migrate copies and retain extensions; unsupported versions fail','document sessions isolate edits, track snapshots and reject invalid updates'];
