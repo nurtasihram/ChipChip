@@ -209,5 +209,3 @@ select.ui-choice{appearance:none!important;-webkit-appearance:none!important;pad
 .ui-floating-heading [data-panel-pin][aria-pressed=true]{background:#315b8d!important;border-color:#8fc3ff!important;color:#f1f6ff!important}
 
 .ui-floating-toolbar[hidden]{display:none!important}
-
-#drawingConstruction{margin:0 0 10px;padding:7px 9px;min-width:0}#drawingConstruction>div{margin:7px 0}#drawingConstructionError{display:block;color:#ffacac;font-size:12px;margin-top:7px}#drawingConstructionError[hidden]{display:none!important}
