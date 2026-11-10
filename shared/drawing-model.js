@@ -31,8 +31,10 @@ const rectRefs={
  center:[.5,-.5],top:[.5,0],bottom:[.5,-1],left:[0,-.5],right:[1,-.5]
 };
 const rectAnchors={...rectRefs,'top-left-bottom-right':[0,0],'top-right-bottom-left':[1,0]};
-function rectangleFromPoints(reference,a,b,{rotation=0}={}){
+function rectangleFromPoints(reference,a,b,{rotation=0,mirror=false}={}){
  if(!Object.hasOwn(rectAnchors,reference))throw Error('未知矩形繪製方式');
+ // Screen references reflect horizontally; the archived rectangle stays in its canonical, unreflected frame.
+ if(mirror){const factor=rectRefs[reference];reference=factor?Object.keys(rectRefs).find(key=>rectRefs[key][0]===1-factor[0]&&rectRefs[key][1]===factor[1]):reference==='top-left-bottom-right'?'top-right-bottom-left':'top-left-bottom-right';}
  if(!Array.isArray(a)||a.length!==2||!Array.isArray(b)||b.length!==2)throw Error('矩形需要兩個二維點');a=a.map(number);b=b.map(number);rotation=number(rotation);
  const delta=rotate([b[0]-a[0],b[1]-a[1]],-rotation),world=p=>{const v=rotate(p,rotation);return [a[0]+v[0],a[1]+v[1]]};
  if(!delta[0]||!delta[1])throw Error('矩形寬高必須大於 0');

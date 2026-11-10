@@ -12,6 +12,14 @@ for(const reference of Object.keys(M.rectAnchors)){
  assert.deepEqual(M.inspect(raw).data,raw);
 }
 assert.throws(()=>M.rectangleFromPoints('center',[0,0],[0,1]));
+// Screen references must remain anchored and occupy the requested screen region under reflection.
+const reflectedRefs={'top-left':'top-right','top-right':'top-left','bottom-left':'bottom-right','bottom-right':'bottom-left',left:'right',right:'left','top-left-bottom-right':'top-right-bottom-left','top-right-bottom-left':'top-left-bottom-right'};
+for(const mirror of [false,true])for(const degrees of [0,37,-31,90,180])for(const reference of Object.keys(M.rectAnchors)){
+ const camera=new ChipViewport.Camera({x:613,y:427,scale:3.25,angle:degrees*Math.PI/180,mirror}),factor=M.rectAnchors[reference],A={x:400,y:300},B={x:A.x+(factor[0]===1?-120:120),y:A.y+(factor[1]===-1?-60:60)},a=camera.toWorld(A),b=camera.toWorld(B),raw=M.rectangleFromPoints(reference,[a.x,a.y],[b.x,b.y],{rotation:mirror?-degrees:degrees,mirror}),g=M.solve(raw),u=M.rotate([g.width,0],g.rotation),v=M.rotate([0,-g.height],g.rotation),corners=[[0,0],u,v,[u[0]+v[0],u[1]+v[1]]].map(p=>camera.toScreen({x:g.point[0]+p[0],y:g.point[1]+p[1]})),xs=corners.map(p=>p.x),ys=corners.map(p=>p.y),width=120*(factor[0]===.5?2:1),height=60*(factor[1]===-.5?2:1);
+ assert.equal(raw.reference,mirror?(reflectedRefs[reference]||reference):reference);assert.equal(Object.hasOwn(raw,'mirror'),false);const first=raw.point||raw.points[0];close(first[0],a.x);close(first[1],a.y);
+ close(Math.min(...xs),A.x-width*factor[0]);close(Math.max(...xs),A.x+width*(1-factor[0]));close(Math.min(...ys),A.y+height*factor[1]);close(Math.max(...ys),A.y+height*(1+factor[1]));assert.deepEqual(M.inspect(raw).data,raw);
+}
+
 const examples=[
  {type:'arc',reference:'center-start-end',points:[[0,0],[10,0],[0,10]]},
  {type:'arc',reference:'center-start-sweep',points:[[0,0],[10,0]],sweep:-270},

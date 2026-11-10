@@ -23,4 +23,11 @@ result=P.split(qloop,[{index:2,t:.4}]);assert.equal(result.length,1);assert.equa
 hits=P.intersections(quad,[5,-20],[5,20]);assert.equal(hits.length,1);near(hits[0].t,.5);near(hits[0].point[1],5);near(P.locate(quad,0,[5,5]).t,.5);
 const qr={...quad,point_ref:'start',points:[[10,20],[10,0],[20,0]]};result=P.split(qr,[{index:0,t:.5}]);samePoint(qcurve(result[1],0).point(.6),qcurve(qr,0).point(.8));
 result=P.join(a,'end',{...quad,points:[[10,0],[20,0],[30,0]]},'start',{weld:true});assert.equal(result.type,'bezier');assert.equal(result.points.length,4);samePoint(qcurve(result,1).point(.4),qcurve({...quad,points:[[10,0],[20,0],[30,0]]},0).point(.4));
+// Detaching an anchor never inserts a replacement connection or changes the anchor count.
+for(const raw of [quad,{...quad,closed:true},a,square])for(let index=0;index<raw.points.length;index++){
+ const parts=P.breakAnchor(raw,index),anchors=parts.flatMap(p=>p.type==='point'?[p.point]:M.solve(p).points);assert.equal(anchors.length,raw.points.length);eq([...anchors].sort(),[...M.solve(raw).points].sort());assert.ok(parts.some(p=>p.type==='point'&&JSON.stringify(p.point)===JSON.stringify(M.solve(raw).points[index])));assert.ok(parts.every(p=>p.name===raw.name&&p.closed!==true));
+ let queue=[...parts],points=[];while(queue.length){const next=queue.shift();if(next.type==='point')points.push(next);else queue.push(...P.breakAnchor(next,0));}assert.equal(points.length,raw.points.length);assert.ok(points.every(p=>p.type==='point'));}
+assert.throws(()=>P.breakAnchor({type:'point',point:[0,0]},0),/最小單元/);
+const openArc={type:'arc',reference:'center-radius-start-sweep',point:[0,0],radius:10,angle:0,sweep:90};for(const parts of [P.breakAnchor(openArc,0),P.breakAnchor(openArc,1),P.breakSegment(openArc,0)]){assert.equal(parts.length,2);assert.ok(parts.every(p=>p.type==='point'));near(parts[0].point[0],10);near(parts[1].point[1],10);}
+assert.throws(()=>P.breakAnchor(circle,0),/沒有可拆/);assert.throws(()=>P.breakSegment(circle,0),/沒有可拆/);
 export const results=[{name:'path operations',ok:true}];

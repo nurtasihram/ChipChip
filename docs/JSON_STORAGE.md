@@ -56,7 +56,7 @@
 - `line`：`points` 恰為兩點。
 - `polyline`：點簇，`closed` 可省略或為 false；true 時隱式閉合，不需重複起點。
 - `polygon`：沿用共用類型代碼，天然閉合。
-- `rect`：`reference` 可為 top-left／top-right／bottom-left／bottom-right／center／top／bottom／left／right，保存 point、width、height；亦可為 top-left-bottom-right／top-right-bottom-left，以兩個對角點保存。rotation 使用文件角度，當前設定以該參考點為旋轉基準。尺寸編輯固定參考點。
+- `rect`：`reference` 可為 top-left／top-right／bottom-left／bottom-right／center／top／bottom／left／right，保存 point、width、height；亦可為 top-left-bottom-right／top-right-bottom-left，以兩個對角點保存。rotation 使用文件角度，當前設定以該參考點為旋轉基準。尺寸編輯固定參考點。 畫布方式名稱以目前螢幕方向解讀；鏡像繪製時，先將左右參考映射到既有的物件 reference 枚舉，旋轉使用相應的未反射物件座標框架。例如螢幕左上參考在鏡像視圖可保存為物件 top-right，固定點與幾何均不變；不增加鏡像欄位，重新投影亦不依賴建立時的視圖。
 - `circle`：center-radius／center-diameter 使用 point 與 radius／diameter；center-point／three-points 使用 points。三點共線等無解情形保留原參數。由定義點推導的半徑不偽裝成可任意編輯的獨立參數；移動時定義點一起移動。
 - 線與點簇預設 absolute；line／polyline／polygon 的 point_ref=start 表示第一點絕對，其餘點相對於第一點。
 
@@ -171,3 +171,9 @@ side 指沿起點到終點方向的圓心側：圖稿正交座標中左為 1、�
 `ChipDrawingModel.paths` 是現有物件 JSON 的純幾何運算介面，不新增歸檔欄位或關係表。點列分割、接合、首尾閉合直接寫回 points／point_ref／closed，圓與開放圓弧的熔斷結果採既有 arc 參考方式。每個實際結果為完整物件，首個保留來源身份與通用欄位，其他結果使用新身份；切割線僅存在於預覽中。
 
 預覽使用共用 JSON 唯讀介面，不因嘗試不支援的操作寫入來源物件。提交前重新核對來源、鎖定與可編輯狀態，全部結果能由現有模型完整表達後才建立一次復原記錄。完整貝塞爾資料或混合曲段尚未定義時保持來源不變，不擴充資料結構。
+
+### 打斷的最小單元與子線選取
+
+打斷可選子線的連接，亦可選單個實際錨點。錨點打斷將所選點拆成完整 point 物件，移除其前後連接，剩餘線按原連接順序保留，總錨點數不變；可逐步拆至獨立點。開放圓弧可拆成既有兩端點，完整圓沒有可直接拆出的實際端點，不擅自生成新錨點。獨立點為終態，重複打斷不新增物件或撤銷紀錄。
+
+子線選取是共用選取狀態中的暫時範圍，保留所選來源與子線索引，移動時由共用座標模型操作其既有錨點與控制點。子線多選、框選與拖動不建立額外歸檔物件或永久關係，公開 JSON 仍只包含完整母物件。打斷後才按實際結果產生各自完整物件。

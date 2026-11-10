@@ -26,9 +26,9 @@ try{
   const svg=page.locator('#chipIconTooltip svg[data-construction-animation]');await svg.waitFor({state:'visible'});await page.waitForTimeout(1350);
   const result=await svg.evaluate(n=>new Promise(resolve=>{
    const children=[...n.children],values=new Set(),times=[];let start;
-   function sample(now){start??=now;times.push(now);values.add(n.querySelector('[data-demo-pointer]').getAttribute('transform'));if(now-start<800)requestAnimationFrame(sample);else{globalThis.lastHelpAnimation=n;resolve({nodes:n.querySelectorAll('*').length,distinct:values.size,samples:times.length,elapsed:now-start,reused:children.every((node,i)=>node===n.children[i])})}}requestAnimationFrame(sample);
+   function sample(now){start??=now;times.push(now);values.add(n.querySelector('[data-demo-pointer]').getAttribute('transform'));if(now-start<800)requestAnimationFrame(sample);else{globalThis.lastHelpAnimation=n;resolve({nodes:n.querySelectorAll('*').length,feedbackNodes:n.querySelector('[data-demo-input-feedback]').querySelectorAll('*').length+1,distinct:values.size,samples:times.length,elapsed:now-start,reused:children.every((node,i)=>node===n.children[i])})}}requestAnimationFrame(sample);
   }));
-  assert.ok(result.nodes<24,'reuse a small scene instead of duplicating every frame');assert.ok(result.distinct>=20,'pointer must update smoothly rather than six times per second');assert.equal(result.reused,true);
+  assert.ok(result.nodes-result.feedbackNodes<24,'reuse a small scene instead of duplicating every frame');assert.equal(result.feedbackNodes,5,'reuse one shared input feedback group');assert.ok(result.distinct>=20,'pointer must update smoothly rather than six times per second');assert.equal(result.reused,true);
   await page.mouse.move(1350,850);await page.waitForTimeout(50);const stopped=await page.evaluate(()=>lastHelpAnimation.querySelector('[data-demo-pointer]').getAttribute('transform'));await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>lastHelpAnimation.querySelector('[data-demo-pointer]').getAttribute('transform')),stopped,'hidden help must stop updating');
   results.push({type,...result,updatesPerSecond:Math.round(result.distinct*1000/result.elapsed)});
  }
