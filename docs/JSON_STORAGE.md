@@ -60,7 +60,11 @@
 - `circle`：center-radius／center-diameter 使用 point 與 radius／diameter；center-point／three-points 使用 points。三點共線等無解情形保留原參數。由定義點推導的半徑不偽裝成可任意編輯的獨立參數；移動時定義點一起移動。
 - 線與點簇預設 absolute；line／polyline／polygon 的 point_ref=start 表示第一點絕對，其餘點相對於第一點。
 
-現有三階貝塞爾、一般 SVG path、橢圓、巢狀群組、幾何圓角矩形、非等距仿射變換等尚未全部接入。請求模型輸出時明確報告，不用 SVG 原文冒充新模型，也不靜默逼近或改變原圖形。貝塞爾結構檢查已區分 points／control_points；缺少控制點的模型可按折線降級顯示並保留 bezier 類型，完整二階逐段連接及其他圓弧選解仍待定義。
+`bezier` 使用現有 `points`、`control_points`、`point_ref` 與布林 `closed`，兩個點簇等長。`control_points[i]` 是相對於 `points[i]` 的控制點偏移，控制從第 i 個錨點到下一錨點的二階曲線；閉合時最後一項控制末點至首點。開放線最後一項仍保留於 JSON，沒有出向子段時不參與求形；新分割結果的末項為 `[0,0]`。`point_ref=start` 只影響錨點的儲存座標，控制偏移始終以各自錨點為基準。這些規則直接由公開欄位決定，不另存連接表或附屬幾何。
+
+二階貝塞爾已接入 SVG Q 投影、JSON 往返、開閉、焊接、連節、熔斷、打斷及有限參考線切斷。接合時保持首個物件方向與通用欄位，反向的第二條線同步重排控制點；折線接入時用中點控制表示原直線，接合橋段亦保持直線。分割用精確二階子曲線，不以折線取樣逼近。打斷只移除所選子段，保持錨點總數。
+
+現有畫布三階曲線僅在三階係數為零、能精確降為二階時接入此 JSON 模型；一般三階雙手柄不能由既有單控制點結構無損表示，明確報告未支援並保持原圖形。一般複合 SVG path、橢圓、巢狀群組、幾何圓角矩形、非等距仿射變換等尚未全部接入，不用 SVG 原文冒充模型，不靜默逼近或分開歸檔。缺少 control_points 仍按折線降級顯示並保留 bezier 類型。
 
 ## 身份、繼承與來源
 
@@ -79,6 +83,37 @@ stroke／fill 的部分缺省按「物件 → 圖層 → 軟件預設」解析�
 未知物件／染色欄位保留並提示。不能解析的 JSON、重複身份、不相容上下文及物件數量不匹配會在替換前拒絕；不影響目前圖稿。缺少控制點的降級、缺省身份、不可用染色與無解幾何各有不同問題代碼。
 
 ## 精度與後續範圍
+
+### 計量設定 JSON：units_system
+
+「計量單位」底部的 JSON 編輯區依 [Issue #55](https://github.com/nurtasihram/ChipChip/issues/55) 的欄位與代碼展示 `units_system` 設定塊本身，不另造文件版本或巢狀的 length／angle／pixel 結構。例如：
+
+```json
+{
+  "localized": false,
+  "coordinate": "orth",
+  "length": "metric",
+  "length_approx": "mm",
+  "length_precision": 2,
+  "angle": "deg",
+  "angle_precision": 2,
+  "time_approx": "s",
+  "time_precision": 2,
+  "color": "hex",
+  "fraction_style": "fraction",
+  "fraction_precision": 2,
+  "fraction_approx": true,
+  "pixel_phy": [[480, 127], "mm"],
+  "pixel_precision": 0
+}
+```
+
+- 使用 `orth`／`polar`、`metric`／`british`、`deg`／`radius`／`clock` 及小寫色彩代碼；內部介面的 cart／imperial／rad／HEX 等值由共用適配層轉換。公制候選包含 km，英制包含 ft，換算及輸入共用既有計量核心。
+- `fraction_style` 使用 fraction／ratio／float／decimalRatio。缺省約分分別為 fraction=true、ratio=false；decimalRatio 的 `fraction_approx` 使用 auto／hundred／thousand／myriad；float 不寫入尚未定義用途的 `fraction_approx`，小數模式缺省精度為 4。明確的 false 與 0 不會當作缺省。
+- `angle_precision` 始終為小數位數，不再用時分秒部件名稱冒充精度。時分秒的近似單位使用 `angle_approx` 的 h／min／s／ms／us／ns；省略時繼承 `time_approx`。目前沒有獨立時間設定列的欄位由共用設定模型保留；這次不代表所有時間格式器或 #55 的精度污染機制已完成。
+- `pixel_phy` 固定綁定「像素數：物理長度」的校準語義。一般分數寫成 `[[像素數, 物理長度], 物理單位代碼]`，例如 96 DPI 對應 `[[480,127],"mm"]`；亦可接受正的純量比例並轉成精確整數對。這個欄位的整數對由已知的像素校準上下文解碼，不依提示用的 `fraction_style` 猜成十進制指數。保持原始整數對，不因顯示約分而改寫校準資料。
+- 保存前完整驗證，當前可執行精度範圍沿用共用控制器的 0–9 位，整數對沿用 JavaScript 安全整數範圍；越界明確拒絕，不靜默截斷。舊版 version=1 的巢狀設定可匯入遷移，之後一律輸出本設定塊的標準欄位。
+- 此編輯區調整提示／輸入設定，不把設定變更當成原有圖稿儲存資料的單位轉換。上文第一階段圖稿模型的正交、mm、deg、hex、float 儲存上下文保持原有相容性限制；完整儲存模式轉換仍依 #55 的後續設計實作。
 
 所有新模型數值檢查與計量歸檔沿用共用介面，不套用顯示修約。已知參考點及尺寸的屬性操作直接更新作者模型，避免從 SVG 投影反求時改寫原值。原有 SVG 引擎的浮點投影限制仍存在；瀏覽器測試對投影採容差，但對作者模型中的已知中心使用精確相等檢查。
 
@@ -126,3 +161,13 @@ side 指沿起點到終點方向的圓心側：圖稿正交座標中左為 1、�
 所有方式共用求解、SVG 投影、計量輸入、窗格與 JSON 模型。無解的 JSON 仍保留原定義並顯示錯誤標記；無解的互動草稿不建立假圖形、不增加復原記錄。繪製完全在畫布內完成：圓心模式依序放置圓心及半徑起點，再移動決定終點或掃角；兩端點／半徑模式的第三個弧上點動態決定半徑及大小弧；弓高由第三點在弦法線上的投影決定；雙切點的第三點決定第一點切向，第二點切向由同一圓弧連動求出並保存。禁止以物件屬性面板指派動態繪製參數。矩形與圓弧的方式提示以共用提示組件在文字下方呈現 SVG 步驟動畫。沿兩段貝塞爾滑動求解或以兩物件及半徑求相切弧尚未接入。原有 SVG 檔案讀寫流程不在這一階段擴充，幾何 reference 的往返驗證使用屬性頁 JSON 模型。
 
 驗證：node tests/construction.test.mjs、node tests/construction.browser.mjs、node tests/arc.browser.mjs。
+
+## 線型屬性的開閉控制
+
+座標簇下方的「開閉」使用共用 SVG 雙態按鈕，直接修改既有模型：polyline 的 closed 布林值，以及 arc 的 none／chord。既有 sector 可開放，重新閉合時採首尾弦閉合。點列、身份與其他欄位保持原模型內容，支援撤銷及重做；閉合折線仍以 polyline + closed 歸檔，polygon 僅為其 SVG 投影。直線與尚未支援的完整貝塞爾模型不擅自增加 closed 欄位或改用 SVG 隱藏狀態，介面停用並列出原因。
+
+## 路徑裁減
+
+`ChipDrawingModel.paths` 是現有物件 JSON 的純幾何運算介面，不新增歸檔欄位或關係表。點列分割、接合、首尾閉合直接寫回 points／point_ref／closed，圓與開放圓弧的熔斷結果採既有 arc 參考方式。每個實際結果為完整物件，首個保留來源身份與通用欄位，其他結果使用新身份；切割線僅存在於預覽中。
+
+預覽使用共用 JSON 唯讀介面，不因嘗試不支援的操作寫入來源物件。提交前重新核對來源、鎖定與可編輯狀態，全部結果能由現有模型完整表達後才建立一次復原記錄。完整貝塞爾資料或混合曲段尚未定義時保持來源不變，不擴充資料結構。

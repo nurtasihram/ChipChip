@@ -36,9 +36,18 @@ function geometry(node,previous){
  else if(t==='line')result.points=[[numeric(node,'x1'),numeric(node,'y1')],[numeric(node,'x2'),numeric(node,'y2')]].map(p=>world(p,m));
  else if(t==='polyline'||t==='polygon'){
   const tokens=(attr(node,'points')||'').trim().split(/[\s,]+/).map(Number);if(tokens.length%2||!tokens.every(Number.isFinite))throw Error('物件點簇損壞');result.points=[];for(let i=0;i<tokens.length;i+=2)result.points.push(world([tokens[i],tokens[i+1]],m));
-  if(t==='polyline'&&result.points.length>2&&result.points[0].every((v,i)=>v===result.points.at(-1)[i])){result.closed=true;result.points.pop()}
+  if(t==='polyline'&&previous?.closed!==false&&result.points.length>2&&result.points[0].every((v,i)=>v===result.points.at(-1)[i])){result.closed=true;result.points.pop()}
  }
- else if(t==='rect'){
+ else if(t==='bezier'){
+  const path=bridge.parse?.(attr(node,'d')||'');if(!path||path.commands.filter(c=>c.type==='M').length!==1)throw Error('此複合路徑尚未支援貝塞爾 JSON 轉換');
+  const commands=path.commands,closed=commands.at(-1)?.type==='Z',curves=root.ChipCurveMetrics.commands(commands);if(!curves.length)throw Error('貝塞爾線至少需要一段曲線');
+  result={type:'bezier',points:[],control_points:[],closed};
+  for(const curve of curves){if(!curve.degree)throw Error('圓弧與貝塞爾的混合線型尚未定義');const a=curve.point(0),b=curve.point(1),v=curve.derivative(0),third=curve.derivative(0,3),scale=Math.max(1,Math.hypot(v.x,v.y),Math.hypot(b.x-a.x,b.y-a.y));if(Math.hypot(third.x,third.y)>1e-10*scale)throw Error('此三階曲線不能精確轉為現有二階 JSON 模型，尚未支援；原圖形保持不變');
+   if(closed&&curve===curves.at(-1)&&a.x===b.x&&a.y===b.y&&curve.degree===1)continue;
+   const p=world([a.x,a.y],m),c=world([a.x+v.x/2,a.y+v.y/2],m);result.points.push(p);result.control_points.push(c.map((x,i)=>x-p[i]));
+  }
+  if(!closed){const b=curves.at(-1).point(1);result.points.push(world([b.x,b.y],m));let terminal=previous?.control_points?.at(-1)||[0,0];const before=storedView(node)?._matrix;if(before){const det=before.a*before.d-before.b*before.c,x=(before.d*scalar(terminal[0])+before.c*scalar(terminal[1]))/det,y=(-before.b*scalar(terminal[0])-before.a*scalar(terminal[1]))/det;terminal=[quantity(m.a*x+m.c*y),quantity(-m.b*x-m.d*y)];}result.control_points.push(terminal);}
+ }else if(t==='rect'){
   if(m.a*m.d-m.b*m.c<0)throw Error('鏡像矩形的參考方式尚未接入；不改寫參考語義');if(numeric(node,'rx')||numeric(node,'ry'))throw Error('幾何圓角矩形欄位尚待定義，原圖形保持不變');
   const topLeft=world([numeric(node,'x'),numeric(node,'y')],m),width=numeric(node,'width'),height=numeric(node,'height'),rotation=-Math.atan2(m.b,m.a)*180/Math.PI,reference=previous?.reference||'top-left';
   result={type:t,reference,rotation};const factor=M().rectRefs[reference];
@@ -66,7 +75,7 @@ function paint(node,kind){
  if(kind==='stroke'){const pattern=attr(node,'stroke-dasharray');if(pattern&&pattern!=='none'){const list=pattern.trim().split(/[\s,]+/).map(Number);if(!list.every(Number.isFinite))throw Error('虛線長度需要上下文轉換');result.pattern=list;if(value!=='none')result.type='dashed'}}
  return result;
 }
-function encodeObject(node){
+function encodeObject(node,{cache=true}={}){
  initialize(node);const previous=record(node),oldView=storedView(node),current=view(node);
  if(previous&&JSON.stringify(oldView)===JSON.stringify(current))return previous;
  if(previous&&attr(node,'data-model-unresolved')==='true')return previous;
@@ -85,7 +94,7 @@ function encodeObject(node){
   }
  }
  if(!previous&&attr(node,'display')==='none'||previous&&current.display!==oldView?.display)data.hiden=attr(node,'display')==='none';
- stash(node,data);return M().copy(data);
+ if(cache)stash(node,data);return M().copy(data);
 }
 function encode(nodes){return {units_system:{...M().defaultUnits},items:[...nodes].map(encodeObject)}}
 function validate(input){return M().selection(input)}
@@ -96,16 +105,17 @@ function errorNode(data,issues){
  set(node,'aria-label',issues.map(item=>item.message).join('；'));return node;
 }
 function geometryNode(g){let node;
-  node=document.createElementNS(ns,g.type==='point'?'line':g.type==='polyline'&&g.closed?'polygon':g.type);
+  node=document.createElementNS(ns,g.type==='point'?'line':g.type==='bezier'?'path':g.type==='polyline'&&g.closed?'polygon':g.type);
   if(g.type==='point'){set(node,'x1',g.point[0]);set(node,'y1',-g.point[1]);set(node,'x2',g.point[0]);set(node,'y2',-g.point[1]);set(node,'data-object-type','point')}
   else if(['line','polyline','polygon'].includes(g.type)){if(g.type==='line')for(const [i,p]of g.points.entries()){set(node,'x'+(i+1),p[0]);set(node,'y'+(i+1),-p[1])}else set(node,'points',g.points.map(p=>p[0]+','+(-p[1])).join(' '))}
+  else if(g.type==='bezier'){let d='M '+g.points[0][0]+' '+(-g.points[0][1]);for(let i=0;i<(g.closed?g.points.length:g.points.length-1);i++){const c=g.controls[i],p=g.points[(i+1)%g.points.length];d+=' Q '+c[0]+' '+(-c[1])+' '+p[0]+' '+(-p[1]);}if(g.closed)d+=' Z';set(node,'d',d);}
   else if(g.type==='rect'){const relative=M().rotate([g.point[0]-g.pivot[0],g.point[1]-g.pivot[1]],-g.rotation),local=[g.pivot[0]+relative[0],g.pivot[1]+relative[1]];set(node,'x',local[0]);set(node,'y',-local[1]);set(node,'width',g.width);set(node,'height',g.height);if(g.rotation)set(node,'transform','rotate('+(-g.rotation)+' '+g.pivot[0]+' '+(-g.pivot[1])+')')}
   else if(g.type==='arc'){node=document.createElementNS(ns,'path');root.ChipArc.write(node,root.ChipArc.model({x:g.point[0],y:-g.point[1]},g.radius,g.start,g.start+g.sweep,{direction:g.sweep<0?'cw':'ccw',closed:g.closed}))}
   else if(g.type==='circle'){set(node,'cx',g.point[0]);set(node,'cy',-g.point[1]);set(node,'r',g.radius)}
  return node;
 }
 function project(input){return geometryNode(M().solve(input))}
-function create(input,group,appearance={}){const data={id:ids().next(),name:root.ChipUI.objectTypes.find(item=>item.id===input.type)?.label||'物件',...M().copy(input)},source={getAttribute:key=>Object.hasOwn(appearance,key)?String(appearance[key]):null};M().solve(data);for(const kind of ['stroke','fill']){const authored=paint(source,kind);if(Object.keys(authored).length)data[kind]=authored}return decodeObject(data,null,layer(group))}
+function create(input,group,appearance={},{preserveCommon=false}={}){const data={id:ids().next(),name:root.ChipUI.objectTypes.find(item=>item.id===input.type)?.label||'物件',...M().copy(input)},source={getAttribute:key=>Object.hasOwn(appearance,key)?String(appearance[key]):null};if(preserveCommon&&!Object.hasOwn(input,'name'))delete data.name;M().solve(data);for(const kind of ['stroke','fill']){const authored=paint(source,kind);if(Object.keys(authored).length)data[kind]=authored}return decodeObject(data,null,layer(group))}
 function decodeObject(data,target,context=layer(target)){
  const inspected=M().inspect(data,{layer:context}),g=inspected.geometry;let node;
  if(!g||inspected.issues.some(issue=>issue.required&&issue.severity==='error'))node=errorNode(data,inspected.issues);
@@ -114,7 +124,7 @@ function decodeObject(data,target,context=layer(target)){
   for(const kind of ['stroke','fill']){const p=inspected.paint[kind];set(node,kind,p.type==='none'?'none':p.color);set(node,kind+'-opacity',p.opacity)}
   const p=inspected.paint.stroke;for(const [key,name]of Object.entries({width:'stroke-width',linecap:'stroke-linecap',linejoin:'stroke-linejoin',miterlimit:'stroke-miterlimit',offset:'stroke-dashoffset'}))set(node,name,p[key]);set(node,'stroke-dasharray',p.type==='dashed'?p.pattern.join(' '):'none');
   if(g.type==='point'){set(node,'stroke-linecap','round');set(node,'stroke-dasharray','none');set(node,'stroke-dashoffset',0)}
-  if(['line','polyline'].includes(g.type)&&!g.closed)set(node,'fill','none');
+  if(['line','polyline','bezier'].includes(g.type)&&!g.closed)set(node,'fill','none');
  }
  if(data.hiden===true)set(node,'display','none');
  set(node,'data-model-id',data.id||ids().next());if(data.name)set(node,'data-model-name',data.name);
@@ -125,6 +135,8 @@ function update(node,data){
  const next=decodeObject(data,node);if(next.localName!==node.localName){if(bridge.replace)bridge.replace(node,next);else{node.parentNode.insertBefore(next,node);node.remove()}initialize(next);return next}
  for(const key of [...nativeFields,'data-arc','data-object-type']){const value=attr(next,key);if(value===null)node.removeAttribute(key);else node.setAttribute(key,value)}stash(node,M().inspect(data,{layer:layer(node)}).data);return node;
 }
+function closure(node){const raw=record(node),kind=raw?.type||type(node),visible=['line','polyline','bezier','arc'].includes(kind);if(!visible)return {visible:false};try{const data=encodeObject(node);if(data.type==='polyline'||data.type==='bezier')return {visible:true,enabled:true,closed:data.closed===true};if(data.type==='arc')return {visible:true,enabled:true,closed:!!data.closed&&data.closed!=='none'};return {visible:true,enabled:false,closed:!!data.closed,reason:data.type==='line'?'直線模型尚不支援閉合':'此線類的 JSON 開閉尚未定義'};}catch(error){return {visible:true,enabled:false,closed:!!raw?.closed,reason:error.message};}}
+function setClosure(node,closed){const state=closure(node);if(!state.enabled)throw Error(state.reason||'此物件不支援開閉');const data=encodeObject(node);data.closed=data.type==='arc'?(closed?'chord':'none'):!!closed;return update(node,data);}
 function arcVector(node){
  const data=encodeObject(node),g=M().solve(data),m=matrix(node),det=m.a*m.d-m.b*m.c,local=p=>{const x=p[0]-m.e,y=-p[1]-m.f;return {x:(m.d*x-m.c*y)/det,y:(-m.b*x+m.a*y)/det}},on=angle=>[g.point[0]+g.radius*Math.cos(angle*Math.PI/180),g.point[1]+g.radius*Math.sin(angle*Math.PI/180)],centered=(data.reference||'center-start-end').startsWith('center'),anchors=data.reference==='three-points'?data.points.map(local):[local(on(g.start)),local(on(g.start+g.sweep))];if(centered)anchors.push({...local(g.point),reference:'center'});
  return {anchors,set(index,p){const raw=encodeObject(node),current=M().solve(raw),target=world([p.x,p.y],matrix(node)),ref=raw.reference||'center-start-end',delta=[target[0]-current.point[0],target[1]-current.point[1]];
@@ -163,5 +175,5 @@ function sceneSignature(nodes){function shape(node){return {...view(node),childr
 function dimensions(node,width,height){const raw=record(node);if(raw?.type!=='rect')return;if(M().rectRefs[raw.reference||'top-left'])stash(node,{...raw,width:quantity(width),height:quantity(height)});else if(raw.points&&M().rectAnchors[raw.reference]){const first=raw.points[0],offset=M().rotate([raw.reference==='top-right-bottom-left'?-width:width,-height],raw.rotation||0);stash(node,{...raw,points:[first,[first[0]+offset[0],first[1]+offset[1]]]})}}
 function circle(node,center,radius){const raw=record(node);if(raw?.type==='circle'&&['center-radius','center-diameter'].includes(raw.reference||'center-radius')){raw.point=[quantity(center.x),quantity(-center.y)];raw[raw.reference==='center-diameter'?'diameter':'radius']=quantity(radius)*(raw.reference==='center-diameter'?2:1);stash(node,raw)}}
 function describe(node){const raw=record(node);return raw?{...M().inspect(raw,{layer:layer(node)}),layer:layer(node)}:null}
-root.ChipDrawingJson={configure,initialize,record,encode,validate,check,decode,project,create,update,arcVector,encodeLayer,checkLayer,decodeLayer,adopt,capture,diagnostics,describe,dimensions,circle,encodeLayers,sceneSignature};
+root.ChipDrawingJson={configure,initialize,record,read:node=>encodeObject(node,{cache:false}),encode,validate,check,decode,project,create,update,closure,setClosure,arcVector,encodeLayer,checkLayer,decodeLayer,adopt,capture,diagnostics,describe,dimensions,circle,encodeLayers,sceneSignature};
 })(globalThis);

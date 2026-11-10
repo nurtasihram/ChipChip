@@ -2,6 +2,24 @@
 (function(root){
 'use strict';
 const finite=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
+// One geometry adapter for every boundary snap and construction tool. No tool owns a pick radius.
+function curves(node,{parse,matrix}){const G=root.ChipCurveMetrics,attr=k=>Number(node.getAttribute(k)||0);let result=[];
+ if(node.getAttribute('data-object-type')==='point')return [];
+ if(node.localName==='line'&&attr('x1')===attr('x2')&&attr('y1')===attr('y2'))return [];
+ if(node.localName==='line')result=[G.bezier([{x:attr('x1'),y:attr('y1')},{x:attr('x2'),y:attr('y2')}])];
+ else if(node.localName==='path')result=G.commands(parse(node.getAttribute('d')||'')?.commands||[]);
+ else if(['polyline','polygon'].includes(node.localName)){const values=(node.getAttribute('points')||'').trim().split(/[\s,]+/).map(Number),points=[];for(let i=0;i+1<values.length;i+=2)points.push({x:values[i],y:values[i+1]});if(node.localName==='polygon'&&points.length)points.push(points[0]);result=points.slice(1).map((p,i)=>G.bezier([points[i],p]));}
+ else if(node.localName==='rect'){const x=attr('x'),y=attr('y'),w=attr('width'),h=attr('height'),rx=Math.min(w/2,Math.max(0,Number(node.getAttribute('rx')??node.getAttribute('ry')??0))),ry=Math.min(h/2,Math.max(0,Number(node.getAttribute('ry')??node.getAttribute('rx')??0))),line=(a,b)=>G.bezier([a,b]);if(rx&&ry){result=[line({x:x+rx,y},{x:x+w-rx,y}),G.ellipse(x+w-rx,y+ry,rx,ry,0,-Math.PI/2,Math.PI/2),line({x:x+w,y:y+ry},{x:x+w,y:y+h-ry}),G.ellipse(x+w-rx,y+h-ry,rx,ry,0,0,Math.PI/2),line({x:x+w-rx,y:y+h},{x:x+rx,y:y+h}),G.ellipse(x+rx,y+h-ry,rx,ry,0,Math.PI/2,Math.PI/2),line({x,y:y+h-ry},{x,y:y+ry}),G.ellipse(x+rx,y+ry,rx,ry,0,Math.PI,Math.PI/2)];}else{const p=[{x,y},{x:x+w,y},{x:x+w,y:y+h},{x,y:y+h},{x,y}];result=p.slice(1).map((q,i)=>line(p[i],q));}}
+ else if(['circle','ellipse'].includes(node.localName))result=[G.ellipse(attr('cx'),attr('cy'),attr(node.localName==='circle'?'r':'rx'),attr(node.localName==='circle'?'r':'ry'))];
+ return result.map(curve=>G.transform(curve,matrix(node)));
+}
+function curveCandidate(item,point){const hit=item.curve.degree===1?(()=>{const p=nearestPoint(point,item.a,item.b),dx=item.b.x-item.a.x,dy=item.b.y-item.a.y,d=dx*dx+dy*dy;return {point:p,t:d?((p.x-item.a.x)*dx+(p.y-item.a.y)*dy)/d:0};})():root.ChipCurveMetrics.nearest(item.curve,point);return {type:'nearest',anchorType:'nearest',id:'near:'+item.id,point:hit.point,node:item.node,curve:item.curve,index:item.index,t:hit.t,locked:item.locked,source:item.source,label:'邊上最近點'};}
+function curveReferences(curves,point){const refs=[];for(const [index,curve]of curves.entries()){const a=curve.point(0),b=curve.point(1),t=Math.hypot(a.x-point.x,a.y-point.y)<1e-8?0:Math.hypot(b.x-point.x,b.y-point.y)<1e-8?1:null,hit=t===null?root.ChipCurveMetrics.nearest(curve,point):{t,point:curve.point(t),distance:0};if(t!==null||hit.distance<=1e-7)refs.push({curve,index,t:hit.t});}return refs;}
+// Continuous boundaries contribute only their closest projection, even in display-all mode.
+// Co-located projections retain source identity for the shared overlap chooser.
+function nearestBoundary(candidates,screen=p=>p){const boundary=candidates.filter(c=>c.curve&&c.type==='nearest');if(!boundary.length)return candidates;const best=boundary.reduce((a,b)=>b.distance<a.distance?b:a),p=screen(best.point);return candidates.filter(c=>!c.curve||c.type!=='nearest'||Math.hypot(screen(c.point).x-p.x,screen(c.point).y-p.y)<=.01);}
+function isExplicitPoint(candidate){return ['node','control','midpoint','curveMidpoint','intersection','center','focus'].includes(candidate.type);}
+function preferExplicitPoints(candidates,tolerance){return candidates.some(c=>isExplicitPoint(c)&&c.distance<=tolerance)?candidates.filter(c=>c.type!=='nearest'||!c.curve):candidates;}
 function nearestPoint(p,a,b){const x=b.x-a.x,y=b.y-a.y,length=x*x+y*y,t=length?Math.max(0,Math.min(1,((p.x-a.x)*x+(p.y-a.y)*y)/length)):0;return {x:a.x+t*x,y:a.y+t*y}}
 function intersection(a,b,c,d){const rx=b.x-a.x,ry=b.y-a.y,sx=d.x-c.x,sy=d.y-c.y,den=rx*sy-ry*sx;if(Math.abs(den)<1e-12)return null;const qx=c.x-a.x,qy=c.y-a.y,t=(qx*sy-qy*sx)/den,u=(qx*ry-qy*rx)/den;if(t<0||t>1||u<0||u>1)return null;return {x:a.x+t*rx,y:a.y+t*ry}}
 // Nearest grid queries are bounded independently of density and search diameter.
@@ -39,9 +57,9 @@ function gridCandidates({point,spacing,radius,count,retain=[]}){
 // Reusable world-space BVH. Queries expand from the cursor in lower-bound
 // distance order; once the next region cannot beat the hit, traversal stops.
 function spatialIndex(items){
- const bounds=item=>item.point?{minX:item.point.x,maxX:item.point.x,minY:item.point.y,maxY:item.point.y}:{minX:Math.min(item.a.x,item.b.x),maxX:Math.max(item.a.x,item.b.x),minY:Math.min(item.a.y,item.b.y),maxY:Math.max(item.a.y,item.b.y)};
+ const bounds=item=>item.point?{minX:item.point.x,maxX:item.point.x,minY:item.point.y,maxY:item.point.y}:item.box||{minX:Math.min(item.a.x,item.b.x),maxX:Math.max(item.a.x,item.b.x),minY:Math.min(item.a.y,item.b.y),maxY:Math.max(item.a.y,item.b.y)};
  function build(entries){if(!entries.length)return null;const box={minX:Infinity,minY:Infinity,maxX:-Infinity,maxY:-Infinity};for(const e of entries){box.minX=Math.min(box.minX,e.box.minX);box.minY=Math.min(box.minY,e.box.minY);box.maxX=Math.max(box.maxX,e.box.maxX);box.maxY=Math.max(box.maxY,e.box.maxY)}if(entries.length===1)return {...box,item:entries[0].item};const axis=box.maxX-box.minX>=box.maxY-box.minY?'X':'Y';entries.sort((a,b)=>(a.box['min'+axis]+a.box['max'+axis])-(b.box['min'+axis]+b.box['max'+axis]));const mid=entries.length>>1;return {...box,left:build(entries.slice(0,mid)),right:build(entries.slice(mid))}}
- const root=build(items.filter(item=>item.point?finite(item.point):finite(item.a)&&finite(item.b)).map(item=>({item,box:bounds(item)})));
+ const root=build(items.filter(item=>item.point?finite(item.point):item.box?Object.values(item.box).every(Number.isFinite):finite(item.a)&&finite(item.b)).map(item=>({item,box:bounds(item)})));
  function range(box,visit){const stack=root?[root]:[];while(stack.length){const n=stack.pop(),b=typeof box==='function'?box():box;if(n.maxX<b.minX||n.minX>b.maxX||n.maxY<b.minY||n.minY>b.maxY)continue;if(n.item)visit(n.item);else stack.push(n.left,n.right)}}
  function search({point,radius,seeds=[],accept=()=>true,evaluate=item=>[item],overlap=0,stats={},count=1}){
   let best=radius,hits=[];stats.visited=0;stats.evaluated=0;if(!finite(point)||!Number.isFinite(radius)||radius<=0)return [];
@@ -69,5 +87,5 @@ function nearby({point,candidates,enabledTypes,priority,tolerance=10,screen=p=>p
  const hits=candidates.filter(c=>finite(c.point)&&allowed.has(c.type)).map(c=>{const q=screen(c.point);return {...c,distance:Math.hypot(q.x-cursor.x,q.y-cursor.y)}}).filter(c=>Number.isFinite(c.distance)&&c.distance<=tolerance);
  return sort?hits.sort((a,b)=>a.distance-b.distance):hits;
 }
-root.ChipSnap={nearestPoint,nearestGrid,gridCandidates,spatialIndex,intersection,resolve,nearby};
+root.ChipSnap={curves,curveCandidate,curveReferences,nearestBoundary,isExplicitPoint,preferExplicitPoints,nearestPoint,nearestGrid,gridCandidates,spatialIndex,intersection,resolve,nearby};
 })(globalThis);

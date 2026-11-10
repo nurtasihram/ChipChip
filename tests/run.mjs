@@ -1,3 +1,5 @@
+import {results as pathOperations} from './path-operations.test.mjs';
+import {results as curveMetrics} from './curve-metrics.test.mjs';
 import {results as snapping} from './snap.test.mjs';
 import {results as json} from './json-store.test.mjs';
 import {results as model} from './drawing-model.test.mjs';
@@ -11,4 +13,4 @@ import {results as bubbles} from './bubbles.test.mjs';
 import {results as viewport} from './viewport.test.mjs';
 import {results as ui} from './ui.test.mjs';
 import {results as apps} from './app.test.mjs';
-export const results=[...construction,...model,...json,...snapping,...editor,...quantity,...selection,...layers,...viewport,...ui,...apps,...bubbles,...ring];
+export const results=[...pathOperations,...curveMetrics,...construction,...model,...json,...snapping,...editor,...quantity,...selection,...layers,...viewport,...ui,...apps,...bubbles,...ring];

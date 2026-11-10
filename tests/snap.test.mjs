@@ -73,3 +73,14 @@ assert.ok(core.nearestGrid({point:{x:100,y:40},spacing:{r:1e-9},angle:1e-9}).len
 // Count-limited queries preserve exact nearest candidates without enumerating dense grids.
 for(const spacing of [{x:1,y:1},{x:.001,y:10},{x:7,y:.03}]){const point={x:.0023,y:.017},count=20,found=core.gridCandidates({point,spacing,radius:100,count}),brute=[];const cx=Math.round(point.x/spacing.x),cy=Math.round(point.y/spacing.y);for(let x=cx-25;x<=cx+25;x++)for(let y=cy-25;y<=cy+25;y++)brute.push(Math.hypot(x*spacing.x-point.x,y*spacing.y-point.y));brute.sort((a,b)=>a-b);const distances=found.map(c=>Math.hypot(c.point.x-point.x,c.point.y-point.y)).sort((a,b)=>a-b);assert.equal(distances.length,count);for(let i=0;i<count;i++)assert.ok(Math.abs(distances[i]-brute[i])<1e-9)}
 const many=Array.from({length:2000},(_,i)=>({id:String(i),point:{x:Math.sin(i)*i,y:Math.cos(i)*i}})),probe={x:20,y:-10},stats={},bounded=core.spatialIndex(many).search({point:probe,radius:5000,count:12,stats}),expected=many.sort((a,b)=>Math.hypot(a.point.x-probe.x,a.point.y-probe.y)-Math.hypot(b.point.x-probe.x,b.point.y-probe.y)).slice(0,12);assert.deepEqual(plain(bounded.map(c=>c.id)),expected.map(c=>c.id));assert.ok(stats.evaluated<100);
+
+// Curved boundary items use conservative curve bounds, never endpoint-only boxes.
+vm.runInContext(await readFile(new URL('../shared/curve-metrics.js',import.meta.url),'utf8'),context);
+{
+ const G=context.ChipCurveMetrics,curve=G.bezier([{x:0,y:0},{x:100,y:200},{x:200,y:0}]),item={id:'curve',node:'source',index:0,curve,box:curve.bounds,a:curve.point(0),b:curve.point(1),source:'曲線'},point={x:100,y:102},tree=core.spatialIndex([item]),found=tree.search({point,radius:5,evaluate:item=>[core.curveCandidate(item,point)]});
+ assert.equal(found.length,1);assert.equal(found[0].node,'source');assert.ok(Math.hypot(found[0].point.x-100,found[0].point.y-100)<1e-6);assert.ok(Math.abs(found[0].t-.5)<1e-7);
+ const identity={a:1,b:0,c:0,d:1,e:0,f:0},node=(tag,attrs)=>({localName:tag,getAttribute:key=>Object.hasOwn(attrs,key)?String(attrs[key]):null}),rounded=core.curves(node('rect',{x:0,y:0,width:100,height:60,rx:10,ry:5}),{matrix:()=>identity});
+ assert.equal(rounded.length,8);const p=rounded[1].point(.5);assert.ok(p.x>90&&p.x<100&&p.y>0&&p.y<5);
+ const rectangle=core.curves(node('rect',{x:0,y:0,width:100,height:60}),{matrix:()=>identity});assert.equal(core.curveReferences(rectangle,{x:100,y:0}).length,2);assert.equal(core.curveReferences(rectangle,{x:50,y:30}).length,0);
+ const distant=Array.from({length:2000},(_,i)=>{const c=G.transform(curve,{...identity,e:i*1000});return {...item,id:'curve-'+i,curve:c,box:c.bounds,a:c.point(0),b:c.point(1)};}),queryStats={};core.spatialIndex(distant).search({point,radius:1e7,stats:queryStats,evaluate:item=>[core.curveCandidate(item,point)]});assert.ok(queryStats.evaluated<10,'curved nearest queries retain spatial pruning');
+}

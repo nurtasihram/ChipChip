@@ -3,7 +3,7 @@
 'use strict';
 const colors=Object.freeze({rho:'#60a5fa',theta:'#42d98c',scale:'#ffd166',limit:'#ff5969'});
 let pixelRatio=null;function setPixelRatio(numerator,denominator,unit){if(!Number.isSafeInteger(numerator)||numerator<=0||!Number.isSafeInteger(denominator)||denominator<=0||unit==='px'||!units[unit])throw new RangeError('像素換算必須為兩個正整數與物理長度單位');pixelRatio=Object.freeze({kind:'rational',numerator,denominator,unit});return pixelRatio}function getPixelRatio(){return pixelRatio}
-let unitDpi=Number(globalThis.CHIP_CONTEXT_DPI)||96;function setDpi(value){if(Number.isFinite(value)&&value>0) {unitDpi=value;pixelRatio=null}}const units=Object.freeze({get px(){return pixelRatio?pixelRatio.numerator*units[pixelRatio.unit]/pixelRatio.denominator:25.4/unitDpi},m:1000,cm:10,mm:1,um:.001,inch:25.4,mil:.0254});
+let unitDpi=Number(globalThis.CHIP_CONTEXT_DPI)||96;function setDpi(value){if(Number.isFinite(value)&&value>0) {unitDpi=value;pixelRatio=null}}const units=Object.freeze({get px(){return pixelRatio?pixelRatio.numerator*units[pixelRatio.unit]/pixelRatio.denominator:25.4/unitDpi},km:1000000,m:1000,cm:10,mm:1,um:.001,ft:304.8,inch:25.4,mil:.0254});
 class Camera{
  constructor({x=0,y=0,scale=1,angle=0,mirror=false}={}){if(![x,y,scale,angle].every(Number.isFinite)||scale<=0)throw Error('Invalid camera');Object.assign(this,{x,y,scale,angle,mirror})}
  matrix(){const c=Math.cos(this.angle),s=Math.sin(this.angle),m=this.mirror?-1:1,z=this.scale;return {a:z*m*c,b:z*m*s,c:z*s,d:-z*c,e:this.x,f:this.y}}

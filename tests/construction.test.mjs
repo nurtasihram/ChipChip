@@ -35,3 +35,7 @@ for(const raw of [
 ]){const result=M.inspect(raw);assert.equal(result.geometry,null);assert.deepEqual(result.data,raw);assert.ok(result.issues.some(issue=>issue.code==='geometry'))}
 `,context);
 export const results=['11 rectangle drawing references preserve their declared parameters and rotation','arc construction solves signed sweep, three-point, radius selections, sagitta, tangent and double-tangent definitions','invalid arc geometry retains its original JSON and has no false SVG projection'];
+
+const constructionSource=await readFile(new URL('../src/chipdraw/point-construction.js',import.meta.url),'utf8');
+assert.doesNotMatch(constructionSource,/\b(?:G|ChipCurveMetrics)\.nearest\s*\(/,'construction source picking must stay in the common snap model');
+assert.doesNotMatch(constructionSource,/distance\s*<=\s*(16|24)\b/,'construction must not own a snap capture radius');

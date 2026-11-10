@@ -3,14 +3,14 @@ import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 export async function build(){
  const base=new URL('../',import.meta.url);
- const files=['shared/drawing-layers.js','shared/viewport-core.js','shared/ring-gesture.js','shared/bubbles.js','shared/quantity-editor.js','shared/json-store.js','shared/drawing-model.js','shared/json-test-ui.js','shared/code-editor.js','vendor/monaco/workers.js','vendor/monaco/editor.js','vendor/monaco/editor.css','shared/workspace-ui.js','shared/workspace-ui.css','src/chipdraw/snap-core.js','src/chipdraw/selection-tools.js','src/chipdraw/pcb-fill-properties.js','src/chipdraw/stroke-properties.js','src/chipdraw/arc.js','src/chipdraw/drawing-json.js','src/chipdraw/construction.js'];
+ const files=['shared/drawing-layers.js','shared/viewport-core.js','shared/ring-gesture.js','shared/bubbles.js','shared/quantity-editor.js','shared/json-store.js','shared/drawing-model.js','shared/json-test-ui.js','shared/code-editor.js','vendor/monaco/workers.js','vendor/monaco/editor.js','vendor/monaco/editor.css','shared/workspace-ui.js','shared/workspace-ui.css','src/chipdraw/snap-core.js','src/chipdraw/selection-tools.js','src/chipdraw/pcb-fill-properties.js','src/chipdraw/stroke-properties.js','src/chipdraw/arc.js','src/chipdraw/drawing-json.js','src/chipdraw/construction.js','src/chipdraw/tool-help.js','shared/curve-metrics.js','shared/path-operations.js','src/chipdraw/point-construction.js'];
  const sources=await Promise.all(files.map(file=>readFile(new URL(file,base),'utf8')));
  const version=createHash('sha256').update(sources.join('\n')).digest('hex').slice(0,12),outputs=[];
  for(const [name,source]of [['ChipChip','src/chipchip/index.html'],['ChipDraw','src/chipdraw/index.html']]){
   let html=await readFile(new URL(source,base),'utf8');
   for(let i=0;i<files.length;i++){
    const file=files[i],css=file.endsWith('.css'),marker=css?'<link rel="stylesheet" href="../../'+file+'">':'<script src="../../'+file+'"></script>';
-   if((file==='shared/drawing-layers.js'||file.startsWith('src/chipdraw/'))&&!html.includes(marker))continue;
+   if((['shared/drawing-layers.js','shared/curve-metrics.js','shared/path-operations.js'].includes(file)||file.startsWith('src/chipdraw/'))&&!html.includes(marker))continue;
    if(html.split(marker).length!==2)throw Error(source+': expected exactly one reference to '+file);
    html=html.replace(marker,()=>css?'<style>\n'+sources[i].replace(/<\/style/gi,'<\\/style')+'\n</style>':'<script>\n'+sources[i].replace(/<\/script/gi,'<\\/script')+'\n</script>');
   }

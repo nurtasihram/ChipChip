@@ -94,8 +94,8 @@ function solve(object){
   else throw Error('此圓形參考方式的選解規則尚未接入');return {type,point:center,radius,reference};
  }
  if(type==='bezier'){
-  const list=points();if(list.length<2)throw Error('貝塞爾線至少需要兩個點');if(!present(object.control_points))return {type:'polyline',points:list,closed:object.closed===true,degraded:true};
-  if(!Array.isArray(object.control_points)||object.control_points.length!==list.length)throw Error('points 與 control_points 長度必須相同');object.control_points.forEach(point);throw Error('二階貝塞爾的逐段連接規則尚待定義');
+  const list=points();if(list.length<2)throw Error('貝塞爾線至少需要兩個點');if(present(object.closed)&&typeof object.closed!=='boolean')throw Error('closed 需要布林值');if(!present(object.control_points))return {type:'polyline',points:list,closed:object.closed===true,degraded:true};
+  if(!Array.isArray(object.control_points)||object.control_points.length!==list.length)throw Error('points 與 control_points 長度必須相同');const controls=object.control_points.map(point).map((p,i)=>p.map((v,j)=>v+list[i][j]));return {type,points:list,controls,closed:object.closed===true};
  }
  throw Error('此物件類型的幾何模型尚未接入');
 }
