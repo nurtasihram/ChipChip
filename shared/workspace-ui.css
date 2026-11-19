@@ -234,3 +234,7 @@ body[data-ui-header="title-only"] .ui-title {flex:none}
 body[data-ui-header="title-only"] #projectTitle {
  display:flex;align-items:center;min-height:59px;padding:9px 14px;
 }
+
+.chip-settings-window{position:fixed;z-index:36;width:min(420px,calc(100vw - 16px));color:var(--ui-text);font:13px system-ui}
+.chip-settings-window:focus-within{z-index:39}
+.chip-settings-window>.ui-floating-body{overflow:auto;overscroll-behavior:contain;min-height:0;padding:6px}

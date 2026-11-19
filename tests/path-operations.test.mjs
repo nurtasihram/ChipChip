@@ -5,6 +5,12 @@ const context=vm.createContext({});for(const file of ['shared/viewport-core.js',
 const M=context.ChipDrawingModel,P=M.paths,G=context.ChipCurveMetrics,plain=v=>JSON.parse(JSON.stringify(v)),eq=(a,b)=>assert.deepEqual(plain(a),b),near=(a,b)=>assert.ok(Math.abs(a-b)<1e-7),line=points=>({id:'first',name:'首個',type:'polyline',points,stroke:{color:'#123456'}});
 const a=line([[0,0],[10,0]]),b={...line([[10,0],[20,5]]),id:'second',name:'次個'};let result=P.join(a,'end',b,'start',{weld:true});eq(result.points,[[0,0],[10,0],[20,5]]);assert.equal(result.name,'首個');assert.equal(result.id,'first');eq(result.stroke,{color:'#123456'});assert.throws(()=>P.join(a,'start',b,'start',{weld:true}),/重疊/);
 result=P.join(a,'start',line([[-20,0],[-10,0]]),'end');eq(result.points,[[-20,0],[-10,0],[0,0],[10,0]]);result=P.join(a,'end',{...b,type:'bezier'},'start');assert.equal(result.type,'bezier');assert.equal(result.name,'首個');
+const source={id:'original',type:'polyline',points:[[0,0],[1,0],[1,1]],closed:true};
+for(const fragments of [M.action.break(source,'segment',1),M.action.break(source,'anchor',1),M.action.fuse(source,[{index:0,t:.5}])]){
+ assert.ok(fragments.length);
+ for(const fragment of fragments){assert.ok(!Object.hasOwn(fragment,'id'));M.solve(fragment);}
+ assert.equal(source.id,'original');assert.equal(source.closed,true);
+}
 const square={...line([[0,0],[10,0],[10,10],[0,10]]),closed:true};result=P.breakSegment(square,1);assert.equal(result.length,1);eq(result[0].points,[[10,10],[0,10],[0,0],[10,0]]);assert.equal(result[0].closed,false);result=P.breakSegment({...square,closed:false},1);eq(result.map(o=>o.points),[[[0,0],[10,0]],[[10,10],[0,10]]]);assert.equal(result.reduce((n,o)=>n+o.points.length,0),4);
 result=P.split(square,[{index:0,t:.5}]);eq(result[0].points,[[5,0],[10,0],[10,10],[0,10],[0,0],[5,0]]);assert.equal(result[0].closed,false);result=P.split(a,[{index:0,t:.25},{index:0,t:.75}]);eq(result.map(o=>o.points),[[[0,0],[2.5,0]],[[2.5,0],[7.5,0]],[[7.5,0],[10,0]]]);assert.equal(P.split(a,[{index:0,t:0}]).length,0);
 const circle={type:'circle',point:[0,0],radius:10};let hits=P.intersections(circle,[0,-20],[0,20]);assert.equal(hits.length,2);result=P.split(circle,hits);assert.equal(result.length,2);for(const arc of result){assert.equal(arc.type,'arc');near(Math.abs(M.solve(arc).sweep),180);}assert.equal(P.intersections(circle,[0,11],[0,20]).length,0,'cutting segment is not extended');

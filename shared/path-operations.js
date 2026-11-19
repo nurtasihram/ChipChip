@@ -31,5 +31,18 @@ function breakAnchor(raw,index){if(raw.type==='point')throw Error('獨立錨點�
 function locate(raw,index,point){const d=describe(raw);if(d.kind==='arc'){const angle=M.arcAngle(point,d.center),travel=M.turn((angle-d.start)*(d.sweep<0?-1:1));return {index:0,t:travel/Math.abs(d.sweep)};}if(d.controls)return {index,t:root.ChipCurveMetrics.nearest(curve(d,index),{x:point[0],y:point[1]}).t};const a=d.points[index],b=d.points[(index+1)%d.points.length],v=b.map((x,i)=>x-a[i]),l=v[0]*v[0]+v[1]*v[1];return {index,t:l?Math.max(0,Math.min(1,((point[0]-a[0])*v[0]+(point[1]-a[1])*v[1])/l)):0};}
 function unique(values){return values.sort((a,b)=>a-b).filter((v,i,list)=>!i||Math.abs(v-list[i-1])>E);}
 function intersections(raw,a,b){const d=describe(raw),G=root.ChipCurveMetrics,map=p=>({x:p[0],y:p[1]});let curves;if(d.kind==='points'){const p=d.points;curves=p.slice(0,d.closed?p.length:p.length-1).map((q,i)=>curve(d,i))}else curves=[G.ellipse(d.center[0],d.center[1],d.radius,d.radius,0,d.start*Math.PI/180,d.sweep*Math.PI/180)];return curves.flatMap((curve,index)=>{const result=G.lineIntersections(curve,map(a),map(b));if(result.overlap)throw Error('切割線與圖形邊重合，沒有唯一交點');return result.hits.map(hit=>({index,t:hit.t,point:[hit.point.x,hit.point.y]}));});}
+// Return complete geometry for new objects. The document allocates IDs on commit.
+function newObjects(pieces){
+ for(const piece of pieces)delete piece.id;
+ return pieces;
+}
+M.action={
+ break(raw,part,index){
+  if(part==='anchor')return newObjects(breakAnchor(raw,index));
+  if(part==='segment')return newObjects(breakSegment(raw,index));
+  throw Error('打斷須指定實際錨點或子線');
+ },
+ fuse(raw,locations){return newObjects(split(raw,locations));}
+};
 M.paths={describe,join,split,breakSegment,breakAnchor,intersections,locate};
 })(globalThis);

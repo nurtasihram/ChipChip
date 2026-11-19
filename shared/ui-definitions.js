@@ -3,6 +3,9 @@
 'use strict';
 const packs = {
   "zh-Hant": {
+    "settings.measurement": "計量單位",
+    "settings.snap": "吸附",
+    "settings.selection": "選取",
     "pane.close": "關閉繪圖窗格",
     "panel.close": "收起面板",
     "canvas.pan": "平移畫布",
@@ -44,6 +47,9 @@ const packs = {
     "fullscreen.off": "退出全螢幕"
   },
   "en": {
+    "settings.measurement": "Measurement Units",
+    "settings.snap": "Snapping",
+    "settings.selection": "Selection",
     "pane.close": "Close drawing pane",
     "panel.close": "Close panel",
     "canvas.pan": "Pan canvas",
