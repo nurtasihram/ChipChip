@@ -1,12 +1,24 @@
-# ChipChip / ChipDraw 共用工作區
+# ChipChip · ChipDraw 繪圖工作區
 
-兩個工具在同一個 Git 專案與 main 分支維護，共用一份底層視圖及格線引擎。
+ChipDraw 是 ChipChip 的預設繪圖面板。HTML 和原生 Qt 共用 JavaScript 矩形編輯狀態機，各自接收輸入、處理畫面更新及繪圖。Qt 主入口直接開啟原生畫板。
 
-ChipChip 預設開啟 [ChipDraw 繪圖面板](index.html)。離線開啟 ChipChip.html 或 ChipDraw.html 都會進入同一個繪圖工作區。[PinView 管腳查看器](PinView.html) 有獨立入口。
+## 開始使用
 
-Qt 本機移植測試環境：[安裝、啟動與驗證](desktop/qt/README.md)。
+| 版本 | 開啟方式 |
+| --- | --- |
+| 離線 HTML | 下載專案後雙擊 `ChipDraw.html`。`ChipChip.html` 和 `index.html` 也開啟同一畫板。 |
+| Windows 原生 Qt | 在專案根目錄首次執行 `.\tools\qt.ps1 setup`，之後用 `.\tools\qt.ps1 run` 啟動。 |
+| Linux／WSL 原生 Qt | 在有圖形桌面的環境首次執行 `bash tools/qt.sh setup`，之後用 `bash tools/qt.sh run` 啟動。 |
 
-原 ChipChip 專案說明保留於 [docs/CHIPCHIP_README.md](docs/CHIPCHIP_README.md)。
+試畫第一個矩形：HTML 從浮動工具列選矩形，Qt 在畫板按次鍵打開「矩形畫法」。選「對角線」，點第一角、移動查看預覽，再點對角完成；預覽中按 Esc 取消。
+
+[ChipDraw 使用指南與面板操作](docs/wiki/Home.md) · [Qt 安裝與驗證](desktop/qt/README.md) · [HTML 繪圖工具](docs/DRAWING_TOOL_INTERACTIONS.md)
+
+## 目前的移植範圍
+
+兩端已接入四種矩形畫法，以及共用的按鈕定義、繁中與英文語言資源和 SVG 操作示範。HTML 面板在畫板內移動；Qt 工具窗格可以拖到桌面，整個放回板內後再跟隨畫板。圖層、吸附及其他繪圖工具的完整操作說明適用於 HTML 版。
+
+獨立的管腳查看器從 `PinView.html` 或 Qt 的 `run pinview` 開啟。[管腳查看器原始說明](docs/CHIPCHIP_README.md)
 
 ## 原始碼與產物
 
@@ -21,11 +33,11 @@ Qt 本機移植測試環境：[安裝、啟動與驗證](desktop/qt/README.md)�
 - src/chipdraw/index.html：ChipDraw 介面、SVG 編輯工具與適配層。
 - tools/build.mjs：產生 ChipDraw 繪圖入口 ChipChip.html、ChipDraw.html、index.html，以及獨立的 PinView.html。
 - tests/run.mjs：執行核心、共用 UI 行為與完整應用啟動檢查。
-- 根目錄的兩個 HTML 為可離線開啟的產物，請勿直接修改。
+- 根目錄的四個 HTML 為可離線開啟的產物，請勿直接修改。
 
 開發時亦可直接開啟 src/ 中的 index.html，兩者以相對路徑載入同一份共用庫；不需伺服器，Monaco 資源也已隨離線產物內嵌。一般修改後執行 node tools/build.mjs；驗證使用 node tests/run.mjs。只有更新 Monaco 資源時才需依 pnpm-lock.yaml 安裝開發依賴，然後執行 node tools/build-monaco.mjs 再重建 HTML。
 
-## 目前共用的邏輯
+## HTML 版 ChipDraw 與 PinView 共用的邏輯
 
 Camera 負責世界／畫面座標互換、可視範圍、平移、指定位置縮放／旋轉，以及 SVG 轉換矩陣。世界座標統一為 Y 向上，長度使用 mm，角度使用弧度。
 
@@ -73,7 +85,7 @@ ChipDraw 錨點與物件屬性已用桌面 Chrome 的實際 SVG 矩陣及指標�
 
 核心測試納入 `node tests/run.mjs`。實際瀏覽器原型驗證使用 `node tests/snap.browser.mjs`，沿用 `CHIPDRAW_PLAYWRIGHT` 與 `CHIPDRAW_BROWSER` 環境變數。
 
-## ChipDraw 操作
+## HTML 版 ChipDraw 操作
 
 直線工具的方式工具列提供「自由直線」、「指定點切線」與「指定點法線」。後兩者先在來源線段／曲線上點選切點，再移動游標選擇正反方向及線段長度，點擊完成；觸控可依序點選切點及方向／長度位置。方向與長度全程由指標位置決定，畫布只顯示共用格式器產生的長度讀值，不提供長度輸入或鎖定；按 Enter 或「建立直線」也可確認當前預覽。線段從切點向所選的一側繪製，長度須大於零；Esc、切換工具／方式、來源幾何改變或指標取消會放棄預覽。切線使用來源幾何在文件座標中的導數；法線與變換後的切線垂直。端點導數為零的貝塞爾會使用第一個非零高階導數決定切線方向。兩種方式共用既有曲線選點、計量、工具列及提示動畫模型，原曲線保留，建立結果為普通直線並使用一筆撤銷紀錄。實際瀏覽器驗證為 `node tests/line-construction.browser.mjs`。
 
