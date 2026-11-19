@@ -31,6 +31,52 @@ const rectRefs={
  center:[.5,-.5],top:[.5,0],bottom:[.5,-1],left:[0,-.5],right:[1,-.5]
 };
 const rectAnchors={...rectRefs,'top-left-bottom-right':[0,0],'top-right-bottom-left':[1,0]};
+const rectConstruction=Object.freeze({diagonal:2,edge:3,'right-triangle':3,'edge-midpoint':2});
+const rectDelta=(a,b)=>[b[0]-a[0],b[1]-a[1]];
+const rectDirection=(a,b)=>Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI;
+function rectangleDefinition(reference,anchors,cursor,rotation=0){
+ const [a,b]=anchors;
+ if(!Object.hasOwn(rectConstruction,reference)||anchors.length!==rectConstruction[reference]-1)return null;
+ if(reference==='diagonal')return {type:'rect',reference,points:[a,cursor],rotation};
+ if(reference==='edge-midpoint'){
+  const [x,y]=rotate(rectDelta(a,cursor),-rotation);
+  return {type:'rect',reference,point:a,half_width:Math.abs(x),height:y,rotation};
+ }
+ if(reference==='edge'){
+  const d=rectDelta(a,b),[x,y]=rotate(d,-rotation),perpendicular=rotate(rectDelta(a,cursor),-rectDirection(a,b))[1];
+  return {type:'rect',reference,points:[a,b],...(Math.abs(x)>=Math.abs(y)?{height:perpendicular}:{width:-perpendicular})};
+ }
+ const center=a.map((v,i)=>v+(b[i]-v)/2),d=rectDelta(center,cursor),distance=Math.hypot(...d);
+ if(!distance)return null;
+ const radius=Math.hypot(...rectDelta(a,b))/2;
+ return {type:'rect',reference,points:[a,b,center.map((v,i)=>v+d[i]*radius/distance)]};
+}
+function solveConstructedRectangle(object,point,points,positive){
+ const {reference}=object;
+ let rotation=present(object.rotation)?number(object.rotation):0,anchor,x1=0,y1=0,x2,y2;
+ if(reference==='edge-midpoint'){
+  anchor=point(object.point);x2=positive(object.half_width);x1=-x2;y2=number(object.height);
+ }else{
+  const list=points(),needed=reference==='right-triangle'?3:2;
+  if(list.length!==needed)throw Error('此矩形參考方式需要 '+needed+' 個點');
+  const [a,b,c]=list,d=rectDelta(a,b),span=positive(Math.hypot(...d));anchor=a;
+  if(reference==='diagonal'){
+   [x2,y2]=rotate(d,-rotation);
+   if(Math.min(Math.abs(x2),Math.abs(y2))<=span*1e-12)throw Error('對角線不可平行於矩形的邊');
+  }else if(reference==='edge'){
+   if(present(object.width)===present(object.height))throw Error('指定邊需要一個有向寬度或高度');
+   rotation=rectDirection(a,b);
+   if(present(object.width)){rotation-=90;x2=number(object.width);y2=span}
+   else{x2=span;y2=number(object.height)}
+  }else{
+   const u=rectDelta(a,c),v=rectDelta(c,b),w=Math.hypot(...u),h=Math.hypot(...v);
+   if(Math.min(w,h)<=span*1e-12||Math.abs(u[0]*v[0]+u[1]*v[1])>w*h*1e-9)throw Error('第三點必須是矩形的直角頂點');
+   rotation=rectDirection(a,c);x2=w;y2=(u[0]*v[1]-u[1]*v[0]<0?-1:1)*h;
+  }
+ }
+ const offset=rotate([Math.min(x1,x2),Math.max(y1,y2)],rotation);
+ return {type:'rect',reference,point:anchor.map((v,i)=>v+offset[i]),width:positive(Math.abs(x2-x1)),height:positive(Math.abs(y2-y1)),rotation,pivot:anchor};
+}
 function rectangleFromPoints(reference,a,b,{rotation=0,mirror=false}={}){
  if(!Object.hasOwn(rectAnchors,reference))throw Error('未知矩形繪製方式');
  // Screen references reflect horizontally; the archived rectangle stays in its canonical, unreflected frame.
@@ -78,11 +124,21 @@ function arcPath(g){
 function solve(object){
  if(present(object.point_ref)&&!['absolute','start'].includes(object.point_ref))throw Error('尚未支援此 point_ref');if(object.point_ref==='start'&&!['line','polyline','polygon','bezier'].includes(object.type))throw Error('此類型的起點參考尚待定義');if(present(object.reference)&&['point','line','polyline','polygon','bezier'].includes(object.type))throw Error('此類型的 reference 尚待定義');
  const type=object.type,point=value=>{if(!Array.isArray(value)||value.length!==2)throw Error('座標需要兩個分量');return value.map(number)},points=()=>{if(!Array.isArray(object.points))throw Error('缺少 points');let result=object.points.map(point);if(object.point_ref==='start'&&result.length){const first=result[0];result=result.map((p,i)=>i?[p[0]+first[0],p[1]+first[1]]:p)}else if(present(object.point_ref)&&object.point_ref!=='absolute')throw Error('尚未支援此 point_ref');return result},positive=value=>{value=number(value);if(value<=0)throw Error('尺寸必須大於 0');return value};
+ if(type==='measurement-tape'){const list=points();if(list.length!==2||!Math.hypot(...rectDelta(list[0],list[1])))throw Error('捲尺需要兩個不同端點');return {type,points:list}}
+ if(type==='measurement-triangle'){
+  const {reference}=object,list=points();
+  if(!['right','arbitrary'].includes(reference)||list.length!==3)throw Error('三角板需要有效的模式與三個頂點');
+  const u=rectDelta(list[1],list[0]),v=rectDelta(list[1],list[2]),span=Math.hypot(...u)*Math.hypot(...v);
+  if(!span||Math.abs(u[0]*v[1]-u[1]*v[0])<=span*1e-12)throw Error('三角板的三點必須互異且不共線');
+  if(reference==='right'&&Math.abs(u[0]*v[0]+u[1]*v[1])>span*1e-8)throw Error('直三角板的第二個頂點必須為直角');
+  return {type,reference,points:list,closed:true};
+ }
  if(type==='arc')return solveArc(object);
  if(type==='point')return {type,point:point(object.point)};
  if(['line','polyline','polygon'].includes(type)){const list=points();if(type==='line'?list.length!==2:list.length<2)throw Error(type==='line'?'直線需要兩個點':'折線至少需要兩個點');if(present(object.closed)&&type!=='polyline')throw Error('此類型不接受 closed');if(present(object.closed)&&typeof object.closed!=='boolean')throw Error('closed 需要布林值');return {type,points:list,closed:type==='polygon'||object.closed===true}}
  if(type==='rect'){
   if(present(object.closed))throw Error('矩形天然閉合，不接受 closed');const reference=object.reference||'top-left',rotation=present(object.rotation)?number(object.rotation):0;let anchor,width,height,leftTop;
+  if(Object.hasOwn(rectConstruction,reference))return solveConstructedRectangle(object,point,points,positive);
   if(reference==='top-left-bottom-right'||reference==='top-right-bottom-left'){
    const list=points();if(list.length!==2)throw Error('對角點矩形需要兩個點');anchor=list[0];const delta=rotate([list[1][0]-anchor[0],list[1][1]-anchor[1]],-rotation);width=positive(reference==='top-left-bottom-right'?delta[0]:-delta[0]);height=positive(-delta[1]);const offset=rotate(reference==='top-left-bottom-right'?[0,0]:[-width,0],rotation);leftTop=[anchor[0]+offset[0],anchor[1]+offset[1]];
   }else{if(!Object.hasOwn(rectRefs,reference))throw Error('尚未支援此矩形 reference');anchor=point(object.point);width=positive(object.width);height=positive(object.height);const factor=rectRefs[reference],offset=rotate([width*factor[0],height*factor[1]],rotation);leftTop=[anchor[0]-offset[0],anchor[1]-offset[1]]}
@@ -122,7 +178,7 @@ function inspect(input,{layer=null,software=softwarePaint,units_system={}}={}){
   }
   if(own(data[kind],'color')&&['pcb','vect'].includes(layer?.type)||own(data[kind],'color')&&layer?.type?.startsWith('pcb_'))add('inactive-color','此圖層強制使用圖層色彩，物件色彩資料保留但不生效',{path:kind+'.color'});
  }
- const known=new Set(['id','name','type','hiden','stroke','fill','reference','point_ref','point','points','width','height','radius','diameter','rotation','closed','control_points','angle','angles','sweep','sagitta','side','large','direction']);for(const key of Object.keys(data))if(!known.has(key))add('unknown-field','未識別欄位 '+key+'，原資料保留',{path:key});
+ const known=new Set(['id','name','type','hiden','stroke','fill','reference','point_ref','point','points','width','height','half_width','radius','diameter','rotation','closed','control_points','angle','angles','sweep','sagitta','side','large','direction']);for(const key of Object.keys(data))if(!known.has(key))add('unknown-field','未識別欄位 '+key+'，原資料保留',{path:key});
  let geometry=null;try{geometry=solve(data);if(geometry.degraded)add('missing-controls','缺少 control_points，以折線降級顯示，保留貝塞爾類型',{path:'control_points'})}catch(error){add('geometry',error.message,{severity:'error',path:'geometry'})}
  const hiden=visibility(data,layer?[layer]:[]);return {data,geometry,paint,sources,hiden:hiden.hiden,issues};
 }
@@ -134,11 +190,11 @@ function inspectLayer(input,{software=softwarePaint,units_system={}}={}){
 function selection(input){const data=copy(input);if(!data||!Array.isArray(data.items))throw Error('JSON 模型需要 items 陣列');data.units_system=units(data.units_system||{});const ids=new Set();for(const item of data.items){if(!item||Array.isArray(item)||typeof item!=='object')throw Error('items 必須包含物件');if(present(item.id)){if(typeof item.id!=='string'||!item.id)throw Error('無效物件 ID');if(ids.has(item.id))throw Error('物件 ID 重複');ids.add(item.id)}}return data}
 const numericSchema={type:'number'},pointSchema={type:'array',items:numericSchema,minItems:2,maxItems:2};
 const strokeSchema={type:'object',properties:{type:{type:'string'},color:{type:'string'},linecap:{type:'string'},linejoin:{type:'string'},width:numericSchema,opacity:numericSchema,offset:numericSchema,miterlimit:numericSchema,pattern:{type:'array',items:numericSchema}}};
-const objectSchema={type:'object',properties:{id:{type:'string'},name:{type:'string'},type:{type:'string'},hiden:{type:'boolean'},reference:{type:'string'},point_ref:{type:'string'},point:pointSchema,points:{type:'array',items:pointSchema},width:numericSchema,height:numericSchema,radius:numericSchema,diameter:numericSchema,rotation:numericSchema,closed:{type:['boolean','string']},angle:numericSchema,angles:{type:'array',items:numericSchema},sweep:numericSchema,sagitta:numericSchema,side:numericSchema,large:{type:'boolean'},direction:{type:'string'},stroke:strokeSchema,fill:{type:'object',properties:{type:{type:'string'},color:{type:'string'},opacity:numericSchema}}}};
+const objectSchema={type:'object',properties:{id:{type:'string'},name:{type:'string'},type:{type:'string'},hiden:{type:'boolean'},reference:{type:'string'},point_ref:{type:'string'},point:pointSchema,points:{type:'array',items:pointSchema},width:numericSchema,height:numericSchema,half_width:numericSchema,radius:numericSchema,diameter:numericSchema,rotation:numericSchema,closed:{type:['boolean','string']},angle:numericSchema,angles:{type:'array',items:numericSchema},sweep:numericSchema,sagitta:numericSchema,side:numericSchema,large:{type:'boolean'},direction:{type:'string'},stroke:strokeSchema,fill:{type:'object',properties:{type:{type:'string'},color:{type:'string'},opacity:numericSchema}}}};
 for(const key of Object.keys(objectSchema.properties)){const value=objectSchema.properties[key];objectSchema.properties[key]={...value,type:[...(Array.isArray(value.type)?value.type:[value.type]),'null']}}
 for(const group of [strokeSchema,objectSchema.properties.fill])for(const key of Object.keys(group.properties)){const value=group.properties[key];group.properties[key]={...value,type:[value.type,'null']}}
 const layerTypeSchema={enum:['art','vect','pcb']};
 const layerSchema={type:'object',properties:{id:{type:'string'},name:{type:'string'},type:layerTypeSchema,hiden:{type:'boolean'},stroke:objectSchema.properties.stroke,fill:objectSchema.properties.fill,items:{type:'array',items:objectSchema}},required:['type']};
 const jsonSchema={oneOf:[{...objectSchema,not:{anyOf:[{required:['items']},{required:['type'],properties:{type:layerTypeSchema}}]}},{type:'object',properties:{items:{type:'array',items:objectSchema}},required:['items'],not:{required:['type']}},layerSchema]};
-root.ChipDrawingModel={copy,createIds,units,defaultUnits,softwarePaint,resolve,visibility,rotate,rectRefs,rectAnchors,rectangleFromPoints,solveArc,arcPath,arcAngle,turn,inspect,inspectLayer,specialize,selection,solve,jsonSchema};
+root.ChipDrawingModel={copy,createIds,units,defaultUnits,softwarePaint,resolve,visibility,rotate,rectRefs,rectAnchors,rectConstruction,rectangleDefinition,rectangleFromPoints,solveArc,arcPath,arcAngle,turn,inspect,inspectLayer,specialize,selection,solve,jsonSchema};
 })(globalThis);

@@ -7,3 +7,6 @@ __pycache__/
 revision-review/
 ChipChip_view_revision_ready.zip
 node_modules/
+.venv-qt/
+.venv-qt-wsl/
+.qt-test-output/

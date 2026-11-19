@@ -33,7 +33,7 @@ try{
    if(type==='bezier'&&frame.reference)assert.equal(actual.reference,frame.reference,mode.id+' coordinate mode at '+frame.time);
    if(frame.finished){assert.equal(actual.tool,mode.returnToSelect?'select':toolId,type+'/'+mode.id+' post-completion tool');assert.equal(actual.objects,type==='point'&&mode.gesture==='click'?2:1);if(type==='bezier')assert.equal(actual.reference,mode.referenceMode)}
   }
-  const steps=await page.evaluate(start=>history.length-start,historyBefore);for(let i=0;i<steps;i++)await page.locator('#undo').click();assert.equal(await page.evaluate(()=>layers.groups().reduce((n,g)=>n+g.children.length,0)),0,type+'/'+mode.id+' full undo');
+  const steps=await page.evaluate(start=>history.length-start,historyBefore);for(let i=0;i<steps;i++)await page.evaluate(()=>rectangleEditor().undo());assert.equal(await page.evaluate(()=>layers.groups().reduce((n,g)=>n+g.children.length,0)),0,type+'/'+mode.id+' full undo');
   results.push({type,mode:mode.id,label:mode.label,frames:frames.length,checks:['real pointer-event replay','preview/final geometry','control handles','coordinate mode','completion tool','undo']});console.log('PASS '+type+'/'+mode.id+' ('+frames.length+' stages)');
  }
  // Later gestures cannot change the mode established by the first Bezier gesture.

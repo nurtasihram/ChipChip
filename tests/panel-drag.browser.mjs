@@ -15,6 +15,6 @@ try{
   await page.evaluate(id=>{for(const name of ['panel','layersPanel','advanced'])$(name).style.zIndex=name===id?'1000':'20';const n=$(id);n.style.setProperty('left','120px','important');n.style.setProperty('top','140px','important')},id);
   const handle=page.locator('#'+id+' '+heading),r=await handle.boundingBox(),before=await page.locator('#'+id).boundingBox();await page.mouse.move(r.x+25,r.y+15);await page.mouse.down();await page.mouse.move(r.x+115,r.y+55,{steps:12});await page.evaluate(()=>new Promise(requestAnimationFrame));const moving=await page.locator('#'+id).boundingBox();assert.ok(Math.abs(moving.x-before.x-90)<1&&Math.abs(moving.y-before.y-40)<1,'real pointer drag paints at frame cadence');await page.mouse.up();const after=await page.locator('#'+id).boundingBox();assert.ok(Math.abs(after.x-moving.x)<1&&Math.abs(after.y-moving.y)<1,'release commits without a position jump');assert.equal(await page.locator('#'+id).evaluate(n=>n.style.translate),'');await handle.focus();await page.keyboard.press('ArrowRight');assert.ok(Math.abs((await page.locator('#'+id).boundingBox()).x-after.x-10)<1,'keyboard movement still works');
  }
- await page.locator('#objectPanelClose').evaluate(n=>n.click());assert.equal(await page.locator('#panel').isVisible(),false);assert.equal(await page.locator('#props').getAttribute('aria-expanded'),'false');
+ await page.locator('#objectPanelClose').evaluate(n=>n.click());assert.equal(await page.locator('#panel .ui-panel-mini').isVisible(),true);
  assert.deepEqual(errors,[]);
 }finally{await browser.close()}

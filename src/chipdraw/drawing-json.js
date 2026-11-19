@@ -10,7 +10,7 @@ function storedView(node){try{return JSON.parse(decodeURIComponent(attr(node,'da
 const nativeFields=['x','y','width','height','rx','ry','cx','cy','r','x1','y1','x2','y2','points','d','transform','stroke','fill','stroke-width','stroke-linecap','stroke-linejoin','stroke-dasharray','stroke-dashoffset','stroke-opacity','fill-opacity','stroke-miterlimit','display'];
 function view(node){const m=matrix(node),result={tag:node.localName,_matrix:{a:m.a,b:m.b,c:m.c,d:m.d,e:m.e,f:m.f}};for(const key of nativeFields){const value=attr(node,key);if(value!==null)result[key]=value}return result}
 function stash(node,data){node.setAttribute('data-model-record',encodeURIComponent(root.ChipJson.stringify(data)));node.setAttribute('data-model-view',encodeURIComponent(JSON.stringify(view(node))))}
-function type(node){if(attr(node,'data-object-type')==='point')return 'point';if(node.localName==='path')return root.ChipArc.read(node)?'arc':'bezier';return node.localName}
+function type(node){if(node.localName==='line'&&attr(node,'data-object-type')==='measurement-tape')return 'measurement-tape';if(node.localName==='polygon'&&attr(node,'data-object-type')==='measurement-triangle')return 'measurement-triangle';if(attr(node,'data-object-type')==='point')return 'point';if(node.localName==='path')return root.ChipArc.read(node)?'arc':'bezier';return node.localName}
 function initialize(node){
  if(bound.has(node))return bound.get(node);const raw=record(node);let id=attr(node,'data-model-id')||raw?.id;
  if(id){const previous=owners.get(id);if(previous&&previous!==node&&previous.parentNode&&bridge.contains?.(previous))throw Error('偵測到重複物件 ID，需明確修復');ids().reserve(id)}else id=ids().next();
@@ -29,13 +29,30 @@ function quantity(value){return root.ChipUI.measurements.archiveQuantity({value:
 function numeric(node,key,fallback=0){const value=attr(node,key);return quantity(value===null?fallback:Number(value))}
 function matrix(node){return bridge.matrix?.(node)||{a:1,b:0,c:0,d:1,e:0,f:0}}
 function world(point,m){return [quantity(m.a*point[0]+m.c*point[1]+m.e),quantity(-(m.b*point[0]+m.d*point[1]+m.f))]}
-function frame(node){const m=matrix(node),x=Math.hypot(m.a,m.b),y=Math.hypot(m.c,m.d),dot=m.a*m.c+m.b*m.d;if(Math.abs(x-1)>1e-9||Math.abs(y-1)>1e-9||Math.abs(dot)>1e-9)throw Error('此物件含縮放或斜切，模型轉換尚未接入；原圖形保持不變');return m}
+function frame(node,tolerance=1e-9){const m=matrix(node),x=Math.hypot(m.a,m.b),y=Math.hypot(m.c,m.d),dot=m.a*m.c+m.b*m.d;if(Math.abs(x-1)>tolerance||Math.abs(y-1)>tolerance||Math.abs(dot)>tolerance)throw Error('此物件含縮放或斜切，模型轉換尚未接入；原圖形保持不變');return m}
+function rectangleGeometry(previous,topLeft,width,height,rotation){
+ const solved=M().solve(previous),result=M().copy(previous),sx=width/solved.width,sy=height/solved.height;
+ const change=point=>{
+  const [x,y]=M().rotate(point.map((v,i)=>scalar(v)-solved.point[i]),-solved.rotation),offset=M().rotate([x*sx,y*sy],rotation);
+  return offset.map((v,i)=>quantity(topLeft[i]+v));
+ };
+ if(result.points)result.points=result.points.map(change);
+ if(result.point)result.point=change(result.point);
+ if(result.reference==='diagonal'||result.reference==='edge-midpoint')result.rotation=rotation;
+ if(result.width!==undefined)result.width=quantity(scalar(result.width)*sx);
+ if(result.height!==undefined)result.height=quantity(scalar(result.height)*sy);
+ if(result.half_width!==undefined)result.half_width=quantity(scalar(result.half_width)*sx);
+ return result;
+}
 function geometry(node,previous){
- const t=previous?.type==='polyline'&&node.localName==='polygon'?'polyline':type(node),m=frame(node);let result={type:t};
+ const t=previous?.type==='polyline'&&node.localName==='polygon'?'polyline':type(node),constructedRect=t==='rect'&&Object.hasOwn(M().rectConstruction,previous?.reference);
+ // SVGTransform exposes a single-precision matrix even for an authored pure rotation.
+ const m=frame(node,constructedRect||t==='measurement-triangle'||t==='measurement-tape'?1e-7:undefined);let result={type:t};
  if(t==='point')result.point=world([numeric(node,'x1'),numeric(node,'y1')],m);
- else if(t==='line')result.points=[[numeric(node,'x1'),numeric(node,'y1')],[numeric(node,'x2'),numeric(node,'y2')]].map(p=>world(p,m));
- else if(t==='polyline'||t==='polygon'){
+ else if(t==='line'||t==='measurement-tape')result.points=[[numeric(node,'x1'),numeric(node,'y1')],[numeric(node,'x2'),numeric(node,'y2')]].map(p=>world(p,m));
+ else if(t==='polyline'||t==='polygon'||t==='measurement-triangle'){
   const tokens=(attr(node,'points')||'').trim().split(/[\s,]+/).map(Number);if(tokens.length%2||!tokens.every(Number.isFinite))throw Error('物件點簇損壞');result.points=[];for(let i=0;i<tokens.length;i+=2)result.points.push(world([tokens[i],tokens[i+1]],m));
+  if(t==='measurement-triangle')result.reference=previous?.reference;
   if(t==='polyline'&&previous?.closed!==false&&result.points.length>2&&result.points[0].every((v,i)=>v===result.points.at(-1)[i])){result.closed=true;result.points.pop()}
  }
  else if(t==='bezier'){
@@ -50,6 +67,7 @@ function geometry(node,previous){
  }else if(t==='rect'){
   if(m.a*m.d-m.b*m.c<0)throw Error('鏡像矩形的參考方式尚未接入；不改寫參考語義');if(numeric(node,'rx')||numeric(node,'ry'))throw Error('幾何圓角矩形欄位尚待定義，原圖形保持不變');
   const topLeft=world([numeric(node,'x'),numeric(node,'y')],m),width=numeric(node,'width'),height=numeric(node,'height'),rotation=-Math.atan2(m.b,m.a)*180/Math.PI,reference=previous?.reference||'top-left';
+  if(constructedRect)return rectangleGeometry(previous,topLeft,width,height,rotation);
   result={type:t,reference,rotation};const factor=M().rectRefs[reference];
   if(factor){const offset=M().rotate([width*factor[0],height*factor[1]],rotation);result.point=[topLeft[0]+offset[0],topLeft[1]+offset[1]];result.width=width;result.height=height}
   else if(['top-left-bottom-right','top-right-bottom-left'].includes(reference)){const right=M().rotate([width,0],rotation),bottom=M().rotate([0,-height],rotation);result.points=reference==='top-left-bottom-right'?[topLeft,[topLeft[0]+right[0]+bottom[0],topLeft[1]+right[1]+bottom[1]]]:[[topLeft[0]+right[0],topLeft[1]+right[1]],[topLeft[0]+bottom[0],topLeft[1]+bottom[1]]]}
@@ -82,7 +100,7 @@ function encodeObject(node,{cache=true}={}){
  const data=previous?M().copy(previous):{id:attr(node,'data-model-id'),name:attr(node,'data-model-name'),...geometry(node)};
  const geometricFields=['x','y','width','height','cx','cy','r','x1','y1','x2','y2','points','d','transform','rx','ry'];
  if(previous&&geometricFields.some(key=>current[key]!==oldView?.[key])){
-  const next=geometry(node,previous);if(previous.type==='bezier'&&!previous.control_points)next.type='bezier';for(const key of ['point','points','width','height','radius','diameter','rotation','angle','angles','sweep','sagitta','side','large','direction'])delete data[key];Object.assign(data,next);
+  const next=geometry(node,previous);if(previous.type==='bezier'&&!previous.control_points)next.type='bezier';for(const key of ['point','points','width','height','half_width','radius','diameter','rotation','angle','angles','sweep','sagitta','side','large','direction'])delete data[key];Object.assign(data,next);
  }
  for(const kind of ['stroke','fill']){
   const next=paint(node,kind);
@@ -105,8 +123,10 @@ function errorNode(data,issues){
  set(node,'aria-label',issues.map(item=>item.message).join('；'));return node;
 }
 function geometryNode(g){let node;
-  node=document.createElementNS(ns,g.type==='point'?'line':g.type==='bezier'?'path':g.type==='polyline'&&g.closed?'polygon':g.type);
+  node=document.createElementNS(ns,g.type==='point'||g.type==='measurement-tape'?'line':g.type==='bezier'?'path':(g.type==='polyline'&&g.closed||g.type==='measurement-triangle')?'polygon':g.type);
   if(g.type==='point'){set(node,'x1',g.point[0]);set(node,'y1',-g.point[1]);set(node,'x2',g.point[0]);set(node,'y2',-g.point[1]);set(node,'data-object-type','point')}
+  else if(g.type==='measurement-tape'){set(node,'data-object-type',g.type);for(const [i,[x,y]]of g.points.entries()){set(node,'x'+(i+1),x);set(node,'y'+(i+1),-y)}}
+  else if(g.type==='measurement-triangle'){set(node,'data-object-type',g.type);set(node,'points',g.points.map(([x,y])=>x+','+(-y)).join(' '))}
   else if(['line','polyline','polygon'].includes(g.type)){if(g.type==='line')for(const [i,p]of g.points.entries()){set(node,'x'+(i+1),p[0]);set(node,'y'+(i+1),-p[1])}else set(node,'points',g.points.map(p=>p[0]+','+(-p[1])).join(' '))}
   else if(g.type==='bezier'){let d='M '+g.points[0][0]+' '+(-g.points[0][1]);for(let i=0;i<(g.closed?g.points.length:g.points.length-1);i++){const c=g.controls[i],p=g.points[(i+1)%g.points.length];d+=' Q '+c[0]+' '+(-c[1])+' '+p[0]+' '+(-p[1]);}if(g.closed)d+=' Z';set(node,'d',d);}
   else if(g.type==='rect'){const relative=M().rotate([g.point[0]-g.pivot[0],g.point[1]-g.pivot[1]],-g.rotation),local=[g.pivot[0]+relative[0],g.pivot[1]+relative[1]];set(node,'x',local[0]);set(node,'y',-local[1]);set(node,'width',g.width);set(node,'height',g.height);if(g.rotation)set(node,'transform','rotate('+(-g.rotation)+' '+g.pivot[0]+' '+(-g.pivot[1])+')')}
@@ -124,7 +144,7 @@ function decodeObject(data,target,context=layer(target)){
   for(const kind of ['stroke','fill']){const p=inspected.paint[kind];set(node,kind,p.type==='none'?'none':p.color);set(node,kind+'-opacity',p.opacity)}
   const p=inspected.paint.stroke;for(const [key,name]of Object.entries({width:'stroke-width',linecap:'stroke-linecap',linejoin:'stroke-linejoin',miterlimit:'stroke-miterlimit',offset:'stroke-dashoffset'}))set(node,name,p[key]);set(node,'stroke-dasharray',p.type==='dashed'?p.pattern.join(' '):'none');
   if(g.type==='point'){set(node,'stroke-linecap','round');set(node,'stroke-dasharray','none');set(node,'stroke-dashoffset',0)}
-  if(['line','polyline','bezier'].includes(g.type)&&!g.closed)set(node,'fill','none');
+  if(['line','polyline','bezier','measurement-tape'].includes(g.type)&&!g.closed)set(node,'fill','none');
  }
  if(data.hiden===true)set(node,'display','none');
  set(node,'data-model-id',data.id||ids().next());if(data.name)set(node,'data-model-name',data.name);
@@ -172,7 +192,7 @@ function capture(nodes){for(const node of nodes){const data=record(node);if(data
 function diagnostics(nodes){return [...nodes].flatMap((node,index)=>M().inspect(encodeObject(node),{layer:layer(node)}).issues.map(issue=>({...issue,index})))}
 function encodeLayers(groups){return {units_system:{...M().defaultUnits},layers:[...groups].map(encodeLayer)}}
 function sceneSignature(nodes){function shape(node){return {...view(node),children:[...node.children].map(shape)}}return JSON.stringify([...nodes].map(shape))}
-function dimensions(node,width,height){const raw=record(node);if(raw?.type!=='rect')return;if(M().rectRefs[raw.reference||'top-left'])stash(node,{...raw,width:quantity(width),height:quantity(height)});else if(raw.points&&M().rectAnchors[raw.reference]){const first=raw.points[0],offset=M().rotate([raw.reference==='top-right-bottom-left'?-width:width,-height],raw.rotation||0);stash(node,{...raw,points:[first,[first[0]+offset[0],first[1]+offset[1]]]})}}
+function dimensions(node,width,height){const raw=record(node);if(raw?.type!=='rect')return;if(Object.hasOwn(M().rectConstruction,raw.reference)){encodeObject(node);return}if(M().rectRefs[raw.reference||'top-left'])stash(node,{...raw,width:quantity(width),height:quantity(height)});else if(raw.points&&M().rectAnchors[raw.reference]){const first=raw.points[0],offset=M().rotate([raw.reference==='top-right-bottom-left'?-width:width,-height],raw.rotation||0);stash(node,{...raw,points:[first,[first[0]+offset[0],first[1]+offset[1]]]})}}
 function circle(node,center,radius){const raw=record(node);if(raw?.type==='circle'&&['center-radius','center-diameter'].includes(raw.reference||'center-radius')){raw.point=[quantity(center.x),quantity(-center.y)];raw[raw.reference==='center-diameter'?'diameter':'radius']=quantity(radius)*(raw.reference==='center-diameter'?2:1);stash(node,raw)}}
 function describe(node){const raw=record(node);return raw?{...M().inspect(raw,{layer:layer(node)}),layer:layer(node)}:null}
 root.ChipDrawingJson={configure,initialize,record,read:node=>encodeObject(node,{cache:false}),encode,validate,check,decode,project,create,update,closure,setClosure,arcVector,encodeLayer,checkLayer,decodeLayer,adopt,capture,diagnostics,describe,dimensions,circle,encodeLayers,sceneSignature};

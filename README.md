@@ -2,7 +2,9 @@
 
 兩個工具在同一個 Git 專案與 main 分支維護，共用一份底層視圖及格線引擎。
 
-入口：[ChipChip](index.html) · [ChipDraw](ChipDraw.html)
+ChipChip 預設開啟 [ChipDraw 繪圖面板](index.html)。離線開啟 ChipChip.html 或 ChipDraw.html 都會進入同一個繪圖工作區。[PinView 管腳查看器](PinView.html) 有獨立入口。
+
+Qt 本機移植測試環境：[安裝、啟動與驗證](desktop/qt/README.md)。
 
 原 ChipChip 專案說明保留於 [docs/CHIPCHIP_README.md](docs/CHIPCHIP_README.md)。
 
@@ -17,7 +19,7 @@
 - vendor/monaco/：已封裝的 Monaco Editor、樣式、工作執行緒與授權資料。
 - src/chipchip/index.html：ChipChip 介面、管腳資料與適配層。
 - src/chipdraw/index.html：ChipDraw 介面、SVG 編輯工具與適配層。
-- tools/build.mjs：由同一份核心產生 ChipChip.html、ChipDraw.html 及 GitHub Pages 入口 index.html。
+- tools/build.mjs：產生 ChipDraw 繪圖入口 ChipChip.html、ChipDraw.html、index.html，以及獨立的 PinView.html。
 - tests/run.mjs：執行核心、共用 UI 行為與完整應用啟動檢查。
 - 根目錄的兩個 HTML 為可離線開啟的產物，請勿直接修改。
 

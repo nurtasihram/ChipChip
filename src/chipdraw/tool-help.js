@@ -66,6 +66,38 @@ function animation(type,only=null){
  }
  return scene.bind(render,modes);
 }
+function metricAnimation(kind){
+ const label={right:'直三角板',arbitrary:'任意三角板',tape:'捲尺',clear:'刪除選取的測量物件'}[kind],scene=ChipUI.interactionHelp({id:'metric-'+kind,label});
+ const {node,set,lerp}=scene,a={x:48,y:115},b={x:184,y:109},c={x:138,y:44},action={x:30,y:25};
+ const clear=kind==='clear',arbitrary=kind==='arbitrary',end=kind==='right'||clear?{x:190,y:45}:b;
+ const shape=node('g',{'data-demo-shape':''});
+ const lines=['#ff6464','#54d987','#ffd166'].map(color=>node('line',{stroke:kind==='right'?color:'#ffd166','stroke-width':1.5},shape));
+ const dots=lines.map(()=>node('circle',{r:4,stroke:'#ffd166'},shape));
+ if(clear)node('g',{transform:'translate(19 14)'}).innerHTML=ChipUI.buttonIcon('trash');
+ const pointer=node('path',{d:ChipUI.inputHelp.pointer('mouse'),fill:'#e7edf7','data-demo-pointer':''});
+ const caption=node('text',{x:12,y:165,fill:'#e7edf7','font-size':11});
+ const variants=clear?[{id:'clear'}]:[{id:'click'},{id:'drag'}];
+ const input=(time,kind,p)=>({time,kind,p});
+ return scene.bind((time,variant)=>{
+  const drag=variant.id==='drag',second=arbitrary?.44:.72,finished=arbitrary?.82:second;
+  const progress=(from,to)=>Math.max(0,Math.min(1,(time-from)/(to-from)));
+  const cursor=clear?action:arbitrary&&time>=second?lerp(b,c,progress(second,.79)):lerp(a,end,progress(.16,second-.03));
+  const events=clear?[input(.45,'down',action),input(.48,'up',action)]:[
+   input(.1,'down',a),...(drag?[]:[input(.13,'up',a),input(second-.03,'down',end)]),input(second,'up',end),
+   ...(arbitrary?[input(.79,'down',c),input(.82,'up',c)]:[])
+  ];
+  const confirmed=time>=finished,points=kind==='right'||clear?[a,{x:(clear?end:cursor).x,y:a.y},clear?end:cursor]:arbitrary&&time>=second?[a,b,cursor]:[a,cursor];
+  set(shape,{visibility:(clear?time<.48:time>=.1)?'visible':'hidden'});
+  for(const [i,line]of lines.entries()){
+   const p=points[i],q=points[(i+1)%points.length],show=!!p&&(points.length===3||i===0);
+   set(line,show?{x1:p.x,y1:p.y,x2:q.x,y2:q.y,visibility:'visible'}:{visibility:'hidden'});
+   set(dots[i],p?{cx:p.x,cy:p.y,fill:confirmed||clear||i===0||arbitrary&&time>=second&&i===1?'#ffd166':'#172438',visibility:'visible'}:{visibility:'hidden'});
+  }
+  set(pointer,{transform:'translate('+cursor.x+' '+cursor.y+')'});
+  caption.textContent=clear?(time<.48?'刪除已選取的測量物件':'已刪除'):confirmed?'測量物件已放置':time<.1?'指定起點':arbitrary&&time>=second?'點擊第三點完成':drag?'拖曳後放開':'移動後點擊下一點';
+  scene.input(time,events);
+ },variants);
+}
 for(const [type,items]of Object.entries(definitions))ChipUI.registerObjectInteractions(type,items.map(item=>({...item,helpVisual:()=>animation(type,item.id)})));
-root.ChipToolHelp={animation,sample,fixture,position,types:Object.keys(definitions)};
+root.ChipToolHelp={metricAnimation,animation,sample,fixture,position,types:Object.keys(definitions)};
 })(globalThis);

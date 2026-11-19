@@ -5,6 +5,15 @@ try{
  const page=await browser.newPage({viewport:{width:1400,height:1050}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(new URL('../ChipDraw.html',import.meta.url).href);
  await page.evaluate(()=>{ChipUI.panel.setOpen(false);$('panel').classList.remove('show');showLayers(false);toolsWindow.place(300,80);});
  const select=async type=>page.locator('#toolsButtons [data-tool="'+type+'"]').click();
+ assert.equal(await page.locator('#tools').getAttribute('data-tool-path'),'tools.drawing');
+ for(const [id,kind]of [['select','selector'],['pan','move'],['line','line'],['arc','arc']]){
+  assert.equal(await page.locator('#toolsButtons [data-tool='+id+']').getAttribute('data-tool-path'),'tools.drawing.'+kind);
+ }
+ await select('line');
+ for(const method of ['tangent','normal']){
+  assert.equal(await page.locator('#lineConstructionTools [data-option-id='+method+']').getAttribute('data-tool-path'),'tools.drawing.line.'+method);
+ }
+
  const spaced=async selector=>{const gaps=await page.locator(selector+' .ui-option-default-separator').evaluate(line=>{const a=line.previousElementSibling.getBoundingClientRect(),b=line.getBoundingClientRect(),c=line.nextElementSibling.getBoundingClientRect(),vertical=getComputedStyle(line.parentElement).flexDirection==='column';return vertical?[b.top-a.bottom,c.top-b.bottom]:[b.left-a.right,c.left-b.right];});assert.ok(Math.abs(gaps[0]-gaps[1])<.1,selector+' default separator has equal gaps '+JSON.stringify(gaps));};
  const aligned=async(type,axis)=>{const a=await page.locator('#toolsButtons [data-tool="'+type+'"]').boundingBox(),b=await page.locator('#'+type+'ConstructionTools .ui-option-model button').first().boundingBox();assert.ok(Math.abs((axis==='x'?a.x+a.width/2:a.y+a.height/2)-(axis==='x'?b.x+b.width/2:b.y+b.height/2))<.5,type+' popup buttons align on '+axis);await spaced('#tools');await spaced('#'+type+'ConstructionTools');};
  const gripGeometry=selector=>page.locator(selector+' .ui-toolbar-handle').evaluate(handle=>{const r=handle.getBoundingClientRect(),svg=handle.querySelector('svg'),icon=svg.getBoundingClientRect(),m=new DOMMatrix(getComputedStyle(svg).transform);return {width:r.width,height:r.height,iconWidth:icon.width,iconHeight:icon.height,matrix:[m.a,m.b,m.c,m.d],path:svg.querySelector('path').getAttribute('d')};});

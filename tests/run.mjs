@@ -1,3 +1,4 @@
+import './button-input.test.mjs';
 import {results as pathOperations} from './path-operations.test.mjs';
 import {results as curveMetrics} from './curve-metrics.test.mjs';
 import {results as snapping} from './snap.test.mjs';
