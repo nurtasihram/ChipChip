@@ -10,5 +10,5 @@ export function createMonacoFixture(){
    return {getModel:()=>model,layout(){},focus(){surface.focus()},dispose(){}};
   }
  };
- return {runtime:{monaco:{Uri:{parse:value=>({toString:()=>value})},editor},json:{jsonDefaults:{setDiagnosticsOptions(){}}}},assets:{styles:'',editor:'',json:''}};
+ return {runtime:{monaco:{languages:{getLanguages:()=>[{id:'json',extensions:['.json']}]},Uri:{parse:value=>({toString:()=>value})},editor},json:{jsonDefaults:{setDiagnosticsOptions(){}}}},assets:{styles:'',editor:'',json:''}};
 }

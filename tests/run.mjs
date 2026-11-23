@@ -1,3 +1,5 @@
+import './physical-input.test.mjs';
+import './scalar-input.test.mjs';
 import './button-input.test.mjs';
 import {results as pathOperations} from './path-operations.test.mjs';
 import {results as curveMetrics} from './curve-metrics.test.mjs';

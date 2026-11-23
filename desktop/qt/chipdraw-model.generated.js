@@ -23,26 +23,6 @@ var __spreadValues = (a, b) => {
   return a;
 };
 var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
-var __async = (__this, __arguments, generator) => {
-  return new Promise((resolve, reject) => {
-    var fulfilled = (value) => {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    };
-    var rejected = (value) => {
-      try {
-        step(generator.throw(value));
-      } catch (e) {
-        reject(e);
-      }
-    };
-    var step = (x) => x.done ? resolve(x.value) : Promise.resolve(x.value).then(fulfilled, rejected);
-    step((generator = generator.apply(__this, __arguments)).next());
-  });
-};
 (function(root) {
   "use strict";
   const packs = {
@@ -50,8 +30,11 @@ var __async = (__this, __arguments, generator) => {
       "settings.measurement": "計量單位",
       "settings.snap": "吸附",
       "settings.selection": "選取",
+      "pane.close.hint": "選用關閉鍵，關閉整個繪圖窗格。",
       "pane.close": "關閉繪圖窗格",
+      "panel.close.hint": "選用收起鍵，收起工具面板，保留畫布。",
       "panel.close": "收起面板",
+      "canvas.pan.hint": "選用平移工具，在畫布按住並拖動，放開即停止平移。",
       "canvas.pan": "平移畫布",
       "rect.title": "矩形畫法",
       "done": "完成",
@@ -94,8 +77,11 @@ var __async = (__this, __arguments, generator) => {
       "settings.measurement": "Measurement Units",
       "settings.snap": "Snapping",
       "settings.selection": "Selection",
+      "pane.close.hint": "Activate Close to close the drawing pane.",
       "pane.close": "Close drawing pane",
+      "panel.close.hint": "Activate Close to hide the panel and keep the canvas visible.",
       "panel.close": "Close panel",
+      "canvas.pan.hint": "Select Pan, then press and drag on the canvas. Release to stop panning.",
       "canvas.pan": "Pan canvas",
       "rect.title": "Rectangle methods",
       "done": "Done",
@@ -139,16 +125,22 @@ var __async = (__this, __arguments, generator) => {
     "pane.close": {
       "action": "pane.close",
       "alt": "pane.close",
+      "hint": "pane.close.hint",
+      "visual": { "kind": "animation", "id": "pane.close" },
       "svg": '<svg xmlns="http://www.w3.org/2000/svg" class="tool-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m5 5 14 14M19 5 5 19"/></svg>'
     },
     "panel.close": {
       "action": "panel.close",
       "alt": "panel.close",
+      "hint": "panel.close.hint",
+      "visual": { "kind": "animation", "id": "panel.close" },
       "svg": '<svg xmlns="http://www.w3.org/2000/svg" class="tool-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m5 5 14 14M19 5 5 19"/></svg>'
     },
     "canvas.pan": {
       "action": "canvas.pan",
       "alt": "canvas.pan",
+      "hint": "canvas.pan.hint",
+      "visual": { "kind": "animation", "id": "canvas.pan" },
       "svg": '<svg xmlns="http://www.w3.org/2000/svg" class="tool-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 12h16m-4-4 4 4-4 4M8 8l-4 4 4 4"/></svg>'
     },
     "rect.diagonal": {
@@ -248,6 +240,42 @@ var __async = (__this, __arguments, generator) => {
     const def = buttons[key];
     return __spreadProps(__spreadValues({}, def), { alt: text(def.alt, language), hint: def.hint ? text(def.hint, language) : null });
   }
+  function workspaceButtonHelp(id, scene) {
+    const { node, set, lerp } = scene;
+    const pan = id === "canvas.pan";
+    const panel = id === "panel.close";
+    const board = node("rect", { x: 12, y: 14, width: 220, height: 122, rx: 5, fill: "#26394e", stroke: "#9eb7cf" });
+    const drawing = node("path", { d: "M40 93l30-41 25 41Z", fill: "none", stroke: "#69b8ff", "stroke-width": 3 });
+    const overlay = panel ? node("rect", { x: 118, y: 37, width: 98, height: 64, rx: 4, fill: "#42566c", stroke: "#b4c7d9" }) : null;
+    const target = panel ? { x: 130, y: 49 } : { x: 26, y: 27 };
+    const start = { x: 77, y: 88 }, end = { x: 137, y: 105 };
+    const icon = node("path", {
+      d: pan ? "M-8 0H8m-4-4 4 4-4 4M-4-4l-4 4 4 4" : "M-5-5L5 5M5-5L-5 5",
+      transform: "translate(" + target.x + " " + target.y + ")",
+      fill: "none",
+      stroke: "#fff",
+      "stroke-width": 2
+    });
+    const pointer = node("path", { d: "M0 0v13l4-3 4 6 3-2-4-6 5-1Z", fill: "#fff", "data-demo-pointer": "" });
+    const press = node("circle", { r: 7, fill: "none", stroke: "#ffd166", "stroke-width": 2 });
+    const events = [{ time: 0.22, kind: "down", p: target }, { time: 0.3, kind: "up", p: target }];
+    if (pan) events.push({ time: 0.49, kind: "down", p: start }, { time: 0.82, kind: "up", p: end });
+    const phase = (t, a, b) => Math.max(0, Math.min(1, (t - a) / (b - a)));
+    return scene.bind((t) => {
+      const delta = phase(t, 0.49, 0.82);
+      let cursor = lerp({ x: target.x + 26, y: target.y + 19 }, target, phase(t, 0, 0.22));
+      if (pan && t >= 0.3) cursor = t < 0.49 ? lerp(target, start, phase(t, 0.3, 0.49)) : lerp(start, end, delta);
+      const closed = !pan && t >= 0.3;
+      const visible = (value) => value ? "visible" : "hidden";
+      set(board, { visibility: visible(!closed || panel) });
+      set(drawing, { visibility: visible(!closed || panel), transform: "translate(" + (end.x - start.x) * delta * (pan ? 1 : 0) + " " + (end.y - start.y) * delta * (pan ? 1 : 0) + ")" });
+      if (overlay) set(overlay, { visibility: visible(!closed) });
+      set(icon, { visibility: visible(!closed), stroke: pan && t >= 0.3 ? "#ffd166" : "#fff" });
+      set(pointer, { transform: "translate(" + cursor.x + " " + cursor.y + ")" });
+      set(press, { cx: cursor.x, cy: cursor.y, visibility: visible(t >= 0.22 && t < 0.3 || pan && t >= 0.49 && t < 0.82) });
+      scene.input(t, events);
+    });
+  }
   const english = { "面板選項": "Panel options", "計量單位": "Measurement Units", "長度單位": "Length Units", "角度單位": "Angle Units", "分數／比例": "Fractions / Ratios", "錨點": "Anchors", "首個錨點": "First anchor", "形狀": "Shape", "圓形": "Circle", "矩形": "Rectangle", "綫條": "Lines", "首個選取": "First selected", "樣式": "Notation", "約分": "Reduce", "示例": "Example", "用於縮放刻度與倍率吸附": "Used for scale graduations and snapped ratios", "視圖": "View", "格線": "Grid", "旋轉": "Rotation", "比例尺": "Scale", "顯示": "Show", "自動隱藏": "Auto hide", "透明度": "Opacity", "座標系": "Coordinates", "正交系": "Cartesian", "極座標": "Polar", "座標系指示器": "Coordinate indicator", "指示器": "Compass", "長度": "Length", "公制": "Metric", "英制": "Imperial", "單位": "Unit", "小數精度": "Decimals", "角度": "Angle", "角度精度": "Angle precision", "360° 制": "Degrees", "弧度制": "Radians", "時分秒": "Clock", "顯示原點": "Show origin", "厚": "Width", "顯示格線": "Show grid", "遞進": "Increment", "等分": "Equal", "周數": "Turns", "綫模式": "Lines", "點模式": "Points", "大小": "Size", "鋪滿": "Fill viewport", "溢出": "Overflow", "小時": "Hours", "分鐘": "Minutes", "秒": "Seconds", "毫秒": "Milliseconds", "微秒": "Microseconds", "納秒": "Nanoseconds" };
   const unitNames = { clock: ["時分秒", "hours:minutes:seconds"], km: ["公里", "kilometre"], ft: ["英尺", "foot"], m: ["米", "metre"], cm: ["厘米", "centimetre"], mm: ["毫米", "millimetre"], um: ["微米", "micrometre"], inch: ["英寸", "inch"], mil: ["密耳", "mil"], px: ["像素", "pixel"], "°": ["度", "degree"], rad: ["弧度", "radian"], h: ["小時", "hour"], min: ["分鐘", "minute"], s: ["秒", "second"], ms: ["毫秒", "millisecond"], "µs": ["微秒", "microsecond"], ns: ["納秒", "nanosecond"], count: ["個", "count"], ratio: ["分數", "fraction"], view: ["視圖比", "view"], "%": ["百分比", "%"], "‰": ["千分比", "‰"], "‱": ["萬分比", "‱"] };
   for (const code of ["km", "m", "cm", "mm", "um", "ft", "inch", "mil"]) unitNames[code + "2"] = ["平方" + unitNames[code][0], unitNames[code][1] + " squared"];
@@ -255,6 +283,7 @@ var __async = (__this, __arguments, generator) => {
     locale,
     text,
     button,
+    workspaceButtonHelp,
     english,
     unitNames,
     interactions,
@@ -361,239 +390,242 @@ var __async = (__this, __arguments, generator) => {
     return { numerator: n / (a || /* @__PURE__ */ BigInt("1")), denominator: d / (a || /* @__PURE__ */ BigInt("1")) };
   }
   function convertPair(pair, from, to) {
-    const factors = { km: [/* @__PURE__ */ BigInt("1000000"), /* @__PURE__ */ BigInt("1")], ft: [/* @__PURE__ */ BigInt("1524"), /* @__PURE__ */ BigInt("5")], mm: [/* @__PURE__ */ BigInt("1"), /* @__PURE__ */ BigInt("1")], cm: [/* @__PURE__ */ BigInt("10"), /* @__PURE__ */ BigInt("1")], m: [/* @__PURE__ */ BigInt("1000"), /* @__PURE__ */ BigInt("1")], um: [/* @__PURE__ */ BigInt("1"), /* @__PURE__ */ BigInt("1000")], inch: [/* @__PURE__ */ BigInt("127"), /* @__PURE__ */ BigInt("5")], mil: [/* @__PURE__ */ BigInt("127"), /* @__PURE__ */ BigInt("5000")] };
+    const factors = root.ChipPhysical.lengthFactors;
     if (!factors[from] || !factors[to]) throw Error("此欄位需要物理長度單位");
-    const a = factors[from], b = factors[to];
+    const a = factors[from].map(BigInt), b = factors[to].map(BigInt);
     return reducePair(pair.numerator * a[0] * b[1], pair.denominator * a[1] * b[0]);
-  }
-  function mount({ unitFor, precision, valueOf, formatValue, formatUnit, allowedPhysicalUnits, setValue, setRational = () => false }) {
-    let popup = null, epoch = 0;
-    function close(restore = true) {
-      epoch++;
-      const owner = restore !== false && (popup == null ? void 0 : popup.contains(document.activeElement)) ? popup.chipOwner : null;
-      popup == null ? void 0 : popup.remove();
-      popup = null;
-      owner == null ? void 0 : owner.focus();
-    }
-    function dispatch(input, value) {
-      if (!Number.isFinite(value)) throw Error("需要有限數值");
-      const min = input.getAttribute("min"), max = input.getAttribute("max");
-      if (min !== null) value = Math.max(Number(min), value);
-      if (max !== null) value = Math.min(Number(max), value);
-      setValue(input, value, unitFor(input));
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-      input.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-    function panel(input) {
-      close();
-      popup = document.createElement("div");
-      popup.className = "quantity-popup";
-      popup.chipOwner = input;
-      popup.setAttribute("data-panel-popup", "true");
-      popup.chipClose = () => close(false);
-      popup.setAttribute("role", "dialog");
-      document.body.append(popup);
-      const r = input.getBoundingClientRect();
-      root.ChipUI.placePopup(popup, r.left, r.bottom + 5);
-      return popup;
-    }
-    function button(host, label, fn) {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.textContent = label;
-      b.onclick = fn;
-      host.append(b);
-      return b;
-    }
-    function expression(input) {
-      const host = panel(input), requestEpoch = epoch, field = document.createElement("input"), error = document.createElement("output");
-      host.classList.add("quantity-expression");
-      const heading = document.createElement("strong");
-      heading.textContent = "算式";
-      host.append(heading);
-      field.type = "text";
-      field.value = String(valueOf(input));
-      field.setAttribute("aria-label", "算式");
-      field.setAttribute("placeholder", "例如 2 * Math.PI");
-      error.className = "quantity-error";
-      error.setAttribute("role", "alert");
-      error.setAttribute("aria-live", "assertive");
-      error.hidden = true;
-      host.append(field);
-      const ok = button(host, "確定", () => __async(null, null, function* () {
-        error.hidden = true;
-        error.textContent = "";
-        field.removeAttribute("aria-invalid");
-        ok.disabled = true;
-        ok.setAttribute("aria-busy", "true");
-        const timer = setTimeout(() => ok.classList.add("quantity-busy"), 180);
-        try {
-          const result = yield run(field.value, valueOf(input));
-          if (requestEpoch !== epoch) return;
-          dispatch(input, result);
-          close();
-        } catch (e) {
-          if (requestEpoch !== epoch) return;
-          error.textContent = "算式錯誤：" + e.message;
-          error.hidden = false;
-          field.setAttribute("aria-invalid", "true");
-          field.focus();
-        } finally {
-          clearTimeout(timer);
-          ok.disabled = false;
-          ok.classList.remove("quantity-busy");
-          ok.removeAttribute("aria-busy");
-        }
-      }));
-      button(host, "取消", close);
-      host.append(error);
-      field.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !ok.disabled) {
-          e.preventDefault();
-          ok.onclick();
-        }
-      });
-      field.focus();
-      field.select();
-    }
-    function convert(input) {
-      var _a, _b;
-      const host = panel(input), unit = unitFor(input), units = unit === "°" || unit === "rad" ? { "°": Math.PI / 180, rad: 1 } : ["%", "‰", "‱"].includes(unit) ? { "%": 0.01, "‰": 1e-3, "‱": 1e-4 } : ((_b = (_a = root.ChipUI) == null ? void 0 : _a.measurements) == null ? void 0 : _b.unitCandidates("physical-area").includes(unit)) ? Object.fromEntries(root.ChipUI.measurements.unitCandidates("physical-area").map((code) => [code, root.ChipUI.measurements.unitFactor(code)])) : root.ChipViewport.units;
-      if (!(unit in units)) {
-        host.textContent = "此欄位沒有可換算的單位";
-        button(host, "關閉", close);
-        return;
-      }
-      const title = document.createElement("div");
-      title.textContent = "以其他單位輸入，確認後換回 " + formatUnit(unit);
-      host.append(title);
-      const field = document.createElement("input");
-      field.type = "number";
-      field.value = formatValue(valueOf(input), unit);
-      host.append(field);
-      let from = unit, conversionValue = valueOf(input), exact = input.id === "pixelLength" ? decimalPair(field.value) : null;
-      field.addEventListener("input", () => {
-        conversionValue = Number(field.value);
-        if (exact) try {
-          exact = decimalPair(field.value);
-        } catch (e) {
-          exact = null;
-        }
-      });
-      for (const key of Object.keys(units)) {
-        if (units === root.ChipViewport.units && unit !== "px" && !allowedPhysicalUnits().includes(key)) continue;
-        if (input.id === "pixelLength" && key === "px") continue;
-        button(host, formatUnit(key), () => {
-          if (exact) {
-            exact = convertPair(exact, from, key);
-            field.value = formatValue(Number(exact.numerator) / Number(exact.denominator), key);
-          } else {
-            conversionValue = conversionValue * units[from] / units[key];
-            field.value = formatValue(conversionValue, key);
-          }
-          from = key;
-          for (const b of host.querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.textContent === formatUnit(key)));
-        });
-      }
-      const error = document.createElement("output");
-      error.setAttribute("role", "alert");
-      button(host, "確定", () => {
-        try {
-          if (exact && setRational(input, convertPair(exact, from, unit))) {
-            close();
-            return;
-          }
-          dispatch(input, conversionValue * units[from] / units[unit]);
-          close();
-        } catch (e) {
-          error.textContent = e.message;
-        }
-      });
-      button(host, "取消", close);
-      host.append(error);
-    }
-    function menu(input, x, y) {
-      const host = panel(input);
-      host.classList.add("quantity-menu");
-      host.setAttribute("role", "menu");
-      host.setAttribute("aria-label", "數值操作");
-      for (const action of ["複製", "剪切", "算式", "換算", "重置"]) button(host, action, () => __async(null, null, function* () {
-        var _a;
-        try {
-          if (action === "算式") expression(input);
-          else if (action === "換算") convert(input);
-          else if (action === "重置") {
-            dispatch(input, Number((_a = input.getAttribute("value")) != null ? _a : 0));
-            close();
-          } else {
-            yield navigator.clipboard.writeText(input.getAttribute("data-quantity") === "true" ? input.value : String(valueOf(input)));
-            if (action === "剪切") dispatch(input, 0);
-            close();
-          }
-        } catch (e) {
-          host.setAttribute("aria-label", e.message);
-          const error = document.createElement("output");
-          error.textContent = e.message;
-          host.append(error);
-        }
-      }));
-      for (const b of host.querySelectorAll("button")) {
-        b.setAttribute("role", "menuitem");
-        if (b.textContent === "重置") b.classList.add("quantity-reset");
-        b.addEventListener("keydown", (e) => {
-          const buttons = [...host.querySelectorAll("button")], index = buttons.indexOf(b);
-          if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-            e.preventDefault();
-            buttons[(index + (e.key === "ArrowDown" ? 1 : buttons.length - 1)) % buttons.length].focus();
-          }
-        });
-      }
-      host.querySelector("button").focus();
-      root.ChipUI.placePopup(host, x, y);
-    }
-    function target(e) {
-      var _a, _b, _c, _d, _e;
-      const n = ((_b = (_a = e.target).closest) == null ? void 0 : _b.call(_a, "input")) || ((_e = (_d = (_c = e.target).closest) == null ? void 0 : _d.call(_c, "[data-conversion-component]")) == null ? void 0 : _e.querySelector("input"));
-      return n && !n.closest(".quantity-popup") && (["number", "range"].includes(n.type) || n.getAttribute("data-quantity") === "true") ? n : null;
-    }
-    document.addEventListener("contextmenu", (e) => {
-      const input = target(e);
-      if (!input) return;
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      menu(input, e.clientX, e.clientY);
-    }, true);
-    let press = null;
-    document.addEventListener("pointerdown", (e) => {
-      if (popup && !popup.contains(e.target)) close();
-      const input = target(e);
-      if (input && e.pointerType === "touch") {
-        press = { x: e.clientX, y: e.clientY, timer: setTimeout(() => {
-          menu(input, e.clientX, e.clientY);
-          press = null;
-        }, 500) };
-      }
-    }, true);
-    function clear() {
-      if (press) clearTimeout(press.timer);
-      press = null;
-    }
-    document.addEventListener("pointermove", (e) => {
-      if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 8) clear();
-    }, true);
-    for (const type of ["pointerup", "pointercancel"]) document.addEventListener(type, clear, true);
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        close();
-        clear();
-      }
-    }, true);
   }
   function scalar(value) {
     if (typeof value !== "number" || !Number.isFinite(value)) throw Error("需要有限數值");
     return value;
   }
-  root.ChipQuantity = { scalar, decimalPair, convertPair, calculate, run, mount };
+  root.ChipQuantity = { scalar, decimalPair, convertPair, calculate, run };
+})(globalThis);
+(function(root) {
+  "use strict";
+  const lengthFactors = { km: [1e6, 1], m: [1e3, 1], cm: [10, 1], mm: [1, 1], um: [1, 1e3], ft: [1524, 5], inch: [127, 5], mil: [127, 5e3] };
+  const times = ["h", "min", "s", "ms", "µs", "ns"];
+  const seconds = [[3600, 1], [60, 1], [1, 1], [1, 1e3], [1, 1e6], [1, 1e9]];
+  const timeCode = (u) => u === "us" ? "µs" : u;
+  function safe(n) {
+    if (!Number.isSafeInteger(n)) throw RangeError("超出可精確歸檔的整數範圍");
+    return n;
+  }
+  function gcd(a, b) {
+    a = Math.abs(a);
+    while (b) {
+      const r = a % b;
+      a = b;
+      b = r;
+    }
+    return a || 1;
+  }
+  function pair(n, d) {
+    safe(n);
+    safe(d);
+    if (d <= 0) throw RangeError("分母必須為正整數");
+    const g = gcd(n, d);
+    return [n / g, d / g];
+  }
+  function mul(a, b) {
+    const g = gcd(a[0], b[1]), h = gcd(b[0], a[1]);
+    return pair(a[0] / g * (b[0] / h), a[1] / h * (b[1] / g));
+  }
+  function add(a, b) {
+    const g = gcd(a[1], b[1]);
+    return pair(safe(a[0] * (b[1] / g)) + safe(b[0] * (a[1] / g)), a[1] * (b[1] / g));
+  }
+  function decimal(text) {
+    const m = /^([+-]?)(\d*)(?:\.(\d*))?(?:e([+-]?\d+))?$/i.exec(String(text).trim());
+    if (!m || !(m[2] || m[3])) throw Error("請輸入數值");
+    let digits = (m[2] + (m[3] || "")).replace(/^0+/, "");
+    if (!digits) return [0, 1];
+    let exponent = Number(m[4] || 0) - (m[3] || "").length;
+    while (digits.endsWith("0")) {
+      digits = digits.slice(0, -1);
+      exponent++;
+    }
+    const n = safe(Number(digits) * (m[1] === "-" ? -1 : 1));
+    return exponent >= 0 ? pair(n * 10 ** exponent, 1) : pair(n, 10 ** -exponent);
+  }
+  function factor(kind, unit) {
+    if (kind === "length" || kind === "area") {
+      const code = kind === "area" && unit.endsWith("2") ? unit.slice(0, -1) : unit;
+      if (Object.prototype.hasOwnProperty.call(lengthFactors, code) && (kind === "length" || unit === code + "2"))
+        return kind === "length" ? lengthFactors[code] : mul(lengthFactors[code], lengthFactors[code]);
+    } else if (kind === "time" && times.includes(unit)) return seconds[times.indexOf(unit)];
+    else if (kind === "angle" && ["°", "rad"].includes(unit)) return [1, 1];
+    throw Error("物理量與單位不符：" + unit);
+  }
+  function ratioLayout(kind, record) {
+    const own = (key) => Object.prototype.hasOwnProperty.call(record, key);
+    if (!own("numerator") || !own("denominator")) throw Error("比例須同時包含分子與分母");
+    const common = own("unit"), top = own("numeratorUnit"), bottom = own("denominatorUnit");
+    if (top !== bottom || common && top) throw Error("請指定公共單位，或同時指定分子與分母的單位");
+    if (kind === "dimensional-ratio" && !common && !top) throw Error("量綱比例必須指定單位");
+    const units = {};
+    for (const key of ["unit", "numeratorUnit", "denominatorUnit"]) {
+      if (!own(key)) continue;
+      if (typeof record[key] !== "string" || !record[key].trim()) throw Error("比例單位須為非空代碼");
+      units[key] = record[key];
+    }
+    return { kind, mode: "ratio", parts: ["numerator", "denominator"], ratioUnits: units };
+  }
+  function ratioValue(fields, spec) {
+    if (fields.length !== 2) throw Error("比例須同時包含分子與分母");
+    const terms = fields.map((text) => {
+      const exact = decimal(text), value = Number(text);
+      const stored = decimal(String(value));
+      if (stored[0] !== exact[0] || stored[1] !== exact[1]) throw Error("比例項超出可精確保存範圍");
+      return value;
+    });
+    if (terms[1] === 0) throw Error("比例分母不能為零");
+    return __spreadValues({ numerator: terms[0], denominator: terms[1] }, spec.ratioUnits);
+  }
+  function pixelLayout(record) {
+    if (!Array.isArray(record) || record.length !== 2 || !Array.isArray(record[0]) || record[0].length !== 2 || !record[0].every((n) => Number.isSafeInteger(n) && n > 0) || !Object.prototype.hasOwnProperty.call(lengthFactors, record[1]))
+      throw Error("pixel_phy 需要兩個正整數及物理長度單位");
+    return {
+      kind: "pixel_phy",
+      mode: "ratio",
+      parts: ["numerator", "denominator"],
+      ratioUnits: { numeratorUnit: "px", denominatorUnit: record[1] },
+      units: Object.keys(lengthFactors),
+      unit: record[1]
+    };
+  }
+  function convertPixel(record, to) {
+    const { unit } = pixelLayout(record);
+    if (!Object.prototype.hasOwnProperty.call(lengthFactors, to)) throw Error("無效長度單位");
+    if (to === unit) return record;
+    const [pixels, length] = record[0], a = lengthFactors[unit], b = lengthFactors[to];
+    const top = [length, a[0], b[1]], bottom = [pixels, a[1], b[0]];
+    for (let i = 0; i < top.length; i++) for (let j = 0; j < bottom.length; j++) {
+      const divisor = gcd(top[i], bottom[j]);
+      top[i] /= divisor;
+      bottom[j] /= divisor;
+    }
+    const product = (terms) => terms.reduce((n, v) => safe(n * v), 1);
+    return [[product(bottom), product(top)], to];
+  }
+  function layout(kind, s, chosen, record) {
+    var _a;
+    if (kind === "pixel_phy") return pixelLayout(record);
+    if (kind === "scalar-ratio" || kind === "dimensional-ratio") return ratioLayout(kind, record);
+    let units, preferred;
+    if (kind === "length" || kind === "area") {
+      const system = s.length === "british" ? "british" : "metric";
+      units = Object.keys(lengthFactors).filter((u) => ["ft", "inch", "mil"].includes(u) === (system === "british")).map((u) => kind === "area" ? u + "2" : u);
+      preferred = (s.length_approx || (system === "metric" ? "mm" : "inch")) + (kind === "area" ? "2" : "");
+    } else if (kind === "angle") {
+      units = ["°", "rad", "clock"];
+      preferred = { deg: "°", radius: "rad", clock: "clock" }[s.angle] || "°";
+    } else if (kind === "time") {
+      units = times.concat("clock");
+      preferred = timeCode(s.time_approx || "s");
+    } else throw Error("未知物理量：" + kind);
+    const unit = units.includes(chosen) ? chosen : preferred;
+    if (!units.includes(unit)) throw Error("計量設定的單位無效");
+    const precision = (_a = s[kind === "area" ? "length_precision" : kind + "_precision"]) != null ? _a : 2;
+    if (!Number.isInteger(precision) || precision < 0 || precision > 9) throw Error("計量精度無效");
+    let parts = [unit], mode = "single";
+    if (unit === "clock") {
+      const end = timeCode(kind === "angle" && s.angle_approx || s.time_approx || "s");
+      if (!times.includes(end)) throw Error("時間近似單位無效");
+      parts = times.slice(0, times.indexOf(end) + 1);
+      mode = "clock";
+    } else if ((kind === "length" || kind === "area") && ["fraction", "ratio"].includes(s.fraction_style)) {
+      parts = ["numerator", "denominator"];
+      mode = "fraction";
+    }
+    return { kind, unit, units, parts, mode, precision, reduce: s.fraction_approx !== false };
+  }
+  function ratioOf(record) {
+    if (!Number.isFinite(record.value)) throw Error("無效量值");
+    return record.rational ? pair(record.rational.numerator, record.rational.denominator) : decimal(String(record.value));
+  }
+  function convert(kind, p, from, to) {
+    const a = factor(kind, from), b = factor(kind, to);
+    return mul(mul(p, a), [b[1], b[0]]);
+  }
+  function display(record, l) {
+    if (l.kind === "pixel_phy") return record[0].map(String);
+    if (l.mode === "ratio") {
+      if (!Number.isFinite(record.numerator) || !Number.isFinite(record.denominator) || record.denominator === 0) throw Error("無效比例項");
+      return [String(record.numerator), String(record.denominator)];
+    }
+    const source = timeCode(record.unit), clock = l.mode === "clock", unit = clock ? l.kind === "angle" ? "°" : "s" : l.unit;
+    factor(l.kind, source);
+    const angle = l.kind === "angle" && unit !== source;
+    const scale = factor(l.kind, source), target = factor(l.kind, unit);
+    let number = record.value * (scale[0] / scale[1]) / (target[0] / target[1]);
+    if (angle) number *= source === "rad" ? 180 / Math.PI : Math.PI / 180;
+    if (!Number.isFinite(number)) throw Error("無效量值");
+    if (l.mode === "fraction") {
+      if (source === unit && !l.reduce && record.rational) return [record.rational.numerator, record.rational.denominator].map(String);
+      return convert(l.kind, ratioOf(record), source, unit).map(String);
+    }
+    if (!clock) return [number.toFixed(l.precision)];
+    const last = seconds[l.parts.length - 1], tick = last[0] / last[1];
+    let ticks = safe(Math.round(Math.abs(number) * (l.kind === "angle" ? 120 : 1) / tick));
+    return l.parts.map((u, i) => {
+      const size = Math.round(seconds[i][0] / seconds[i][1] / tick), n = Math.floor(ticks / size);
+      ticks -= n * size;
+      return (i === 0 && number < 0 ? "-" : "") + String(n);
+    });
+  }
+  function encode(p, unit) {
+    return { value: p[0] / p[1], unit, rational: { kind: "rational", numerator: p[0], denominator: p[1] } };
+  }
+  function parse(fields, l) {
+    if (l.kind === "pixel_phy") {
+      if (!fields.every((text) => /^\d+$/.test(text))) throw Error("像素數及物理長度必須為正整數");
+      const record = [fields.map(Number), l.unit];
+      pixelLayout(record);
+      return record;
+    }
+    if (l.mode === "ratio") return ratioValue(fields, l);
+    if (fields.length !== l.parts.length) throw Error("欄位不完整");
+    if (l.mode === "single") return encode(decimal(fields[0]), l.unit);
+    if (l.mode === "fraction") {
+      if (!/^[+-]?\d+$/.test(fields[0]) || !/^\d+$/.test(fields[1])) throw Error("分子及分母須為整數");
+      return encode(pair(Number(fields[0]), Number(fields[1])), l.unit);
+    }
+    let p = [0, 1];
+    fields.forEach((text, i) => {
+      if (!(i === 0 ? /^[+-]?\d+$/ : /^\d+$/).test(text)) throw Error("時鐘欄位須為整數");
+      const n = Math.abs(Number(text));
+      if (i && n >= (i < 3 ? 60 : 1e3)) throw Error("時鐘子欄位超出範圍");
+      p = add(p, mul(pair(n, 1), seconds[i]));
+    });
+    if (fields[0].startsWith("-")) p[0] = -p[0];
+    return l.kind === "angle" ? encode(mul(p, [1, 120]), "°") : encode(p, "s");
+  }
+  function inUnit(kind, record, unit) {
+    if (record.unit === unit) return record;
+    if (kind === "angle") throw Error("請保留輸入的角度單位以維持精確值");
+    return encode(convert(kind, ratioOf(record), record.unit, unit), unit);
+  }
+  function sliderAmount(kind, record, unit) {
+    if (kind === "angle" && record.unit !== unit) {
+      factor(kind, record.unit);
+      factor(kind, unit);
+      return record.value * (unit === "rad" ? Math.PI / 180 : 180 / Math.PI);
+    }
+    return inUnit(kind, record, unit).value;
+  }
+  function sliderRecord(kind, record, unit, min, max, count, ticks, absolute) {
+    const lower = decimal(min), upper = decimal(max);
+    const span = add(upper, [-lower[0], lower[1]]);
+    if (kind === "angle" && record.unit !== unit && !absolute) {
+      const value = Math.max(min, Math.min(max, sliderAmount(kind, record, unit) + (max - min) * ticks / count));
+      return { unit, value };
+    }
+    const start = absolute ? lower : ratioOf(inUnit(kind, record, unit));
+    const next = add(start, mul(span, pair(ticks, count)));
+    return encode(next[0] / next[1] <= min ? lower : next[0] / next[1] >= max ? upper : next, unit);
+  }
+  root.ChipPhysical = { lengthFactors, convertPixel, layout, display, parse, inUnit, sliderAmount, sliderRecord };
 })(globalThis);
 (function(root) {
   "use strict";
@@ -633,6 +665,11 @@ var __async = (__this, __arguments, generator) => {
   }
   function createRegistry() {
     const codecs = /* @__PURE__ */ new Map();
+    const api = { register, validate, create(type, data, title = "") {
+      const codec = codecs.get(type);
+      if (!codec) throw Error("未知文件類型");
+      return validate({ format: "chip-workspace", type, version: codec.version, title, data });
+    }, read: (text) => validate(parse(text)), write: (record) => stringify(validate(record)) };
     function register(type, codec) {
       if (typeof type !== "string" || !type || codecs.has(type) || !Number.isSafeInteger(codec.version) || codec.version < 1 || typeof codec.validate !== "function") throw Error("無效或重複文件類型");
       codecs.set(type, __spreadValues({}, codec));
@@ -654,11 +691,6 @@ var __async = (__this, __arguments, generator) => {
       if (codec.validate(record.data) === false) throw Error("無效文件資料");
       return record;
     }
-    const api = { register, validate, create(type, data, title = "") {
-      const codec = codecs.get(type);
-      if (!codec) throw Error("未知文件類型");
-      return validate({ format: "chip-workspace", type, version: codec.version, title, data });
-    }, read: (text) => validate(parse(text)), write: (record) => stringify(validate(record)) };
     return api;
   }
   function createManager({ validate = copy } = {}) {
@@ -1358,7 +1390,7 @@ function nativeRectangleSession() {
     button: ChipUIDefinitions.button,
     text: ChipUIDefinitions.text,
     helpFrame(id, language, progress) {
-      const { alt, hint } = ChipUIDefinitions.button("rect." + id, language);
+      const workspace = id.includes(".");
       const nodes = [];
       const scene = {
         svg: { dataset: {} },
@@ -1375,7 +1407,11 @@ function nativeRectangleSession() {
         lerp: (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }),
         bind: (paint) => paint(progress)
       };
-      ChipRectangleHelp.drawHelp(id, alt, hint, ChipUIDefinitions.text("done", language), scene);
+      if (workspace) ChipUIDefinitions.workspaceButtonHelp(id, scene);
+      else {
+        const { alt, hint } = ChipUIDefinitions.button("rect." + id, language);
+        ChipRectangleHelp.drawHelp(id, alt, hint, ChipUIDefinitions.text("done", language), scene);
+      }
       const escape = (value) => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
       return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 175">' + nodes.map((n) => "<" + n.tag + " " + Object.keys(n.attrs).map((key) => key + '="' + escape(n.attrs[key]) + '"').join(" ") + ">" + escape(n.textContent || "") + "</" + n.tag + ">").join("") + "</svg>";
     },

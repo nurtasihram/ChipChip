@@ -19,9 +19,10 @@ function stringify(value){return JSON.stringify(copy(value),null,2)}
 function fingerprint(value){if(Array.isArray(value))return '['+value.map(fingerprint).join(',')+']';if(value&&typeof value==='object')return '{'+Object.keys(value).sort().map(k=>JSON.stringify(k)+':'+fingerprint(value[k])).join(',')+'}';return JSON.stringify(value)}
 function createRegistry(){
  const codecs=new Map();
+ const api={register,validate,create(type,data,title=''){const codec=codecs.get(type);if(!codec)throw Error('未知文件類型');return validate({format:'chip-workspace',type,version:codec.version,title,data})},read:text=>validate(parse(text)),write:record=>stringify(validate(record))};
  function register(type,codec){if(typeof type!=='string'||!type||codecs.has(type)||!Number.isSafeInteger(codec.version)||codec.version<1||typeof codec.validate!=='function')throw Error('無效或重複文件類型');codecs.set(type,{...codec});return api}
  function validate(input){const record=copy(input);if(!record||Array.isArray(record)||record.format!=='chip-workspace'||!codecs.has(record.type))throw Error('未知文件格式或類型');const codec=codecs.get(record.type);if(!Number.isSafeInteger(record.version)||record.version<1||record.version>codec.version)throw Error('不支援的文件版本');while(record.version<codec.version){const migrate=codec.migrations?.[record.version];if(typeof migrate!=='function')throw Error('缺少文件版本遷移');record.data=copy(migrate(copy(record.data)));record.version++}if(typeof record.title!=='string')throw Error('缺少文件標題');if(codec.validate(record.data)===false)throw Error('無效文件資料');return record}
- const api={register,validate,create(type,data,title=''){const codec=codecs.get(type);if(!codec)throw Error('未知文件類型');return validate({format:'chip-workspace',type,version:codec.version,title,data})},read:text=>validate(parse(text)),write:record=>stringify(validate(record))};return api;
+ return api;
 }
 function createManager({validate=copy}={}){
  const records=new Map();let activeId=null,sequence=0;

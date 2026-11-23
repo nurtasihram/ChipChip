@@ -29,12 +29,16 @@ function nativeRectangleSession() {
         methods: language => ChipUIDefinitions.rectangleButtons(language),
         button: ChipUIDefinitions.button, text: ChipUIDefinitions.text,
         helpFrame(id,language,progress) {
-            const {alt,hint}=ChipUIDefinitions.button('rect.'+id,language);
+            const workspace = id.includes('.');
             const nodes=[];
             const scene={svg:{dataset:{}},node(tag,attrs){const n={tag,attrs};nodes.push(n);return n;},
                 set(n,attrs){Object.assign(n.attrs,attrs);},input(){},
                 lerp:(a,b,t)=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t}),bind:paint=>paint(progress)};
-            ChipRectangleHelp.drawHelp(id,alt,hint,ChipUIDefinitions.text('done',language),scene);
+            if (workspace) ChipUIDefinitions.workspaceButtonHelp(id,scene);
+            else {
+                const {alt,hint}=ChipUIDefinitions.button('rect.'+id,language);
+                ChipRectangleHelp.drawHelp(id,alt,hint,ChipUIDefinitions.text('done',language),scene);
+            }
             const escape=value=>String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
             return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 175">'+nodes.map(n=>
                 '<'+n.tag+' '+Object.keys(n.attrs).map(key=>key+'="'+escape(n.attrs[key])+'"').join(' ')+'>'+escape(n.textContent||'')+'</'+n.tag+'>').join('')+'</svg>';

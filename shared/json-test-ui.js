@@ -21,7 +21,7 @@ function mount({read,load,validate=null,host=null,subject='目前圖稿',hintTex
   const heading=document.createElement('div');heading.className='ui-panel-heading';const title=document.createElement('strong');title.textContent='JSON 模型';heading.append(title);
   if(!host){const close=button(heading,idPrefix+'Close','×',hide);close.setAttribute('aria-label','關閉 JSON 模型');panel.append(heading)}
   const body=document.createElement('div');body.className='json-test-body';if(!host||hintText){const hint=document.createElement('p');hint.textContent=hintText||'編輯目前圖稿 JSON 後載入；此處不寫入檔案。';body.append(hint)}
-  const code=ChipCodeEditor.mount({id:idPrefix+'Text',label:subject+' JSON 模型',schema});field=code.element;code.model.onDidChangeContent?.(()=>check());body.append(field);
+  const code=ChipCodeEditor.mount({id:idPrefix+'Text',language:'json',label:subject+' JSON 模型',schema});field=code.element;code.model.onDidChangeContent?.(()=>check());body.append(field);
   const actions=document.createElement('div');actions.className='json-test-actions';
   if(!host)button(actions,idPrefix+'Output','輸出'+subject,()=>update());
   apply=button(actions,idPrefix+'Load',host?'保存':'載入 JSON',async()=>{

@@ -147,7 +147,8 @@ stroke／fill 的部分缺省按「物件 → 圖層 → 軟件預設」解析�
 - 使用 `orth`／`polar`、`metric`／`british`、`deg`／`radius`／`clock` 及小寫色彩代碼；內部介面的 cart／imperial／rad／HEX 等值由共用適配層轉換。公制候選包含 km，英制包含 ft，換算及輸入共用既有計量核心。
 - `fraction_style` 使用 fraction／ratio／float／decimalRatio。缺省約分分別為 fraction=true、ratio=false；decimalRatio 的 `fraction_approx` 使用 auto／hundred／thousand／myriad；float 不寫入尚未定義用途的 `fraction_approx`，小數模式缺省精度為 4。明確的 false 與 0 不會當作缺省。
 - `angle_precision` 始終為小數位數，不再用時分秒部件名稱冒充精度。時分秒的近似單位使用 `angle_approx` 的 h／min／s／ms／us／ns；省略時繼承 `time_approx`。目前沒有獨立時間設定列的欄位由共用設定模型保留；這次不代表所有時間格式器或 #55 的精度污染機制已完成。
-- `pixel_phy` 固定綁定「像素數：物理長度」的校準語義。一般分數寫成 `[[像素數, 物理長度], 物理單位代碼]`，例如 96 DPI 對應 `[[480,127],"mm"]`；亦可接受正的純量比例並轉成精確整數對。這個欄位的整數對由已知的像素校準上下文解碼，不依提示用的 `fraction_style` 猜成十進制指數。保持原始整數對，不因顯示約分而改寫校準資料。
+- 一般比例綁定兩個必填數值 `numerator`、`denominator`，分母非零。純量比例可省略單位，例如 `{"numerator":6,"denominator":8}`。量綱比例須含公共單位 `unit`，或完整提供 `numeratorUnit` 及 `denominatorUnit`，例如 `{"numerator":480,"numeratorUnit":"px","denominator":127,"denominatorUnit":"mm"}`。公共單位對兩項共同生效。編輯、顯示與歸檔保留兩項原值及其單位歸屬。HTML 與 Qt 的物理量輸入元件用 `scalar-ratio` 或 `dimensional-ratio` 宣告此綁定；單位由綁定資料指定。
+- `pixel_phy` 固定綁定「像素數：物理長度」的校準語義。一般分數寫成 `[[像素數, 物理長度], 物理單位代碼]`，例如 96 DPI 對應 `[[480,127],"mm"]`；亦可接受正的純量比例並轉成精確整數對。這個欄位的整數對由已知的像素校準上下文解碼，不依提示用的 `fraction_style` 猜成十進制指數。保持原始整數對，不因顯示約分而改寫校準資料。 校準輸入框依序顯示像素分子與物理長度分母。分母選單可獨立更換長度單位；換算以整數因子約分，成功後才更新校準。例：480 px : 127 mm 換成 96 px : 1 inch。瀏覽器在本機保存校準模式、DPI 與 pixel_phy，重開時還原。
 - 保存前完整驗證，當前可執行精度範圍沿用共用控制器的 0–9 位，整數對沿用 JavaScript 安全整數範圍；越界明確拒絕，不靜默截斷。舊版 version=1 的巢狀設定可匯入遷移，之後一律輸出本設定塊的標準欄位。
 - 此編輯區調整提示／輸入設定，不把設定變更當成原有圖稿儲存資料的單位轉換。上文第一階段圖稿模型的正交、mm、deg、hex、float 儲存上下文保持原有相容性限制；完整儲存模式轉換仍依 #55 的後續設計實作。
 

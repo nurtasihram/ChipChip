@@ -5,7 +5,10 @@
   "license": "MIT",
   "features": [
     "editor",
-    "json"
+    "json",
+    "javascript",
+    "c",
+    "cpp"
   ],
   "offline": true
 }
