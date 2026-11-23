@@ -87,18 +87,23 @@ function settingsWindow(page,{titleKey,icon,launcher,slot}){
  heading.className='ui-panel-heading';
  label.id=page.id+'Title';
  label.textContent=ChipUIDefinitions.text(titleKey,uiLanguage);
- heading.append(label);
+ const closeButton=document.createElement('button');
+ heading.append(label,closeButton);
+ shell.setAttribute('role','region');
+ shell.setAttribute('aria-labelledby',label.id);
  page.hidden=false;
  page.setAttribute('role','region');
  page.setAttribute('aria-labelledby',label.id);
  shell.append(heading,page);
  document.body.append(shell);
  const controller=floatingPanel(shell,{heading,body:page,icon,minWidth:260,minHeight:170});
+ closeButton.addEventListener('click',()=>controller.setCollapsed(true));
  const restore=shell.querySelector('.ui-panel-mini button');
  restore.id=launcher;
  restore.setAttribute('aria-controls',page.id);
  function localize(){
   label.textContent=ChipUIDefinitions.text(titleKey,uiLanguage);
+  iconButton(closeButton,'close',(uiLanguage==='en'?'Close ':'關閉')+label.textContent);
   restore.setAttribute('aria-label',(uiLanguage==='en'?'Open ':'展開')+label.textContent);
   restore.dataset.tooltip=restore.getAttribute('aria-label');
  }
