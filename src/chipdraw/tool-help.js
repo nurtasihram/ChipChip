@@ -42,13 +42,13 @@ function sample(type,mode,time){
  return s;
 }
 function animation(type,only=null){
- const modes=ChipUI.objectTypes.find(item=>item.id===type).interactions.filter(item=>!only||item.id===only),label=ChipUI.objectTypes.find(item=>item.id===type).label,scene=ChipUI.interactionHelp({id:type,label:label+'：繪圖手勢與模式',duration:4600}),{svg,node,set}=scene;svg.dataset.toolAnimation=type;
+ const modes=ChipDrawUI.objectTypes.find(item=>item.id===type).interactions.filter(item=>!only||item.id===only),label=ChipDrawUI.objectTypes.find(item=>item.id===type).label,scene=ChipDrawUI.interactionHelp({id:type,label:label+'：繪圖手勢與模式',duration:4600}),{svg,node,set}=scene;svg.dataset.toolAnimation=type;
  const heading=node('text',{x:10,y:18,fill:'#9acbff','font-size':11,'data-demo-mode-label':''}),shape=node(type==='bezier'?'path':type==='polyline'?'polyline':C.primitive(type,{x:0,y:0},{x:0,y:0}).tag,{fill:'none',stroke:'#69b8ff','stroke-width':type==='point'?5:2.6,'stroke-linecap':'round','data-demo-shape':'',visibility:'hidden'}),extraPoint=node('circle',{r:2.5,fill:'#69b8ff',visibility:'hidden','data-demo-placed-point':''});
  const guides=Array.from({length:5},()=>node('path',{fill:'none',stroke:'#e7a45d','stroke-width':1.1,'stroke-dasharray':'3 3',visibility:'hidden','data-demo-guide':''})),arrows=Array.from({length:4},()=>node('path',{fill:'none',stroke:'#c896ff','stroke-width':1.1,'stroke-linecap':'round','stroke-linejoin':'round',visibility:'hidden','data-demo-reference-arrow':''})),markers=Array.from({length:4},(_,i)=>{const dot=node('circle',{r:3.2,stroke:'#ffd166','stroke-width':1,'data-demo-point':i+1}),text=node('text',{fill:'#e7edf7','font-size':11});return {dot,text}}),handles=Array.from({length:4},()=>node('circle',{r:2.5,fill:'#c896ff',visibility:'hidden','data-demo-control':''})),foci=[0,1].map(()=>node('circle',{r:2,fill:'#c896ff',visibility:'hidden','data-demo-focus':''})),ring=node('circle',{fill:'none',stroke:'#ffd166','stroke-width':1.5,visibility:'hidden'}),pointer=node('path',{d:'M0 0v15l4-4 4 7 4-2-4-7 6-1Z',stroke:'#172438','stroke-width':1,'data-demo-pointer':''}),caption=node('text',{x:10,y:165,fill:'#e7edf7','font-size':11,'data-demo-caption':''});
  function render(time,mode){const s=sample(type,mode,time);let message='';svg.dataset.pointerDown=String(s.down);svg.dataset.demoStage=s.finished?'complete':'drawing';svg.dataset.referenceMode=s.draft?.referenceMode||'';if(heading.textContent!==mode.label)heading.textContent=mode.label;set(shape,{visibility:'hidden'});set(extraPoint,{visibility:'hidden'});for(const e of [...guides,...arrows,...handles,...foci])set(e,{visibility:'hidden'});const dots=[];let lines=0,controls=0;
   const guide=(a,b,color='#e7a45d')=>{if(lines<guides.length)set(guides[lines++],{d:'M '+a.x+' '+a.y+' L '+b.x+' '+b.y,stroke:color,visibility:'visible'})},dot=(p,label,confirmed=true,color='#ffd166')=>dots.push({p,label,confirmed,color});
   if(type==='bezier'){
-   if(s.draft){const {display,markers:anchors}=s.finished?{display:s.draft.anchors,markers:s.draft.anchors}:C.bezierDisplay(s.draft);if(display.length>1)set(shape,{d:C.bezierPath(display),visibility:'visible'});for(const [i,a]of anchors.entries()){dot(a.point,String(i+1));if(Math.hypot(a.offset.x,a.offset.y)>1e-10)for(const incoming of a.symmetric&&i>0?[false,true]:[false]){const p=C.bezierControl(a,incoming);guide(a.point,p,'#c896ff');const arrow=ChipUI.referenceArrow(a.point,p,{mode:s.draft.referenceMode});if(arrow)set(arrows[controls],{d:arrow,visibility:'visible'});set(handles[controls++],{cx:p.x,cy:p.y,visibility:'visible'})}}}else dot(s.cursor,'1',false);
+   if(s.draft){const {display,markers:anchors}=s.finished?{display:s.draft.anchors,markers:s.draft.anchors}:C.bezierDisplay(s.draft);if(display.length>1)set(shape,{d:C.bezierPath(display),visibility:'visible'});for(const [i,a]of anchors.entries()){dot(a.point,String(i+1));if(Math.hypot(a.offset.x,a.offset.y)>1e-10)for(const incoming of a.symmetric&&i>0?[false,true]:[false]){const p=C.bezierControl(a,incoming);guide(a.point,p,'#c896ff');const arrow=ChipDrawUI.referenceArrow(a.point,p,{mode:s.draft.referenceMode});if(arrow)set(arrows[controls],{d:arrow,visibility:'visible'});set(handles[controls++],{cx:p.x,cy:p.y,visibility:'visible'})}}}else dot(s.cursor,'1',false);
    message=s.finished?'✓ 已完成':mode.gesture==='click'?(s.draft?.awaitingControl?'點選控制點（相對於錨點）':'點選下一個錨點'):(s.down?'按住拖出對稱控制柄，放開確認':'移動放置下一個錨點');
   }else if(type==='polyline'){
    const display=s.polyCursor&&!s.finished?[...s.points,s.polyCursor]:s.points;if(display.length>1)set(shape,{points:display.map(p=>p.x+','+p.y).join(' '),visibility:'visible'});s.points.forEach((p,i)=>dot(p,String(i+1)));if(!s.points.length)dot(s.cursor,'1',false);else if(s.polyCursor&&!s.finished&&Math.hypot(s.cursor.x-s.points.at(-1).x,s.cursor.y-s.points.at(-1).y)>2)dot(s.cursor,String(s.points.length+1),false);message=s.finished?'✓ 已完成':'逐點追加頂點';
@@ -67,14 +67,14 @@ function animation(type,only=null){
  return scene.bind(render,modes);
 }
 function metricAnimation(kind){
- const label={right:'直三角板',arbitrary:'任意三角板',tape:'捲尺',clear:'刪除選取的測量物件'}[kind],scene=ChipUI.interactionHelp({id:'metric-'+kind,label});
+ const label={right:'直三角板',arbitrary:'任意三角板',tape:'捲尺',clear:'刪除選取的測量物件'}[kind],scene=ChipDrawUI.interactionHelp({id:'metric-'+kind,label});
  const {node,set,lerp}=scene,a={x:48,y:115},b={x:184,y:109},c={x:138,y:44},action={x:30,y:25};
  const clear=kind==='clear',arbitrary=kind==='arbitrary',end=kind==='right'||clear?{x:190,y:45}:b;
  const shape=node('g',{'data-demo-shape':''});
  const lines=['#ff6464','#54d987','#ffd166'].map(color=>node('line',{stroke:kind==='right'?color:'#ffd166','stroke-width':1.5},shape));
  const dots=lines.map(()=>node('circle',{r:4,stroke:'#ffd166'},shape));
- if(clear)node('g',{transform:'translate(19 14)'}).innerHTML=ChipUI.buttonIcon('trash');
- const pointer=node('path',{d:ChipUI.inputHelp.pointer('mouse'),fill:'#e7edf7','data-demo-pointer':''});
+ if(clear)node('g',{transform:'translate(19 14)'}).innerHTML=ChipDrawUI.buttonIcon('trash');
+ const pointer=node('path',{d:ChipDrawUI.inputHelp.pointer('mouse'),fill:'#e7edf7','data-demo-pointer':''});
  const caption=node('text',{x:12,y:165,fill:'#e7edf7','font-size':11});
  const variants=clear?[{id:'clear'}]:[{id:'click'},{id:'drag'}];
  const input=(time,kind,p)=>({time,kind,p});
@@ -98,6 +98,6 @@ function metricAnimation(kind){
   scene.input(time,events);
  },variants);
 }
-for(const [type,items]of Object.entries(definitions))ChipUI.registerObjectInteractions(type,items.map(item=>({...item,helpVisual:()=>animation(type,item.id)})));
+for(const [type,items]of Object.entries(definitions))ChipDrawUI.registerObjectInteractions(type,items.map(item=>({...item,helpVisual:()=>animation(type,item.id)})));
 root.ChipToolHelp={metricAnimation,animation,sample,fixture,position,types:Object.keys(definitions)};
 })(globalThis);

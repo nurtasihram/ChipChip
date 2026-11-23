@@ -9,11 +9,11 @@ try{
  const click=async p=>{const q=await page.evaluate(p=>transformPoint(p,$('world').getScreenCTM()),p);await page.mouse.click(q.x,q.y);};
  const mode=async id=>{await page.locator('#toolsButtons [data-tool=point]').click();await page.locator('#pointConstructionTools [data-option-id="'+id+'"]').click();};
  const edit=async(id,v)=>{await page.locator('#'+id).fill(String(v));await page.locator('#'+id).dispatchEvent('change');};
- const latest=()=>page.evaluate(()=>({x:Number(selected.getAttribute('x1')),y:Number(selected.getAttribute('y1')),count:layers.active().children.length,history:history.length}));
+ const latest=()=>page.evaluate(()=>({x:Number(selected.getAttribute('x1')),y:Number(selected.getAttribute('y1')),count:layers.active().children.length}));
  await page.evaluate(()=>{el('line',{x1:-100,y1:-70,x2:100,y2:-70,stroke:'#69b8ff','stroke-width':2});});
  await mode('divide');await click({x:-80,y:-70});await click({x:80,y:-70});await edit('pointConstructionNumerator',3);await edit('pointConstructionDenominator',4);
  assert.equal(await page.locator('[data-point-construction-preview]').count(),1);assert.equal(await page.locator('[data-point-construction-marker][data-confirmed=true]').count(),2);
- const before=await page.evaluate(()=>history.length);await page.locator('#pointConstructionCommit').click();let p=await latest();near(p.x,40);near(p.y,-70);assert.equal(p.count,2);assert.equal(p.history,before+1);await page.evaluate(()=>rectangleEditor().undo());assert.equal(await page.evaluate(()=>layers.active().children.length),1);await page.evaluate(()=>rectangleEditor().redo());assert.equal(await page.evaluate(()=>layers.active().children.length),2);
+ await page.locator('#pointConstructionCommit').click();let p=await latest();near(p.x,40);near(p.y,-70);assert.equal(p.count,2);assert.equal(await page.evaluate(()=>layers.active().children.length),2);
  // Reverse direction and invalid rational values must not create geometry.
  await click({x:80,y:-70});await click({x:-80,y:-70});await edit('pointConstructionDenominator',0);assert.equal(await page.locator('#pointConstructionCommit').isDisabled(),true);assert.equal(await page.locator('[data-point-construction-preview]').count(),0);await edit('pointConstructionDenominator',4);await page.keyboard.press('Enter');p=await latest();near(p.x,-40);
  await mode('length');await click({x:0,y:-70});await click({x:-60,y:-70});await edit('pointConstructionLength',130);await page.keyboard.press('Enter');p=await latest();near(p.x,-130);near(p.y,-70);
@@ -41,5 +41,5 @@ try{
  }
  await mkdir(new URL('../output/point-construction/',import.meta.url),{recursive:true});await page.screenshot({path:new URL('../output/point-construction/desktop.png',import.meta.url).pathname.replace(/^\/([A-Za-z]:)/,'$1')});
  await page.setViewportSize({width:375,height:800});await page.evaluate(()=>{viewAngle=0;viewMirrored=false;view();});assert.equal(await page.locator('#pointConstructionControls').evaluate(n=>n.getBoundingClientRect().right<=innerWidth),true);
- assert.deepEqual(errors,[]);console.log('PASS: arc-length point placement, rational validation, reverse direction, original-parameter extension, transformed curves, units, undo/redo, help and narrow layout');
+ assert.deepEqual(errors,[]);console.log('PASS: arc-length point placement, rational validation, reverse direction, original-parameter extension, transformed curves, units, help and narrow layout');
 }finally{await browser.close()}

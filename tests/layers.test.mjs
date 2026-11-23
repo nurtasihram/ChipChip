@@ -5,9 +5,9 @@ import {createDOM} from './dom-fixture.mjs';
 const {document}=createDOM('<div id="art"><line x1="0"/></div>');
 document.createElementNS=(_,tag)=>document.createElement(tag);
 const context=vm.createContext({document});
-vm.runInContext(await readFile(new URL('../shared/drawing-layers.js',import.meta.url),'utf8'),context);
-const art=document.getElementById('art'),history=[];
-const layers=context.ChipDrawingLayers.create({art,beforeChange:()=>history.push(art.innerHTML)});
+vm.runInContext(await readFile(new URL('../src/chipdraw/drawing-layers.js',import.meta.url),'utf8'),context);
+const art=document.getElementById('art');
+const layers=context.ChipDrawingLayers.create({art});
 const first=layers.active(),line=first.children[0];
 assert.equal(layers.groups().length,1);assert.equal(layers.owner(line),first);
 const second=layers.add();assert.equal(layers.active(),second);assert.equal(layers.groups().length,2);
@@ -17,9 +17,9 @@ layers.toggle(second,'locked');assert.equal(layers.editable(second),false);asser
 layers.toggle(second,'locked');layers.toggle(second,'visible');assert.equal(layers.editable(second),false);assert.equal(second.getAttribute('display'),'none');layers.toggle(second,'visible');
 layers.reorder(-1);assert.equal(art.children[0],second);layers.reorderTo(second,1);assert.equal(art.children[1],second);
 assert.equal(layers.move(line,first.getAttribute('data-drawing-layer')),true);layers.activate(second);assert.equal(layers.remove(),true);assert.equal(layers.remove(),false);
-const removable=layers.add();removable.append(document.createElement('rect'));assert.equal(layers.remove(removable),true);art.innerHTML=history.pop();layers.normalize();assert.equal(layers.groups().length,2);assert.equal(layers.active().children.length,1);layers.remove();layers.add();layers.rename('元件');const saved=art.innerHTML;layers.toggle(layers.active(),'locked');art.innerHTML=history.pop();layers.normalize();assert.equal(art.innerHTML,saved);assert.equal(layers.active().getAttribute('data-name'),'元件');assert.equal(layers.editable(),true);
+const removable=layers.add();removable.append(document.createElement('rect'));assert.equal(layers.remove(removable),true);assert.equal(layers.groups().length,1);assert.equal(layers.active(),first);layers.add();layers.rename('元件');const saved=art.innerHTML;layers.toggle(layers.active(),'locked');assert.equal(layers.active().getAttribute('data-name'),'元件');assert.equal(layers.editable(),false);
 const restored=document.createElement('div');restored.innerHTML=saved;const reopened=context.ChipDrawingLayers.create({art:restored});assert.equal(reopened.groups().length,2);assert.equal(reopened.active().getAttribute('data-name'),'元件');
 const typed=document.createElement('div'),typedLayers=context.ChipDrawingLayers.create({art:typed});assert.equal(typedLayers.add({type:'artwork'}).getAttribute('data-layer-type'),'artwork');assert.equal(typedLayers.add({type:'vector'}).getAttribute('data-layer-type'),'vector');for(const role of ['silk-top','silk-bottom','mask-top','mask-bottom','outline']){assert.ok(typedLayers.add({type:'pcb',role}));assert.equal(typedLayers.add({type:'pcb',role}),null)}for(const role of ['drill','mill']){assert.ok(typedLayers.add({type:'pcb',role}));assert.ok(typedLayers.add({type:'pcb',role}))}
 assert.equal(typedLayers.state('visible'),'true');typedLayers.toggle(typedLayers.groups()[0],'visible');assert.equal(typedLayers.state('visible'),'mixed');typedLayers.setAll('visible',false);assert.equal(typedLayers.state('visible'),'false');typedLayers.setAll('visible',true);assert.equal(typedLayers.state('visible'),'true');typedLayers.setAll('locked',true);assert.equal(typedLayers.state('locked'),'true');assert.ok(typedLayers.groups().every(g=>g.getAttribute('pointer-events')==='none'));typedLayers.toggle(typedLayers.groups()[0],'locked');assert.equal(typedLayers.state('locked'),'mixed');typedLayers.setAll('locked',false);assert.equal(typedLayers.state('locked'),'false');
 const filterGroup=typedLayers.groups()[0];typedLayers.toggle(filterGroup,'filtered');assert.equal(typedLayers.selectable(filterGroup),false);assert.equal(typedLayers.editable(filterGroup),true);assert.notEqual(filterGroup.getAttribute('display'),'none');typedLayers.setAll('locked',false);assert.equal(filterGroup.getAttribute('pointer-events'),'none');typedLayers.setAll('filtered',false);assert.equal(typedLayers.selectable(filterGroup),true);
-export const results=['layer creation, ownership, naming, stacking and selected-object movement','hidden/locked layers reject editing; last layer cannot be removed; populated layer deletion can be restored','SVG hierarchy and current layer survive serialized restoration'];
+export const results=['layer creation, ownership, naming, stacking and selected-object movement','hidden/locked layers reject editing; last layer cannot be removed; deleting a populated layer retains the other layer','SVG hierarchy and current layer survive serialized restoration'];

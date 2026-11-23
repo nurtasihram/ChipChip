@@ -1,3 +1,4 @@
+#include "button-hint.h"
 #include "pane.h"
 #include <optional>
 #include <QtTest/QTest>
@@ -6,7 +7,6 @@ class Canvas final : public QGraphicsView {
     Script session{drawingBundle};
     QGraphicsScene board;
     QGraphicsPolygonItem *ghost=nullptr;
-    QHash<QString,QGraphicsItem*> objects;
     std::optional<QPointF> press;
     bool first=false;
     QJSValue point(QMouseEvent *event) {
@@ -23,15 +23,38 @@ class Canvas final : public QGraphicsView {
         for(auto offset:QPolygonF{{0,0},{w,0},{w,h},{0,h}}) outline<<origin+rotation.map(offset);
         return board.addPolygon(outline,QPen(QColor(preview?"#ffd166":"#69b8ff"),2,preview?Qt::DashLine:Qt::SolidLine));
     }
+    QPainterPath guides,markers;
+    static QPointF scenePoint(QJSValue p){return {p.property("x").toNumber(),p.property("y").toNumber()};}
+    void clearPreview(){
+        delete ghost;ghost=nullptr;guides=QPainterPath();markers=QPainterPath();viewport()->update();
+    }
     void preview(QJSValue point) {
-        delete ghost; ghost=nullptr;
-        auto shape=session.call("preview",{point});
-        if(shape.isObject()) ghost=polygon(shape,true);
+        clearPreview();
+        auto frame=session.call("construction",{point});if(!frame.isObject())return;
+        auto shape=frame.property("outline");
+        if(shape.isObject())ghost=polygon(shape,true);
+        auto lines=frame.property("lines"),anchors=frame.property("anchors");
+        for(int i=0;i<lines.property("length").toInt();++i){
+            auto pair=lines.property(i);guides.moveTo(scenePoint(pair.property(0)));guides.lineTo(scenePoint(pair.property(1)));
+        }
+        auto circle=frame.property("constraint");
+        if(circle.isObject()){
+            QPointF center(circle.property("cx").toNumber(),circle.property("cy").toNumber());
+            double radius=circle.property("r").toNumber();guides.addEllipse(center,radius,radius);
+        }
+        const double dot=3./transform().m11();
+        for(int i=0;i<anchors.property("length").toInt();++i)markers.addEllipse(scenePoint(anchors.property(i)),dot,dot);
+        auto candidate=frame.property("candidate");
+        if(candidate.isObject())guides.addEllipse(scenePoint(candidate),dot,dot);
+    }
+    void drawForeground(QPainter *painter,const QRectF &) override {
+        painter->save();
+        QPen pen(QColor("#e7a45d"),0,Qt::DashLine);painter->setPen(pen);painter->setBrush(Qt::NoBrush);painter->drawPath(guides);
+        painter->setPen(Qt::NoPen);painter->setBrush(QColor("#ffd166"));painter->drawPath(markers);painter->restore();
     }
     void apply(QJSValue change) {
         if(!change.isObject()) return;
-        if(change.hasProperty("remove")) delete objects.take(change.property("remove").toString());
-        else objects.insert(change.property("add").toString(),polygon(change.property("geometry"),false));
+        polygon(change.property("geometry"),false);
     }
 public:
     QString method="diagonal";
@@ -44,7 +67,7 @@ public:
         centerOn(0,0);
     }
     Script &model(){return session;}
-    void command(const QString &name){press.reset();delete ghost;ghost=nullptr;apply(session.call(name));}
+    void command(const QString &name){press.reset();clearPreview();apply(session.call(name));}
 protected:
     void mousePressEvent(QMouseEvent *e) override {
         if(dragMode()==ScrollHandDrag||e->button()!=Qt::LeftButton)return QGraphicsView::mousePressEvent(e);
@@ -59,7 +82,7 @@ protected:
         if(!press||e->button()!=Qt::LeftButton)return QGraphicsView::mouseReleaseEvent(e);
         auto delta=e->position()-*press;press.reset();
         auto change=(!first||QPointF::dotProduct(delta,delta)>16)?session.call("place",{point(e)}):QJSValue();
-        if(change.isObject()){delete ghost;ghost=nullptr;apply(change);}else preview(point(e));
+        if(change.isObject()){clearPreview();apply(change);}else preview(point(e));
         e->accept();
     }
     void wheelEvent(QWheelEvent *e) override {e->accept();}
@@ -123,10 +146,35 @@ protected:
         return QWidget::event(e);
     }
 public:
-    ChoiceRow(){box->setContentsMargins(0,0,0,0);setProperty("detail_type",detail);setProperty("resortable",true);}
+    ChoiceRow(){box->setSpacing(4);box->setContentsMargins(0,0,0,0);setProperty("detail_type",detail);setProperty("resortable",true);}
     QSize minimumSizeHint()const override{return buttons.isEmpty()?QSize():buttons.first()->sizeHint();}
     void add(QToolButton *b){buttons<<b;box->addWidget(b);b->installEventFilter(this);
         connect(b->defaultAction(),&QAction::triggered,this,[this]{open=false;sync();});}
+};
+
+class ButtonSvgIcon final : public QIconEngine {
+    QByteArray svg;
+public:
+    explicit ButtonSvgIcon(QByteArray source):svg(std::move(source)){}
+    QIconEngine *clone() const override {return new ButtonSvgIcon(svg);}
+    void paint(QPainter *p,const QRect &rect,QIcon::Mode,QIcon::State) override {
+        QSvgRenderer renderer(svg);
+        p->save();p->setRenderHint(QPainter::Antialiasing);renderer.render(p,rect);p->restore();
+    }
+    QPixmap scaledPixmap(const QSize &size,QIcon::Mode mode,QIcon::State state,qreal scale) override {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+        const QSize pixels=size*scale;
+#else
+        const QSize pixels=size;
+#endif
+        QPixmap result=pixmap(pixels,mode,state);
+        result.setDevicePixelRatio(scale);
+        return result;
+    }
+    QPixmap pixmap(const QSize &size,QIcon::Mode mode,QIcon::State state) override {
+        QPixmap result(size);result.fill(Qt::transparent);
+        QPainter painter(&result);paint(&painter,QRect(QPoint(),size),mode,state);return result;
+    }
 };
 
 class HelpButton final : public QToolButton {
@@ -158,13 +206,18 @@ class HelpButton final : public QToolButton {
         }
     }
     QPointF pointerStart;
+    ButtonHint *popup=nullptr;
+    inline static QPointer<HelpButton> hintOwner;
+    void dismiss(){timer.stop();if(popup)popup->hide();if(hintOwner==this)hintOwner.clear();}
     void hint(){
         if(!isVisible())return;
         auto svg=visual.property("kind").toString()=="animation"
             ?session.call("helpFrame",{visual.property("id"),lang,(clock.elapsed()%4200)/4200.0}).toString()
             :visual.property("svg").toString();
-        auto text=defaultAction()->toolTip().toHtmlEscaped();
-        QToolTip::showText(mapToGlobal(QPoint(0,height())),text+"<br><img width='180' src='data:image/svg+xml;base64,"+svg.toUtf8().toBase64()+"'>",this);
+        if(hintOwner && hintOwner!=this)hintOwner->dismiss();
+        hintOwner=this;
+        if(!popup)popup=new ButtonHint(this);
+        popup->display(this,defaultAction()->toolTip(),svg);
     }
     bool event(QEvent *e) override {
         auto type=e->type();
@@ -180,21 +233,24 @@ class HelpButton final : public QToolButton {
             e->accept();return true;
         }
         if(type==QEvent::ContextMenu){clock.restart();hint();timer.start();return true;}
-        if(e->type()==QEvent::ToolTip||e->type()==QEvent::FocusIn){clock.restart();hint();timer.start();if(e->type()==QEvent::ToolTip)return true;}
-        if(e->type()==QEvent::Leave||e->type()==QEvent::Hide||e->type()==QEvent::FocusOut||e->type()==QEvent::MouseButtonPress){timer.stop();QToolTip::hideText();}
+        if(type==QEvent::ToolTip)return true;
+        if(type==QEvent::Enter||type==QEvent::FocusIn){clock.restart();hint();timer.start();}
+        if(type==QEvent::KeyPress && static_cast<QKeyEvent*>(e)->key()==Qt::Key_Escape)dismiss();
+        if(e->type()==QEvent::Leave||e->type()==QEvent::Hide||e->type()==QEvent::FocusOut||e->type()==QEvent::MouseButtonPress){dismiss();}
         return QToolButton::event(e);
     }
 public:
     HelpButton(Script &model,QString language,QJSValue def,QWidget *parent):QToolButton(parent),session(model),lang(language),visual(def.property("visual")){
-        QPixmap image(24,24);image.fill(Qt::transparent);QSvgRenderer renderer(def.property("svg").toString().toUtf8());
-        {QPainter painter(&image);renderer.render(&painter);}
-        auto title=def.property("alt").toString();auto action=new QAction(renderer.isValid()?QIcon(image):QIcon(),title,this);
+        auto svg=def.property("svg").toString().replace("currentColor","#d9e9fb").toUtf8();
+        auto title=def.property("alt").toString();
+        auto action=new QAction(svg.isEmpty()?QIcon():QIcon(new ButtonSvgIcon(svg)),title,this);
+        if(!svg.isEmpty()){setFixedSize(36,36);setIconSize(QSize(22,22));}
         auto tips=def.property("hint").toVariant();
         action->setToolTip(tips.typeId()==QMetaType::QVariantList?tips.toStringList().join(" → "):tips.toString());
         setDefaultAction(action);setAccessibleName(title);if(action->icon().isNull())setToolButtonStyle(Qt::ToolButtonTextOnly);
         key=def.property("action").toString();setAttribute(Qt::WA_AcceptTouchEvents);setAttribute(Qt::WA_TabletTracking);
         hold.setSingleShot(true);hold.setInterval(session.call("holdMs").toInt());connect(&hold,&QTimer::timeout,this,[this]{pointerEvent("hold",position);});
-        timer.setInterval(80);connect(&timer,&QTimer::timeout,this,[this]{hint();});
+        timer.setInterval(33);connect(&timer,&QTimer::timeout,this,[this]{hint();});
     }
 };
 
@@ -206,11 +262,14 @@ QWidget *drawingWindow(){
     auto pane=new QWidget(dock);auto layout=new QVBoxLayout(pane);dock->setCentralWidget(pane);
 
     auto button=[&](QString key,QWidget *parent){return new HelpButton(model,lang,model.call("button",{key,lang}),parent);};
-    auto close=button("pane.close",window);window->titleButton(close,true);QObject::connect(close,&QToolButton::clicked,window,&QWidget::close);
+    auto close=button("pane.close",dock);dock->titleButton(close,true);QObject::connect(close,&QToolButton::clicked,window,&QWidget::close);
     
+    auto tools=window->titleTab();
+    tools->setToolTip(model.call("text",{"rect.title",lang}).toString());
+    QObject::connect(tools,&QToolButton::clicked,dock,[dock,tools,canvas]{dock->openAt(canvas->viewport()->mapFromGlobal(tools->mapToGlobal(QPoint(0,tools->height()+5))));});
     auto pan=button("canvas.pan",pane);pan->defaultAction()->setCheckable(true);dock->titleButton(pan);
     QObject::connect(pan,&QToolButton::clicked,canvas,[canvas](bool on){canvas->command("cancel");canvas->setDragMode(on?QGraphicsView::ScrollHandDrag:QGraphicsView::NoDrag);});
-    auto hide=button("panel.close",pane);dock->titleButton(hide);layout->setContentsMargins(6,dock->titleHeight()+2,6,4);QObject::connect(hide,&QToolButton::clicked,dock,&QWidget::hide);
+    auto hide=button("panel.close",pane);dock->titleButton(hide);layout->setContentsMargins(6,2,6,4);QObject::connect(hide,&QToolButton::clicked,dock,&QWidget::hide);
     auto row=new ChoiceRow;layout->addWidget(row);auto group=new QActionGroup(row);
     auto defs=model.call("methods",{lang});
     for(int i=0;i<defs.property("length").toInt();++i){
@@ -220,7 +279,7 @@ QWidget *drawingWindow(){
     }
     canvas->setContextMenuPolicy(Qt::CustomContextMenu);
     QObject::connect(canvas,&QWidget::customContextMenuRequested,dock,[dock](QPoint p){dock->openAt(p);});
-    for(auto pair:{std::pair{QKeySequence(Qt::Key_Escape),"cancel"},std::pair{QKeySequence(Qt::Key_Return),"confirm"},std::pair{QKeySequence(QKeySequence::Undo),"undo"},std::pair{QKeySequence(QKeySequence::Redo),"redo"}}){
+    for(auto pair:{std::pair{QKeySequence(Qt::Key_Escape),"cancel"},std::pair{QKeySequence(Qt::Key_Return),"confirm"}}){
         auto shortcut=new QShortcut(pair.first,window);QObject::connect(shortcut,&QShortcut::activated,canvas,[canvas,name=pair.second]{canvas->command(name);});
     }
     return window;
@@ -230,7 +289,14 @@ void testDrawing(){
     std::unique_ptr<QWidget> window(drawingWindow());
     auto canvas=static_cast<Canvas*>(static_cast<QMainWindow*>(window.get())->centralWidget());
     window->show();QApplication::processEvents();
-    if(!window->windowFlags().testFlag(Qt::FramelessWindowHint)||canvas->geometry().top()>1)throw std::runtime_error("Canvas frame");
+    if(!window->windowFlags().testFlag(Qt::FramelessWindowHint)||canvas->geometry().top()>=window->findChild<QFrame*>("paneTitle")->height())throw std::runtime_error("Canvas frame");
+    const auto image=window->grab().toImage().convertToFormat(QImage::Format_ARGB32);
+    bool antialiased=false;
+    for(int y=0;y<qCeil(6*image.devicePixelRatio());++y)
+        for(int x=0;x<qCeil(6*image.devicePixelRatio());++x){
+            int alpha=image.pixelColor(x,y).alpha();if(alpha>0&&alpha<255)antialiased=true;
+        }
+    if(window->testAttribute(Qt::WA_TranslucentBackground)&&!antialiased)throw std::runtime_error("Missing translucent rounded corner");
     auto &s=canvas->model();
     auto viewport=canvas->viewport();auto start=canvas->mapFromScene(QPointF(0,0));auto end=canvas->mapFromScene(QPointF(40,-30));
     QTest::mouseClick(viewport,Qt::LeftButton,Qt::NoModifier,start);
@@ -238,12 +304,40 @@ void testDrawing(){
     if(!s.call("active").toBool())throw std::runtime_error("Missing rectangle draft");
     QTest::mouseClick(viewport,Qt::LeftButton,Qt::NoModifier,end);
     if(canvas->scene()->items().size()!=1)throw std::runtime_error("Canvas commit failed");
-    canvas->command("undo");if(!canvas->scene()->items().isEmpty())throw std::runtime_error("Canvas undo failed");
+    int committed=1;
+    const QString lang=QLocale().bcp47Name();
+    auto toolsTitle=s.call("text",{"rect.title",lang}).toString();
+    QToolButton *launcher=nullptr;
+    for(auto tool:window->findChildren<QToolButton*>())if(tool->text()=="ChipDraw" && tool->toolTip()==toolsTitle)launcher=tool;
+    if(!launcher||!launcher->isVisible())throw std::runtime_error("Missing rectangle tools launcher");
+    launcher->click();QApplication::processEvents();
+    for(auto method:{"diagonal","edge","right-triangle","edge-midpoint"}){
+        auto def=s.call("button",{QString("rect.")+method,lang});
+        QToolButton *choice=nullptr;
+        for(auto tool:window->findChildren<QToolButton*>())if(tool->accessibleName()==def.property("alt").toString())choice=tool;
+        if(!choice)throw std::runtime_error("Missing rectangle method");
+        if(choice->size()!=QSize(36,36)||choice->iconSize()!=QSize(22,22))throw std::runtime_error("Rectangle button dimensions");
+        const auto samples=qEnvironmentVariable("CHIPDRAW_QT_DPI_SAMPLES");
+        if(!samples.isEmpty() && QString(method)=="diagonal"){
+            QDir directory(samples);
+            if(!launcher->grab().save(directory.filePath("qt-title.png")) ||
+               !choice->grab().save(directory.filePath("qt-rect.png")) ||
+               !choice->icon().pixmap(choice->iconSize(),choice->devicePixelRatioF()).save(directory.filePath("qt-svg.png")))
+                throw std::runtime_error("Cannot save DPI samples");
+            qInfo()<<"DPR"<<choice->devicePixelRatioF()<<"title"<<launcher->size()<<launcher->font().family()
+                   <<"button"<<choice->size()<<"icon"<<choice->iconSize();
+        }
+        choice->click();if(canvas->method!=method)throw std::runtime_error("Rectangle tool selection failed");
+        auto click=[&](QPointF scene){QTest::mouseClick(viewport,Qt::LeftButton,Qt::NoModifier,canvas->mapFromScene(scene));};
+        click({0,0});QTest::mouseMove(viewport,canvas->mapFromScene(QPointF(30,15)));
+        auto image=viewport->grab().toImage();auto anchor=canvas->mapFromScene(QPointF(0,0))*image.devicePixelRatio();
+        if(image.pixelColor(anchor)!=QColor("#ffd166"))throw std::runtime_error("Missing visible first rectangle anchor");
+        click({40,30});
+        if(QString(method)=="edge"||QString(method)=="right-triangle")click({0,35});
+        if(s.call("active").toBool()||canvas->scene()->items().size()!=++committed)throw std::runtime_error("Pointer rectangle construction failed");
+    }
     auto p=[&](int x,int y){return s.engine.toScriptValue(QVariantList{x,y});};
     s.call("begin",{"diagonal",p(1,2),0});s.call("place",{p(12,23)});
     auto items=[&]{return s.call("document").property("items");};
-    if(items().property("length").toInt()!=1)throw std::runtime_error("Rectangle placement failed");
-    auto id=items().property(0).property("id").toString();s.call("undo");
-    if(items().property("length").toInt())throw std::runtime_error("Undo failed");
-    s.call("redo");if(items().property(0).property("id").toString()!=id)throw std::runtime_error("Redo failed");
+    if(items().property("length").toInt()!=committed+1)throw std::runtime_error("Rectangle placement failed");
 }

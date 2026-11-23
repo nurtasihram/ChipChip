@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
 const context=vm.createContext({});
-vm.runInContext(await readFile(new URL('../shared/drawing-layers.js',import.meta.url),'utf8'),context);
+vm.runInContext(await readFile(new URL('../src/chipdraw/drawing-layers.js',import.meta.url),'utf8'),context);
 const a={name:'a',allowed:true,b:{left:10,top:10,right:20,bottom:20}},b={name:'b',allowed:true,b:{left:25,top:10,right:40,bottom:20}},hidden={allowed:false,b:a.b};
 const selection=context.ChipDrawingLayers.createSelection({candidates:()=>[a,b,hidden],allowed:n=>n.allowed,bounds:n=>n.b});
 selection.pick(a);assert.equal(selection.primary,a);selection.pick(b,true);assert.equal(selection.items.length,2);selection.pick(a);assert.equal(selection.items.length,2);selection.pick(a,true);assert.equal(selection.primary,b);selection.pick(hidden);assert.equal(selection.primary,b);selection.pick(null);assert.equal(selection.items.length,0);

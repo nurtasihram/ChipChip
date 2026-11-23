@@ -10,7 +10,7 @@ try{
    const host=document.createElement('div');host.id='choice-test';
    host.style.cssText='position:fixed;top:10px;left:10px;z-index:99999;display:flex;background:black';
    document.body.append(host);
-   ChipUI.optionModel(host,{...options,mode:'single',items:['a','b','c'].map(id=>({id,text:true,label:id})),selected:['b']});
+   ChipDrawUI.optionModel(host,{...options,mode:'single',items:['a','b','c'].map(id=>({id,text:true,label:id})),selected:['b']});
   },options);
   const row=page.locator('#choice-test'),button=id=>row.locator('[data-option-id="'+id+'"]');
   const state=()=>row.evaluate(n=>[n.chipOptionModel.order(),n.chipOptionModel.values()]);
@@ -27,7 +27,7 @@ try{
  const row=page.locator('#choice-test');
  await row.evaluate(host=>{
   host.style.width='180px';
-  ChipUI.optionModel(host,{mode:'single',items:['a','b','c'].map(id=>({id,label:id,text:true})),selected:['b']});
+  ChipDrawUI.optionModel(host,{mode:'single',items:['a','b','c'].map(id=>({id,label:id,text:true})),selected:['b']});
   for(const button of host.children)button.style.flex='0 0 40px';
  });
  const visible=()=>row.locator('button:visible').evaluateAll(buttons=>buttons.map(b=>b.dataset.optionId));

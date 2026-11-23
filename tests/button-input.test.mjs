@@ -1,5 +1,13 @@
 import assert from 'node:assert/strict';
 import '../shared/ui-definitions.js';
+import '../src/chipdraw/ui-definitions.js';
+const analysisButtons=globalThis.ChipUIButtonModel.create({
+    buttons:{measure:{action:'measure',alt:'name',hint:'instructions',svg:'<svg/>',visual:{id:'sample'}}},
+    packs:{fr:{name:'Mesurer',instructions:'Choisir un échantillon'}},
+    locale:()=> 'fr'
+});
+assert.equal(analysisButtons.button('measure','fr').hint,'Choisir un échantillon');
+assert.throws(()=>analysisButtons.button('rect.diagonal','fr'),/Unknown UI button/);
 const ui = globalThis.ChipUIDefinitions;
 for (const device of ['pen','touch']) {
     const input = ui.createButtonGesture();

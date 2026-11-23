@@ -8,19 +8,25 @@ try{
   const url=new URL('../'+app+'.html',import.meta.url).href;
   await page.goto(url);
   await page.evaluate(()=>{
-   const s=ChipUI.measurements.settings;
+   const s=ChipDrawUI.measurements.settings;
    s.apply({...s.read(),pixel_phy:[[960,254],'mm']});
    document.getElementById('advanced').open=document.body.dataset.uiTitle!=='ChipDraw';
   });
   await page.locator('#uiMeasurementTab').click();
   const menu=page.locator('#pixelLengthUnit');
-  await menu.click();
+  const next=await menu.evaluate(select=>select.options[(select.selectedIndex+1)%select.length].value);
+  await menu.click();assert.equal(await menu.inputValue(),next);
+  assert.equal(await page.locator('#uiChoicePopup').count(),0);
+  await page.locator('#pixelLength').fill('0');
+  await menu.click();assert.equal(await menu.inputValue(),next);
+  await page.locator('#pixelLength').press('Escape');
+  await menu.click({button:'right'});
   await page.locator('#uiChoicePopup [data-value="inch"]').click();
-  const current=()=>page.evaluate(()=>({value:ChipUI.measurements.settings.read().pixel_phy,factor:ChipViewport.units.px}));
+  const current=()=>page.evaluate(()=>({value:ChipDrawUI.measurements.settings.read().pixel_phy,factor:ChipViewport.units.px}));
   assert.deepEqual(await current(),{value:[[96,1],'inch'],factor:25.4/96});
   await page.close();
   const reopened=await context.newPage();await reopened.goto(url);
-  const restored=await reopened.evaluate(()=>[ChipUI.measurements.settings.read().pixel_phy,
+  const restored=await reopened.evaluate(()=>[ChipDrawUI.measurements.settings.read().pixel_phy,
    document.getElementById('pixelCount').value,document.getElementById('pixelLength').value,
    document.getElementById('pixelLengthUnit').value,document.getElementById('dpiSource').value]);
   assert.deepEqual(restored,[[[96,1],'inch'],'96','1','inch','fraction']);

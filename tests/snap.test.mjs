@@ -3,6 +3,8 @@ import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 const context=vm.createContext({});vm.runInContext(await readFile(new URL('../src/chipdraw/snap-core.js',import.meta.url),'utf8'),context);
 const core=context.ChipSnap,plain=x=>JSON.parse(JSON.stringify(x));
+assert.deepEqual(plain(core.snapToGrid({x:14,y:33},{x:10,y:20})),{x:10,y:40});
+assert.deepEqual(plain(core.snapToGrid({x:31,y:0},{coordinate:'polar',radius:20,angle:Math.PI/6})),{x:40,y:0});
 assert.deepEqual(plain(core.nearestPoint({x:5,y:3},{x:0,y:0},{x:10,y:0})),{x:5,y:0});
 assert.deepEqual(plain(core.nearestPoint({x:-5,y:3},{x:0,y:0},{x:10,y:0})),{x:0,y:0});
 assert.deepEqual(plain(core.intersection({x:0,y:0},{x:10,y:10},{x:0,y:10},{x:10,y:0})),{x:5,y:5});

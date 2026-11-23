@@ -18,14 +18,41 @@ function convertPair(pair,from,to){const factors=root.ChipPhysical.lengthFactors
 function scalar(value){if(typeof value!=='number'||!Number.isFinite(value))throw Error('需要有限數值');return value}
 root.ChipQuantity={scalar,decimalPair,convertPair,calculate,run};
 // The native adapter uses its own widgets and omits this DOM implementation.
-browserUI: root.ChipQuantity.mount=function mount({unitFor,precision,valueOf,formatValue,formatUnit,allowedPhysicalUnits,setValue,setRational=()=>false}){
+browserUI: root.ChipQuantity.mount=function mount({unitFor,precision,valueOf,formatValue,formatUnit,allowedPhysicalUnits,lengthUnits=Object.fromEntries(Object.entries(root.ChipPhysical.lengthFactors).map(([code,[n,d]])=>[code,n/d])),setValue,setRational=()=>false}){
  let popup=null,epoch=0;function close(restore=true){epoch++;const owner=restore!==false&&popup?.contains(document.activeElement)?popup.chipOwner:null;if(popup?.chipOwner?.scalarMenuOpen){popup.chipOwner.scalarMenuOpen=false;delete popup.chipOwner.closeScalarMenu;}popup?.remove();popup=null;owner?.focus()}function dispatch(input,value){if(!Number.isFinite(value))throw Error('需要有限數值');const min=input.getAttribute('min'),max=input.getAttribute('max');if(min!==null)value=Math.max(Number(min),value);if(max!==null)value=Math.min(Number(max),value);setValue(input,value,unitFor(input));input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}))}
  function panel(input){close();popup=document.createElement('div');popup.className='quantity-popup';popup.chipOwner=input;popup.setAttribute('data-panel-popup','true');popup.chipClose=()=>close(false);popup.setAttribute('role','dialog');document.body.append(popup);const r=input.getBoundingClientRect();root.ChipUI.placePopup(popup,r.left,r.bottom+5);return popup}
  function button(host,label,fn){const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=fn;host.append(b);return b}
  function expression(input){const host=panel(input),requestEpoch=epoch,field=document.createElement('input'),error=document.createElement('output');host.classList.add('quantity-expression');const heading=document.createElement('strong');heading.textContent='算式';host.append(heading);field.type='text';field.value=String(valueOf(input));field.setAttribute('aria-label','算式');field.setAttribute('placeholder','例如 2 * Math.PI');error.className='quantity-error';error.setAttribute('role','alert');error.setAttribute('aria-live','assertive');error.hidden=true;host.append(field);const ok=button(host,'確定',async()=>{error.hidden=true;error.textContent='';field.removeAttribute('aria-invalid');ok.disabled=true;ok.setAttribute('aria-busy','true');const timer=setTimeout(()=>ok.classList.add('quantity-busy'),180);try{const result=await run(field.value,valueOf(input));if(requestEpoch!==epoch)return;dispatch(input,result);close()}catch(e){if(requestEpoch!==epoch)return;error.textContent='算式錯誤：'+e.message;error.hidden=false;field.setAttribute('aria-invalid','true');field.focus()}finally{clearTimeout(timer);ok.disabled=false;ok.classList.remove('quantity-busy');ok.removeAttribute('aria-busy')}});button(host,'取消',close);host.append(error);field.addEventListener('keydown',e=>{if(e.key==='Enter'&&!ok.disabled){e.preventDefault();ok.onclick()}});field.focus();field.select()}
- function convert(input){const host=panel(input),unit=unitFor(input),units=unit==='°'||unit==='rad'?{'°':Math.PI/180,rad:1}:['%','‰','‱'].includes(unit)?{'%':.01,'‰':.001,'‱':.0001}:root.ChipUI?.measurements?.unitCandidates('physical-area').includes(unit)?Object.fromEntries(root.ChipUI.measurements.unitCandidates('physical-area').map(code=>[code,root.ChipUI.measurements.unitFactor(code)])):root.ChipViewport.units;if(!(unit in units)){host.textContent='此欄位沒有可換算的單位';button(host,'關閉',close);return}const title=document.createElement('div');title.textContent='以其他單位輸入，確認後換回 '+formatUnit(unit);host.append(title);const field=document.createElement('input');field.type='number';field.value=formatValue(valueOf(input),unit);host.append(field);let from=unit,conversionValue=valueOf(input),exact=input.id==='pixelLength'?decimalPair(field.value):null;field.addEventListener('input',()=>{conversionValue=Number(field.value);if(exact)try{exact=decimalPair(field.value)}catch{exact=null}});for(const key of Object.keys(units)){if(units===root.ChipViewport.units&&unit!=='px'&&!allowedPhysicalUnits().includes(key))continue;if(input.id==='pixelLength'&&key==='px')continue;button(host,formatUnit(key),()=>{if(exact){exact=convertPair(exact,from,key);field.value=formatValue(Number(exact.numerator)/Number(exact.denominator),key)}else{conversionValue=conversionValue*units[from]/units[key];field.value=formatValue(conversionValue,key)}from=key;for(const b of host.querySelectorAll('button'))b.setAttribute('aria-pressed',String(b.textContent===formatUnit(key)))})}const error=document.createElement('output');error.setAttribute('role','alert');button(host,'確定',()=>{try{if(exact&&setRational(input,convertPair(exact,from,unit))){close();return}dispatch(input,conversionValue*units[from]/units[unit]);close()}catch(e){error.textContent=e.message}});button(host,'取消',close);host.append(error)}
+ function convert(input){const host=panel(input),unit=unitFor(input),units=unit==='°'||unit==='rad'?{'°':Math.PI/180,rad:1}:['%','‰','‱'].includes(unit)?{'%':.01,'‰':.001,'‱':.0001}:root.ChipUI?.measurements?.unitCandidates('physical-area').includes(unit)?Object.fromEntries(root.ChipUI.measurements.unitCandidates('physical-area').map(code=>[code,root.ChipUI.measurements.unitFactor(code)])):lengthUnits;if(!(unit in units)){host.textContent='此欄位沒有可換算的單位';button(host,'關閉',close);return}const title=document.createElement('div');title.textContent='以其他單位輸入，確認後換回 '+formatUnit(unit);host.append(title);const field=document.createElement('input');field.type='number';field.value=formatValue(valueOf(input),unit);host.append(field);let from=unit,conversionValue=valueOf(input),exact=input.id==='pixelLength'?decimalPair(field.value):null;field.addEventListener('input',()=>{conversionValue=Number(field.value);if(exact)try{exact=decimalPair(field.value)}catch{exact=null}});for(const key of Object.keys(units)){if(units===lengthUnits&&unit!=='px'&&!allowedPhysicalUnits().includes(key))continue;if(input.id==='pixelLength'&&key==='px')continue;button(host,formatUnit(key),()=>{if(exact){exact=convertPair(exact,from,key);field.value=formatValue(Number(exact.numerator)/Number(exact.denominator),key)}else{conversionValue=conversionValue*units[from]/units[key];field.value=formatValue(conversionValue,key)}from=key;for(const b of host.querySelectorAll('button'))b.setAttribute('aria-pressed',String(b.textContent===formatUnit(key)))})}const error=document.createElement('output');error.setAttribute('role','alert');button(host,'確定',()=>{try{if(exact&&setRational(input,convertPair(exact,from,unit))){close();return}dispatch(input,conversionValue*units[from]/units[unit]);close()}catch(e){error.textContent=e.message}});button(host,'取消',close);host.append(error)}
 
- function menu(input,x,y){const host=panel(input);host.classList.add('quantity-menu');host.setAttribute('role','menu');host.setAttribute('aria-label','數值操作');for(const action of ['複製','剪切','算式','換算','重置'])button(host,action,async()=>{try{if(action==='算式')expression(input);else if(action==='換算')convert(input);else if(action==='重置'){dispatch(input,Number(input.getAttribute('value')??0));close()}else{await navigator.clipboard.writeText(input.getAttribute('data-quantity')==='true'?input.value:String(valueOf(input)));if(action==='剪切')dispatch(input,0);close()}}catch(e){host.setAttribute('aria-label',e.message);const error=document.createElement('output');error.textContent=e.message;host.append(error)}});for(const b of host.querySelectorAll('button')){b.setAttribute('role','menuitem');if(b.textContent==='重置')b.classList.add('quantity-reset');b.addEventListener('keydown',e=>{const buttons=[...host.querySelectorAll('button')],index=buttons.indexOf(b);if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();buttons[(index+(e.key==='ArrowDown'?1:buttons.length-1))%buttons.length].focus()}})}host.querySelector('button').focus();root.ChipUI.placePopup(host,x,y)}
+ function navigateMenu(host,keys){
+  const items=[...host.querySelectorAll('button')];
+  function move(direction){
+   const enabled=items.filter(item=>!item.disabled);
+   if(!enabled.length)return;
+   const index=enabled.indexOf(document.activeElement);
+   enabled[(index+direction+enabled.length)%enabled.length].focus();
+  }
+  items.forEach((item,index)=>{
+   item.setAttribute('role','menuitem');item.tabIndex=-1;
+   item.dataset.shortcut=keys[index];item.setAttribute('aria-keyshortcuts',keys[index]);
+   item.addEventListener('pointermove',e=>{if(e.pointerType!=='touch'&&!item.disabled&&document.activeElement!==item)item.focus();});
+  });
+  host.addEventListener('wheel',e=>{
+   if(!e.deltaY||e.ctrlKey||e.metaKey)return;
+   e.preventDefault();e.stopPropagation();move(Math.sign(e.deltaY));
+  },{passive:false});
+  host.addEventListener('keydown',e=>{
+   if(e.isComposing||e.ctrlKey||e.altKey||e.metaKey)return;
+   const direction=e.key==='ArrowUp'?-1:e.key==='ArrowDown'?1:0;
+   const match=items.find(item=>!item.disabled&&item.dataset.shortcut===e.key.toUpperCase());
+   if(!direction&&!match)return;
+   e.preventDefault();e.stopPropagation();
+   if(direction)move(direction);else if(!e.repeat)match.click();
+  });
+  items.find(item=>!item.disabled)?.focus();
+ }
+ function menu(input,x,y){const host=panel(input);host.classList.add('quantity-menu');host.setAttribute('role','menu');host.setAttribute('aria-label','數值操作');for(const action of ['複製','剪切','算式','換算','重置'])button(host,action,async()=>{try{if(action==='算式')expression(input);else if(action==='換算')convert(input);else if(action==='重置'){dispatch(input,Number(input.getAttribute('value')??0));close()}else{await navigator.clipboard.writeText(input.getAttribute('data-quantity')==='true'?input.value:String(valueOf(input)));if(action==='剪切')dispatch(input,0);close()}}catch(e){host.setAttribute('aria-label',e.message);const error=document.createElement('output');error.textContent=e.message;host.append(error)}});host.querySelectorAll('button')[4].classList.add('quantity-reset');navigateMenu(host,['C','X','E','U','R']);root.ChipUI.placePopup(host,x,y)}
  function scalarMenu(input,x,y){
   const host=panel(input), start=input.selectionStart, end=input.selectionEnd, original=input.value;
   input.scalarMenuOpen=true;
@@ -52,17 +79,18 @@ browserUI: root.ChipQuantity.mount=function mount({unitFor,precision,valueOf,for
    });
    item.setAttribute('role','menuitem');
    item.disabled=(action==='cut'||action==='copy') && start===end;
-   item.addEventListener('keydown',event=>{
-    if(!['ArrowUp','ArrowDown'].includes(event.key))return;
-    event.preventDefault();
-    const options=[...host.querySelectorAll('button')].filter(node=>!node.disabled);
-    options[(options.indexOf(item)+(event.key==='ArrowUp'?-1:1)+options.length)%options.length].focus();
-   });
+
   }
-  host.querySelector('button:not(:disabled)')?.focus();root.ChipUI.placePopup(host,x,y);
+  navigateMenu(host,['X','C','V','A','S']);root.ChipUI.placePopup(host,x,y);
  }
+ function dismissMenuOutside(e){
+  if(popup?.classList.contains('quantity-menu')&&!popup.contains(e.target))close(false);
+ }
+ document.addEventListener('wheel',dismissMenuOutside,{capture:true,passive:true});
+ document.addEventListener('scroll',dismissMenuOutside,true);
+ window.addEventListener('resize',()=>{if(popup?.classList.contains('quantity-menu'))close(false);});
  function openMenu(input,x,y){if(input.getAttribute('data-scalar')!==null)scalarMenu(input,x,y);else menu(input,x,y);}
- function target(e){const n=e.target.closest?.('input')||e.target.closest?.('[data-conversion-component]')?.querySelector('input');return n&&!n.closest('.quantity-popup')&&(n.getAttribute('data-scalar')!==null||['number','range'].includes(n.type)||n.getAttribute('data-quantity')==='true')?n:null}
+ function target(e){if(e.target.closest?.('[data-cycle-unit]'))return null;const n=e.target.closest?.('input')||e.target.closest?.('[data-conversion-component]')?.querySelector('input');return n&&!n.closest('.quantity-popup')&&(n.getAttribute('data-scalar')!==null||['number','range'].includes(n.type)||n.getAttribute('data-quantity')==='true')?n:null}
  document.addEventListener('contextmenu',e=>{const input=target(e);if(!input)return;e.preventDefault();e.stopImmediatePropagation();openMenu(input,e.clientX,e.clientY)},true);
  let press=null;document.addEventListener('pointerdown',e=>{if(popup&&!popup.contains(e.target))close();const input=target(e);if(input&&e.pointerType==='touch'){press={x:e.clientX,y:e.clientY,timer:setTimeout(()=>{openMenu(input,e.clientX,e.clientY);press=null},500)}}},true);function clear(){if(press)clearTimeout(press.timer);press=null}document.addEventListener('pointermove',e=>{if(press&&Math.hypot(e.clientX-press.x,e.clientY-press.y)>8)clear()},true);for(const type of ['pointerup','pointercancel'])document.addEventListener(type,clear,true);document.addEventListener('keydown',e=>{if(e.key==='Escape'){close();clear()}},true);
 };

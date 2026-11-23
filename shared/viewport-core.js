@@ -20,7 +20,7 @@ class Camera{
 // Circles are the equal-semiaxis case of the same affine ellipse model.
 function conicGeometry({cx=0,cy=0,rx=0,ry=rx,matrix={a:1,b:0,c:0,d:1,e:0,f:0}}){const m=matrix,x=m.a*rx,y=m.b*rx,u=m.c*ry,v=m.d*ry,xx=x*x+u*u,yy=y*y+v*v,xy=x*y+u*v,half=(xx+yy)/2,major=Math.sqrt(Math.max(0,half+Math.hypot((xx-yy)/2,xy))),minor=major?Math.abs(x*v-y*u)/major:0,rawAngle=Math.atan2(2*xy,xx-yy)/2,basis=rx>=ry?{x:m.a,y:m.b}:{x:m.c,y:m.d},angle=rawAngle+(Math.cos(rawAngle)*basis.x+Math.sin(rawAngle)*basis.y<0?Math.PI:0),c=Math.sqrt(Math.max(0,major*major-minor*minor)),center={x:m.a*cx+m.c*cy+m.e,y:m.b*cx+m.d*cy+m.f},focus={x:c*Math.cos(angle),y:c*Math.sin(angle)};return {family:'ellipse',center,major,minor,radius:major,width:2*major,height:2*minor,angle,focalDistance:2*c,isCircle:Math.abs(major-minor)<=1e-10*Math.max(1,major),foci:[{x:center.x-focus.x,y:center.y-focus.y},{x:center.x+focus.x,y:center.y+focus.y}]}}
 function spacing(n){return Number.isFinite(n)&&n>0?n:1}
-function snap(p,{coordinate='cart',x=1,y=1,radius=1,angle=Math.PI/6}={}){if(coordinate==='polar'){const r=Math.round(Math.hypot(p.x,p.y)/spacing(radius))*spacing(radius),a=Math.round(Math.atan2(p.y,p.x)/spacing(angle))*spacing(angle);return {x:r*Math.cos(a),y:r*Math.sin(a)}}return {x:Math.round(p.x/spacing(x))*spacing(x),y:Math.round(p.y/spacing(y))*spacing(y)}}
+
 function clipLine(a,b,rect){let t0=0,t1=1,dx=b.x-a.x,dy=b.y-a.y;for(const [p,q]of [[-dx,a.x-rect.x],[dx,rect.right-a.x],[-dy,a.y-rect.y],[dy,rect.bottom-a.y]]){if(Math.abs(p)<1e-12){if(q<0)return null;continue}const t=q/p;if(p<0)t0=Math.max(t0,t);else t1=Math.min(t1,t);if(t0>t1)return null}return [{x:a.x+dx*t0,y:a.y+dy*t0},{x:a.x+dx*t1,y:a.y+dy*t1}]}
 function gridGeometry(camera,width,height,o={}){
  const matrix=camera.matrix(),project=p=>({x:matrix.a*p.x+matrix.c*p.y+matrix.e,y:matrix.b*p.x+matrix.d*p.y+matrix.f});
@@ -53,5 +53,5 @@ function bezierSegmentIsStraight(points){
  if(values.length===4){const [,p,q]=values,A=3*(3*p-3*q+1),B=6*(q-2*p),C=3*p;rates.push(C,A+B+C);if(Math.abs(A)<1e-12){if(Math.abs(B)>1e-12)roots.push(-C/B)}else{const vertex=-B/(2*A);if(vertex>0&&vertex<1)rates.push(A*vertex*vertex+B*vertex+C);const d=B*B-4*A*C;if(d>=0)roots.push((-B-Math.sqrt(d))/(2*A),(-B+Math.sqrt(d))/(2*A))}}else if(values.length===3){const p=values[1],d=1-2*p;rates.push(2*p,2*(1-p));if(Math.abs(d)>1e-12)roots.push(-p/d)}
  return rates.every(v=>v>=-1e-10)&&roots.filter(t=>t>0&&t<1).every(t=>{const v=sample(t);return v>=-1e-10&&v<=1+1e-10});
 }
-return Object.freeze({Camera,conicGeometry,bezierSegmentIsStraight,previewBackground,selectionDash,setDpi,setPixelRatio,getPixelRatio,rational,floating,numeric,formatRational,colors,units,snap,clipLine,gridGeometry,drawGrid});
+return Object.freeze({Camera,conicGeometry,bezierSegmentIsStraight,previewBackground,selectionDash,setDpi,setPixelRatio,getPixelRatio,rational,floating,numeric,formatRational,colors,units,clipLine,gridGeometry,drawGrid});
 });

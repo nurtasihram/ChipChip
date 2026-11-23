@@ -3,11 +3,44 @@ const {chromium}=await import(process.env.CHIPDRAW_PLAYWRIGHT||'playwright');
 const browser=await chromium.launch({headless:true,...(process.env.CHIPDRAW_BROWSER?{executablePath:process.env.CHIPDRAW_BROWSER}:{})});
 try{
  const page=await browser.newPage({viewport:{width:1000,height:760}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(new URL('../ChipDraw.html',import.meta.url).href);
+ await page.keyboard.press('Tab');
+ for(const id of ['selectionOutlineWidth','sw']){
+  const field=await page.locator('#'+id).evaluate(input=>{
+   input.focus();
+   const frame=input.closest('.physical-input-group')||input.closest('.conversion-control');
+   return {focused:document.activeElement===input,outline:getComputedStyle(input).outlineStyle,
+    border:getComputedStyle(input).borderTopWidth,ring:getComputedStyle(frame).boxShadow};
+  });
+  assert.equal(field.focused,true,id);assert.equal(field.outline,'none',id);
+  assert.equal(field.border,'0px',id);assert.notEqual(field.ring,'none',id);
+ }
  await page.evaluate(()=>{$('advanced').open=true;$('uiViewTab').click();$('selectionOutlineColor').click()});const format=page.locator('.color-format select');assert.equal(await format.getAttribute('data-ui-choice'),'true');await format.click();assert.equal(await page.locator('#uiChoicePopup').count(),1);assert.equal(await page.locator('#uiChoicePopup').evaluate(n=>n.matches(':popover-open')),true);
  const visible=await page.locator('#uiChoicePopup [role=option]').evaluateAll(nodes=>nodes.every(n=>{const r=n.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return n===hit||n.contains(hit)}));assert.equal(visible,true,'every option is above the color panel and clickable');
  if(process.env.CHIPDRAW_CHOICE_SCREENSHOT)await page.screenshot({path:process.env.CHIPDRAW_CHOICE_SCREENSHOT});
  await page.locator('#uiChoicePopup [data-value=RGB]').click();assert.equal(await page.locator('.chip-color-popup').count(),1,'choosing a format must not close its parent picker');assert.equal(await format.inputValue(),'RGB');assert.equal(await page.locator('[aria-label="RGB R"]').count(),1);
  await format.click();await page.locator('#uiChoicePopup [data-value=RGB]').hover();await page.mouse.wheel(0,120);assert.equal(await format.inputValue(),'HSL','wheel immediately commits');assert.equal(await page.locator('#uiChoicePopup [aria-selected=true]').getAttribute('data-value'),'HSL');assert.equal(await page.locator('[aria-label="HSL H"]').count(),1);await format.focus();await page.keyboard.press('ArrowDown');assert.equal(await format.inputValue(),'HSV');assert.equal(await page.locator('[aria-label="HSV V"]').count(),1);await page.keyboard.press('Home');assert.equal(await format.inputValue(),'HEX');await page.keyboard.press('End');assert.equal(await format.inputValue(),'CMYK');assert.equal(await page.locator('[aria-label="CMYK K"]').count(),1);await page.keyboard.press('Escape');assert.equal(await page.locator('#uiChoicePopup').count(),0);assert.equal(await format.inputValue(),'CMYK','Escape keeps an already selected option');await page.keyboard.press('Escape');assert.equal(await page.locator('.chip-color-popup').count(),0);
- await page.locator('#uiMeasurementTab').click();await page.locator('#unitSelect').focus();await page.keyboard.press('End');assert.equal(await page.locator('#unitSelect').inputValue(),'um','first keyboard navigation immediately commits');assert.equal(await page.locator('#uiChoicePopup').count(),0,'closed keyboard navigation does not open a popup');await page.locator('#unitSelect').hover();await page.mouse.wheel(0,120);assert.equal(await page.locator('#unitSelect').inputValue(),'m','closed selects also use shared wheel selection');assert.equal(await page.locator('#uiChoicePopup').count(),0,'closed wheel navigation does not open a popup');
+ await page.locator('#uiMeasurementTab').click();await page.locator('#unitSelect').focus();await page.keyboard.press('End');assert.equal(await page.locator('#unitSelect').inputValue(),'um','first keyboard navigation immediately commits');assert.equal(await page.locator('#uiChoicePopup').count(),0,'closed keyboard navigation does not open a popup');await page.locator('#unitSelect').hover();await page.mouse.wheel(0,120);assert.equal(await page.locator('#unitSelect').inputValue(),'km','closed selects also use shared wheel selection');assert.equal(await page.locator('#uiChoicePopup').count(),0,'closed wheel navigation does not open a popup');
+ await page.evaluate(()=>document.querySelector('#gridX').dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:200,clientY:200})));
+ const actions=page.locator('.quantity-menu'),copy=actions.locator('[data-shortcut=C]');
+ assert.ok((await actions.boundingBox()).width<160);
+ const rowHeight=(await copy.boundingBox()).height;
+ assert.ok(rowHeight>=30&&rowHeight<34);
+ await page.mouse.move(4,4);await page.mouse.wheel(0,100);
+ await actions.waitFor({state:'detached'});
+ await page.evaluate(()=>document.querySelector('#gridX').dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:200,clientY:200})));
+ await copy.hover();await page.mouse.wheel(0,100);
+ await page.waitForFunction(()=>document.activeElement.dataset.shortcut==='X');
+ await page.keyboard.press('ArrowDown');
+ assert.equal(await actions.locator(':focus').getAttribute('data-shortcut'),'E');
+ await page.keyboard.press('ArrowUp');
+ assert.equal(await actions.locator(':focus').getAttribute('data-shortcut'),'X');
+ await page.keyboard.press('e');
+ assert.equal(await page.locator('.quantity-expression input').isVisible(),true);
+ await page.keyboard.press('Escape');
+ if(!await page.locator('#unitSelect').isVisible())await page.locator('#uiMeasurementTab').click();
+ await page.locator('#unitSelect').click();
+ const second=await page.locator('#uiChoicePopup [data-shortcut="2"]').getAttribute('data-value');
+ await page.keyboard.press('2');assert.equal(await page.locator('#unitSelect').inputValue(),second);
+ assert.equal(await page.locator('#uiChoicePopup').count(),0);
  assert.deepEqual(errors,[]);console.log('PASS: common dropdown top-layer visibility over color panel, parent picker ownership, immediate wheel/keyboard selection and matching canonical values/fields');
 }finally{await browser.close()}

@@ -15,7 +15,7 @@ function initialize(node){
  if(bound.has(node))return bound.get(node);const raw=record(node);let id=attr(node,'data-model-id')||raw?.id;
  if(id){const previous=owners.get(id);if(previous&&previous!==node&&previous.parentNode&&bridge.contains?.(previous))throw Error('偵測到重複物件 ID，需明確修復');ids().reserve(id)}else id=ids().next();
  owners.set(id,node);bound.set(node,id);node.setAttribute('data-model-id',id);
- if(!raw&&!attr(node,'data-model-name'))node.setAttribute('data-model-name',root.ChipUI.objectTypes.find(item=>item.id===type(node))?.label||'物件');return id;
+ if(!raw&&!attr(node,'data-model-name'))node.setAttribute('data-model-name',root.ChipDrawUI.objectTypes.find(item=>item.id===type(node))?.label||'物件');return id;
 }
 function layer(node){
  const group=bridge.owner?.(node);if(!group)return null;initialize(group);const native=attr(group,'data-layer-type'),result={...JSON.parse(decodeURIComponent(attr(group,'data-model-layer')||'%7B%7D')),id:attr(group,'data-model-id'),name:attr(group,'data-name')||'',type:{artwork:'art',vector:'vect',pcb:'pcb'}[native]||'art'};
@@ -25,7 +25,7 @@ function layer(node){
  return result;
 }
 function scalar(value){return root.ChipQuantity.scalar(value)}
-function quantity(value){return root.ChipUI.measurements.archiveQuantity({value:scalar(value),unit:'mm'}).value}
+function quantity(value){return root.ChipDrawUI.measurements.archiveQuantity({value:scalar(value),unit:'mm'}).value}
 function numeric(node,key,fallback=0){const value=attr(node,key);return quantity(value===null?fallback:Number(value))}
 function matrix(node){return bridge.matrix?.(node)||{a:1,b:0,c:0,d:1,e:0,f:0}}
 function world(point,m){return [quantity(m.a*point[0]+m.c*point[1]+m.e),quantity(-(m.b*point[0]+m.d*point[1]+m.f))]}
@@ -135,7 +135,7 @@ function geometryNode(g){let node;
  return node;
 }
 function project(input){return geometryNode(M().solve(input))}
-function create(input,group,appearance={},{preserveCommon=false}={}){const data={id:ids().next(),name:root.ChipUI.objectTypes.find(item=>item.id===input.type)?.label||'物件',...M().copy(input)},source={getAttribute:key=>Object.hasOwn(appearance,key)?String(appearance[key]):null};if(preserveCommon&&!Object.hasOwn(input,'name'))delete data.name;M().solve(data);for(const kind of ['stroke','fill']){const authored=paint(source,kind);if(Object.keys(authored).length)data[kind]=authored}return decodeObject(data,null,layer(group))}
+function create(input,group,appearance={},{preserveCommon=false}={}){const data={id:ids().next(),name:root.ChipDrawUI.objectTypes.find(item=>item.id===input.type)?.label||'物件',...M().copy(input)},source={getAttribute:key=>Object.hasOwn(appearance,key)?String(appearance[key]):null};if(preserveCommon&&!Object.hasOwn(input,'name'))delete data.name;M().solve(data);for(const kind of ['stroke','fill']){const authored=paint(source,kind);if(Object.keys(authored).length)data[kind]=authored}return decodeObject(data,null,layer(group))}
 function decodeObject(data,target,context=layer(target)){
  const inspected=M().inspect(data,{layer:context}),g=inspected.geometry;let node;
  if(!g||inspected.issues.some(issue=>issue.required&&issue.severity==='error'))node=errorNode(data,inspected.issues);

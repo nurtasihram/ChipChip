@@ -8,7 +8,7 @@ try{
  await page.evaluate(()=>{$('advanced').open=false;$('panel').classList.remove('show');$('layersPanel').hidden=true});
  for(const type of ['rect','arc']){
   await page.locator('#toolsButtons [data-tool='+type+']').click();
-  const methods=await page.evaluate(type=>ChipUI.objectTypes.find(item=>item.id===type).methods.map(item=>item.id),type);
+  const methods=await page.evaluate(type=>ChipDrawUI.objectTypes.find(item=>item.id===type).methods.map(item=>item.id),type);
   for(const id of methods){
    await page.locator('#'+type+'ConstructionTools [data-option-id="'+id+'"]').hover();
    const timeline=await page.locator('#chipIconTooltip svg[data-construction-animation]').evaluate(n=>{

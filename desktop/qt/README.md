@@ -26,4 +26,4 @@ ChipDraw 在畫布上以點擊或拖曳繪製矩形。右鍵開啟工具面板�
 
 兩端的共用繪圖和計量模型由 `node tools/build-qt-model.mjs` 更新。`--check` 可檢查嵌入版本與原始碼是否一致。Windows 與 Linux 的編譯產物分別位於 `.qt-build/windows` 和 `.qt-build/linux`。
 
-`test` 以離屏 Qt 平台執行原生測試，涵蓋綁定輸入、像素比例換算、矩形繪製及歷史。執行檔的 `--web-baseline` 選項會以系統瀏覽器開啟離線 HTML。網頁版也可透過 ChipDraw.html 開啟，執行 `node tests/run.mjs` 驗證共用模型。
+`test` 以離屏 Qt 平台執行原生測試，涵蓋綁定輸入、像素比例換算、矩形繪製與提交。執行檔的 `--web-baseline` 選項會以系統瀏覽器開啟離線 HTML。網頁版也可透過 ChipDraw.html 開啟，執行 `node tests/run.mjs` 驗證共用模型。

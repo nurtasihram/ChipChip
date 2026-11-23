@@ -2,7 +2,7 @@
 import {readFile, writeFile} from 'node:fs/promises';
 import {transform} from 'esbuild';
 const root = new URL('../', import.meta.url);
-const files = ['shared/ui-definitions.js','shared/quantity-editor.js','shared/json-store.js','shared/drawing-model.js',
+const files = ['shared/ui-definitions.js','src/chipdraw/ui-definitions.js','shared/quantity-editor.js','shared/json-store.js','shared/drawing-model.js',
     'shared/rectangle-editor.js','shared/rectangle-help.js','desktop/qt/rectangle-session.js'];
 const sources = await Promise.all(files.map(file => readFile(new URL(file, root), 'utf8')));
 const {code} = await transform(sources.join('\n'), {target:'es2016', dropLabels:['browserUI'], charset:'utf8', legalComments:'inline'});

@@ -27,6 +27,18 @@ function nearestPoint(p,a,b){const x=b.x-a.x,y=b.y-a.y,length=x*x+y*y,t=length?M
 function intersection(a,b,c,d){const rx=b.x-a.x,ry=b.y-a.y,sx=d.x-c.x,sy=d.y-c.y,den=rx*sy-ry*sx;if(Math.abs(den)<1e-12)return null;const qx=c.x-a.x,qy=c.y-a.y,t=(qx*sy-qy*sx)/den,u=(qx*ry-qy*rx)/den;if(t<0||t>1||u<0||u>1)return null;return {x:a.x+t*rx,y:a.y+t*ry}}
 // Nearest grid queries are bounded independently of density and search diameter.
 // The drawing camera uses uniform zoom, rotation and reflection.
+function snapToGrid(point,{coordinate='cart',x=1,y=1,radius=1,angle=Math.PI/6}={}){
+ const roundToStep=(value,step)=>{
+  const spacing=Number.isFinite(step)&&step>0?step:1;
+  return Math.round(value/spacing)*spacing;
+ };
+ if(coordinate==='polar'){
+  const r=roundToStep(Math.hypot(point.x,point.y),radius);
+  const theta=roundToStep(Math.atan2(point.y,point.x),angle);
+  return {x:r*Math.cos(theta),y:r*Math.sin(theta)};
+ }
+ return {x:roundToStep(point.x,x),y:roundToStep(point.y,y)};
+}
 function nearestGrid({point,spacing,angle=null,retain=[]}){
  const result=new Map(),add=(id,x,y)=>result.set(id,{type:'grid',id,point:{x,y},source:'格線',label:x===0&&y===0?'原點':'格點'});
  if(angle===null){
@@ -90,5 +102,5 @@ function nearby({point,candidates,enabledTypes,priority,tolerance=10,screen=p=>p
  const hits=candidates.filter(c=>finite(c.point)&&allowed.has(c.type)).map(c=>{const q=screen(c.point);return {...c,distance:Math.hypot(q.x-cursor.x,q.y-cursor.y)}}).filter(c=>Number.isFinite(c.distance)&&c.distance<=tolerance);
  return sort?hits.sort((a,b)=>a.distance-b.distance):hits;
 }
-root.ChipSnap={sublineAnchors,curveInRect,curves,curveCandidate,curveReferences,nearestBoundary,isExplicitPoint,preferExplicitPoints,nearestPoint,nearestGrid,gridCandidates,spatialIndex,intersection,resolve,nearby};
+root.ChipSnap={snapToGrid,sublineAnchors,curveInRect,curves,curveCandidate,curveReferences,nearestBoundary,isExplicitPoint,preferExplicitPoints,nearestPoint,nearestGrid,gridCandidates,spatialIndex,intersection,resolve,nearby};
 })(globalThis);

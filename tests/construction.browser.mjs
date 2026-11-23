@@ -41,22 +41,22 @@ try{
   await page.mouse.up();
   await page.evaluate(()=>{selected.remove();renderSelection()});
  }
- const rects=await page.evaluate(()=>ChipUI.toolMethods('rect').map(item=>item.id));
+ const rects=await page.evaluate(()=>ChipDrawUI.toolMethods('rect').map(item=>item.id));
  assert.deepEqual(rects,['diagonal','edge','right-triangle','edge-midpoint']);
  for(const mirrored of [false,true])for(const reference of rects){
   await page.evaluate(mirror=>{scale=2;viewAngle=31;viewMirrored=mirror;view()},mirrored);
   await choose('rect',reference);await hidePanels();
-  const before=await page.evaluate(()=>history.length),a={x:-20,y:10},b={x:24,y:44},c={x:34,y:6};
+  const before=await page.evaluate(()=>layers.active().children.length),a={x:-20,y:10},b={x:24,y:44},c={x:34,y:6};
   await click(a);await click(b);
   if(['edge','right-triangle'].includes(reference)){
-   assert.equal(await page.evaluate(()=>history.length),before);
+   assert.equal(await page.evaluate(()=>layers.active().children.length),before);
    const target=await page.evaluate(p=>transformPoint(p,$('world').getScreenCTM()),c);
    await page.mouse.move(target.x,target.y);assert.equal(await page.locator('[data-rect-preview]').count(),1);
    await click(c);
   }
   const raw=await read(),pivot=raw.point||raw.points[0];
   assert.equal(raw.reference,reference);assert.equal(raw.type,'rect');close(pivot[0],a.x);close(pivot[1],-a.y);
-  assert.equal(await page.evaluate(()=>history.length),before+1);
+  assert.equal(await page.evaluate(()=>layers.active().children.length),before+1);
   if(reference==='edge-midpoint'){assert.ok(raw.half_width>0);assert.equal(typeof raw.height,'number')}
   else if(reference==='edge'){assert.notEqual(typeof raw.width,typeof raw.height);assert.equal(raw.points.length,2)}
   else if(reference==='right-triangle'){assert.equal(raw.points.length,3);assert.equal(raw.rotation,undefined)}
@@ -72,7 +72,7 @@ try{
   if(reference==='diagonal'){
    const edited=await page.evaluate(x=>{
     const input=$('objectVertex1x'),unit=$('unitSelect').value;
-    ChipUI.measurements.setValue(input.id,x/unitMM(),unit);
+    ChipDrawUI.measurements.setValue(input.id,x/unitMM(),unit);
     input.dispatchEvent(new Event('change',{bubbles:true}));
     return ChipDrawingJson.read(selected);
    },raw.points[1][0]+3.25);
@@ -114,8 +114,8 @@ try{
  assert.equal(await page.locator('#drawingConstruction').count(),0,'draft parameters must never be assigned in the object property panel');
  for(const test of cases){
   await hidePanels();await choose('arc',test.id);assert.equal(await page.evaluate(()=>$('panel').classList.contains('show')),false,'choosing '+test.id+' must not open properties');
-  const before=await page.evaluate(()=>history.length);for(let i=0;i<test.points.length;i++){const [x,y]=test.points[i];if(i===2){const target=await page.evaluate(p=>transformPoint(p,$('world').getScreenCTM()),{x,y});await page.mouse.move(target.x,target.y,{steps:8});assert.equal(await page.locator('[data-arc-preview]').count(),1,test.id+' previews dynamically before confirmation');assert.ok(await page.locator('[data-arc-instruction]').textContent())}await click({x,y})}
-  const raw=await read();assert.equal(raw.type,'arc',test.id);assert.equal(raw.reference,test.id);assert.equal(await page.evaluate(()=>history.length),before+1,test.id+' creates one undo record');assert.ok(await page.evaluate(()=>ChipArc.read(selected)),test.id+' has a native editable arc');assert.equal(Object.hasOwn(raw,'attributes'),false);assert.equal(Object.hasOwn(raw,'tag'),false);assert.equal(await page.evaluate(()=>$('panel').classList.contains('show')),false,'finishing '+test.id+' must not open properties');
+  const before=await page.evaluate(()=>layers.active().children.length);for(let i=0;i<test.points.length;i++){const [x,y]=test.points[i];if(i===2){const target=await page.evaluate(p=>transformPoint(p,$('world').getScreenCTM()),{x,y});await page.mouse.move(target.x,target.y,{steps:8});assert.equal(await page.locator('[data-arc-preview]').count(),1,test.id+' previews dynamically before confirmation');assert.ok(await page.locator('[data-arc-instruction]').textContent())}await click({x,y})}
+  const raw=await read();assert.equal(raw.type,'arc',test.id);assert.equal(raw.reference,test.id);assert.equal(await page.evaluate(()=>layers.active().children.length),before+1,test.id+' creates one object');assert.ok(await page.evaluate(()=>ChipArc.read(selected)),test.id+' has a native editable arc');assert.equal(Object.hasOwn(raw,'attributes'),false);assert.equal(Object.hasOwn(raw,'tag'),false);assert.equal(await page.evaluate(()=>$('panel').classList.contains('show')),false,'finishing '+test.id+' must not open properties');
   if(test.sweep!==undefined)close(raw.sweep,test.sweep);if(test.radius!==undefined)close(raw.radius,test.radius);if(test.sagitta!==undefined)close(raw.sagitta,test.sagitta);if(test.angles)raw.angles.forEach((a,i)=>close(a,test.angles[i]));if(test.id==='three-points')assert.equal(raw.points.length,3);
  }
  const semicircles=await page.evaluate(()=>[-20,20].map(y=>{const raw=ChipConstruction.arcDefinition('endpoints-radius',[{x:-20,y:0},{x:20,y:0}],{x:0,y});return ChipDrawingModel.solve(raw).sweep}));close(semicircles[0],-180);close(semicircles[1],180);
@@ -128,11 +128,11 @@ try{
  // The public JSON editor round trip retains definitions and creates error markers for impossible arcs.
  await page.evaluate(()=>{$('panel').classList.add('show');objectPanel.setPinned(true)});await page.locator('#jsonTestToggle').click();await page.locator('#jsonTestText .monaco-editor').waitFor({state:'visible'});const original=await read();const sector={...original,closed:'sector',fill:{type:'solid',color:'#abcdef'}};
  await page.evaluate(value=>{$('jsonTestText').value=JSON.stringify(value)},sector);await page.getByRole('button',{name:'保存 JSON 模型',exact:true}).click();assert.equal((await read()).reference,original.reference);assert.equal((await read()).closed,'sector');assert.ok(await page.evaluate(()=>selected.getAttribute('d').endsWith(' Z')));
- const impossible={...original,reference:'three-points',points:[[0,0],[1,0],[2,0]]};for(const key of ['point','radius','angle','sweep'])delete impossible[key];await page.evaluate(value=>{$('jsonTestText').value=JSON.stringify(value)},impossible);await page.getByRole('button',{name:'保存 JSON 模型',exact:true}).click();assert.equal(await page.evaluate(()=>selected.getAttribute('data-model-unresolved')),'true');assert.deepEqual((await read()).points,impossible.points);await page.evaluate(()=>$('undo').click());
- // Arc drafts with no solution do not emit a shape or an undo record.
- await hidePanels();await choose('arc','three-points');await hidePanels();const counts=await page.evaluate(()=>({history:history.length,objects:layers.active().children.length}));await click({x:0,y:0});await click({x:10,y:0});await click({x:20,y:0});assert.deepEqual(await page.evaluate(()=>({history:history.length,objects:layers.active().children.length})),counts);assert.ok(await page.locator('[data-arc-instruction]').textContent());await page.keyboard.press('Escape');assert.equal(await page.evaluate(()=>arcDraft),null);
+ const impossible={...original,reference:'three-points',points:[[0,0],[1,0],[2,0]]};for(const key of ['point','radius','angle','sweep'])delete impossible[key];await page.evaluate(value=>{$('jsonTestText').value=JSON.stringify(value)},impossible);await page.getByRole('button',{name:'保存 JSON 模型',exact:true}).click();assert.equal(await page.evaluate(()=>selected.getAttribute('data-model-unresolved')),'true');assert.deepEqual((await read()).points,impossible.points);
+ // Arc drafts with no solution do not emit a shape.
+ await hidePanels();await choose('arc','three-points');await hidePanels();const counts=await page.evaluate(()=>({objectCount:layers.active().children.length,objects:layers.active().children.length}));await click({x:0,y:0});await click({x:10,y:0});await click({x:20,y:0});assert.deepEqual(await page.evaluate(()=>({objectCount:layers.active().children.length,objects:layers.active().children.length})),counts);assert.ok(await page.locator('[data-arc-instruction]').textContent());await page.keyboard.press('Escape');assert.equal(await page.evaluate(()=>arcDraft),null);
  for(const type of ['rect','arc']){await page.locator('#toolsButtons [data-tool='+type+']').hover();await page.locator('#chipIconTooltip svg[data-construction-animation]').waitFor({state:'visible'})}
- for(const type of ['rect','arc']){const methods=await page.evaluate(type=>ChipUI.objectTypes.find(item=>item.id===type).methods.map(item=>item.id),type);await choose(type,methods[0]);for(const id of methods){await page.locator('#'+type+'ConstructionTools [data-option-id="'+id+'"]').hover();const svg=page.locator('#chipIconTooltip svg[data-construction-animation="'+id+'"]');await svg.waitFor({state:'visible'});assert.ok(await svg.locator('[data-demo-shape]').count()>0,id+' has solved geometry in its animation')}}
+ for(const type of ['rect','arc']){const methods=await page.evaluate(type=>ChipDrawUI.objectTypes.find(item=>item.id===type).methods.map(item=>item.id),type);await choose(type,methods[0]);for(const id of methods){await page.locator('#'+type+'ConstructionTools [data-option-id="'+id+'"]').hover();const svg=page.locator('#chipIconTooltip svg[data-construction-animation="'+id+'"]');await svg.waitFor({state:'visible'});assert.ok(await svg.locator('[data-demo-shape]').count()>0,id+' has solved geometry in its animation')}}
  const directory=await mkdtemp(path.join(tmpdir(),'chipchip-construction-'));
  for(const [type,id]of [['rect','edge-midpoint'],['arc','endpoints-radius']]){await choose(type,id);const button=page.locator('#'+type+'ConstructionTools [data-option-id="'+id+'"]');await button.hover();const svg=page.locator('#chipIconTooltip svg[data-construction-animation="'+id+'"]');await svg.waitFor({state:'visible'});assert.equal(await svg.locator('animate').count(),0);assert.ok(await svg.evaluate(n=>n.querySelectorAll('*').length-n.querySelector('[data-demo-input-feedback]').querySelectorAll('*').length-1)<24,'reuse one small SVG scene');assert.ok(await svg.locator('[data-demo-shape]').count()>0,'animation contains actual '+type+' geometry');const frames=await svg.evaluate(n=>{const nodes=[...n.children];n.chipHelpSeek(.4);const before=n.querySelector('[data-demo-pointer]').getAttribute('transform');n.chipHelpSeek(.42);return {before,after:n.querySelector('[data-demo-pointer]').getAttribute('transform'),same:nodes.every((node,i)=>node===n.children[i])}});assert.notEqual(frames.before,frames.after,'continuous progress changes pointer geometry');assert.equal(frames.same,true,'updates reuse SVG nodes');await svg.evaluate(n=>n.chipHelpPlay());await page.waitForTimeout(2800);await page.locator('#chipIconTooltip').screenshot({path:path.join(directory,type+'-help.png')})}
  assert.deepEqual(errors,[]);console.log('PASS: 4 rectangle drawing modes across rotation/reflection; reference-fixed resize; 8 arc modes; transformed model editing; canvas-only gestures without property switching; SVG animated drawing help; compact JSON round trips; sector fill; unsolved preservation and draft cancellation; screenshots '+directory);

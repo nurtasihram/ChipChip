@@ -13,7 +13,7 @@ try{
  await page.evaluate(()=>{const host=$('objectControl1Coordinates');host.coordinateChange({x:30,y:-14})});
  let geometry=await page.evaluate(()=>pathModel(selected.getAttribute('d')).anchors.map(p=>({x:p.x,y:p.y})));
  close(geometry[1].x,17);close(geometry[1].y,10);assert.deepEqual(geometry[0],{x:10,y:20});
- await page.evaluate(()=>$('undo').click());assert.equal(await page.evaluate(()=>selected?.getAttribute('d')||art.querySelector('path').getAttribute('d')),original);
+ await page.evaluate(d=>{selected.setAttribute('d',d);renderSelection()},original);
  await page.evaluate(()=>{selected=art.querySelector('path');selection.replace([selected]);renderSelection();const host=$('objectVertex0Coordinates');host.coordinateChange({x:55,y:-226})});
  geometry=await page.evaluate(()=>pathModel(selected.getAttribute('d')).anchors.map(p=>({x:p.x,y:p.y})));
  close(geometry[0].x,13);close(geometry[0].y,15);close(geometry[1].x,18);close(geometry[1].y,7);
@@ -22,7 +22,7 @@ try{
  await page.evaluate(()=>{toggleVertexLock(selected,0);$('coordinateMode').value='polar';$('coordinateMode').dispatchEvent(new Event('change',{bubbles:true}))});
  assert.equal(await page.locator('#objectControl1Coordinates').getAttribute('data-coordinate-editor'),'polar');assert.equal(await page.locator('#objectControl1radius').count(),1);
  await page.evaluate(()=>{$('coordinateMode').value='cartesian';$('coordinateMode').dispatchEvent(new Event('change',{bubbles:true}));$('unitSelect').value='cm';$('unitSelect').dispatchEvent(new Event('change',{bubbles:true}))});
- close(await page.evaluate(()=>ChipUI.measurements.value('objectControl1x')),2.4);
+ close(await page.evaluate(()=>ChipDrawUI.measurements.value('objectControl1x')),2.4);
  await page.evaluate(()=>{selected.setAttribute('d','M 0 0 C 5 10 15 10 20 0 C 30 -5 35 -5 40 0');renderSelection()});
  assert.equal(await page.locator('[data-control-offset]').count(),4,'legacy independent controls remain editable without changing the curve');
  assert.equal(await page.locator('[data-vertex-index="3"] [data-control-offset]').count(),2);
@@ -31,5 +31,5 @@ try{
  await page.evaluate(()=>$('objectControl2Coordinates').coordinateChange({x:12,y:-8}));
  const joined=await page.evaluate(()=>pathModel(selected.getAttribute('d')).anchors);close(joined[2].x,joined[4].x);close(joined[2].y,joined[4].y);
  if(process.env.CHIPDRAW_SCREENSHOT)await page.screenshot({path:process.env.CHIPDRAW_SCREENSHOT,fullPage:true});
- assert.deepEqual(errors,[]);console.log('PASS: Bezier control offsets, transformed coordinates, anchor movement, undo, locks, polar mode, units and existing independent controls');
+ assert.deepEqual(errors,[]);console.log('PASS: Bezier control offsets, transformed coordinates, anchor movement, locks, polar mode, units and existing independent controls');
 }finally{await browser.close()}

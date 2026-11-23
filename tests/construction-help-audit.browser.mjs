@@ -10,7 +10,7 @@ try{
  const page=await browser.newPage({viewport:{width:1500,height:1100}}),errors=[],results=[];
  page.on('pageerror',error=>errors.push(error.message));await page.goto(new URL('../ChipDraw.html',import.meta.url).href);await page.waitForFunction(()=>constructionTools);
  await page.evaluate(()=>{$('advanced').open=false;$('panel').classList.remove('show');$('layersPanel').hidden=true;$('snapEnabled').checked=false;scale=2;viewAngle=0;viewMirrored=false;view()});
- const methods=await page.evaluate(()=>['rect','arc'].flatMap(type=>ChipUI.objectTypes.find(item=>item.id===type).methods.map(({id,label})=>({type,id,label}))));assert.equal(methods.length,12);
+ const methods=await page.evaluate(()=>['rect','arc'].flatMap(type=>ChipDrawUI.objectTypes.find(item=>item.id===type).methods.map(({id,label})=>({type,id,label}))));assert.equal(methods.length,12);
  const progress=[.05,.12,.2,.25,.30,.325,.35,.4,.43,.5,.6,.68,.75,.8,.82,.9,.95];
  const position=p=>page.evaluate(p=>transformPoint({x:p.x-130,y:p.y-90},$('world').getScreenCTM()),p);
  for(const {type,id,label}of methods){
@@ -23,24 +23,24 @@ try{
    if([.12,.25,.5,.95].includes(time))await svg.screenshot({path:path.join(output,id+'-'+time+'.png')});
   }
   const three=type==='arc'||['edge','right-triangle'].includes(id);
-  let first=false,second=false,finished=false;const before=await page.evaluate(()=>history.length);
+  let first=false,second=false,finished=false;const before=await page.evaluate(()=>layers.active().children.length);
   for(const scene of scenes){
    const screen=await position(scene.cursor);await page.mouse.move(screen.x,screen.y);
    if(!first&&scene.time>=.12){await page.mouse.click(screen.x,screen.y);first=true}
    else if(three&&!second&&scene.time>=(type==='arc'?.30:.43)){await page.mouse.click(screen.x,screen.y);second=true}
    else if(!finished&&scene.stage==='complete'){await page.mouse.click(screen.x,screen.y);finished=true}
    const actual=await page.evaluate(({type,finished})=>{
-    const node=finished?selected:preview.querySelector(type==='rect'?'rect':'[data-arc-preview]');return {visible:!!node,samples:node?Array.from({length:9},(_,i)=>{const p=transformPoint(node.getPointAtLength(node.getTotalLength()*i/8),objectMatrix(node));return {x:p.x+130,y:p.y+90}}):[],guides:[...preview.querySelectorAll('line')].map(e=>[{x:Number(e.getAttribute('x1'))+130,y:Number(e.getAttribute('y1'))+90},{x:Number(e.getAttribute('x2'))+130,y:Number(e.getAttribute('y2'))+90}]).filter(([a,b])=>Math.hypot(a.x-b.x,a.y-b.y)>.002),history:history.length,anchor:clickAnchor?{x:clickAnchor.x+130,y:clickAnchor.y+90}:null,points:(arcDraft||rectDraft)?.points.map(p=>({x:p.x+130,y:p.y+90})),panel:$('panel').classList.contains('show')};
+    const node=finished?selected:preview.querySelector(type==='rect'?'rect':'[data-arc-preview]');return {visible:!!node,samples:node?Array.from({length:9},(_,i)=>{const p=transformPoint(node.getPointAtLength(node.getTotalLength()*i/8),objectMatrix(node));return {x:p.x+130,y:p.y+90}}):[],guides:[...preview.querySelectorAll('line')].map(e=>[{x:Number(e.getAttribute('x1'))+130,y:Number(e.getAttribute('y1'))+90},{x:Number(e.getAttribute('x2'))+130,y:Number(e.getAttribute('y2'))+90}]).filter(([a,b])=>Math.hypot(a.x-b.x,a.y-b.y)>.002),objectCount:layers.active().children.length,anchor:clickAnchor?{x:clickAnchor.x+130,y:clickAnchor.y+90}:null,points:(arcDraft||rectDraft)?.points.map(p=>({x:p.x+130,y:p.y+90})),panel:$('panel').classList.contains('show')};
    },{type,finished});
    assert.equal(scene.points.filter(p=>p.visible&&p.confirmed).length,finished?(three?3:2):first?(second?2:1):0,id+' confirmed markers follow actual clicks');
-   assert.equal(actual.panel,false,id+' must remain on the drawing canvas');assert.equal(actual.visible,scene.visible,id+' shape formation at '+scene.time);assert.equal(actual.history,before+(finished?1:0),id+' must commit only on the final click');
+   assert.equal(actual.panel,false,id+' must remain on the drawing canvas');assert.equal(actual.visible,scene.visible,id+' shape formation at '+scene.time);assert.equal(actual.objectCount,before+(finished?1:0),id+' must commit only on the final click');
    for(let i=0;i<scene.samples.length;i++)for(const axis of ['x','y'])close(actual.samples[i][axis],scene.samples[i][axis],id+' native shape sample at '+scene.time);
    if(type==='rect'&&!three&&first&&!finished)for(const axis of ['x','y'])close(actual.anchor[axis],scene.points[0][axis],id+' live rectangle reference');
    if(three&&!finished){assert.equal(actual.guides.length,scene.guides.length,id+' construction guide count at '+scene.time);for(let i=0;i<scene.guides.length;i++)for(let j=0;j<2;j++)for(const axis of ['x','y'])close(actual.guides[i][j][axis],scene.guides[i][j][axis],id+' guide at '+scene.time);if(first)for(let i=0;i<(second?2:1);i++)for(const axis of ['x','y'])close(actual.points[i][axis],scene.points[i][axis],id+' confirmed point '+(i+1))}
    if(scene.click)for(const axis of ['x','y'])close(scene.clickAt[axis],scene.cursor[axis],id+' click must occur beneath the pointer');
    if(scene.time>=.95){const bbox=await page.evaluate(()=>{return objectBounds(selected)});assert.ok(bbox.x+130>=5&&bbox.x+bbox.width+130<=250&&bbox.y+90>=5&&bbox.y+bbox.height+90<=150,id+' completed illustration must fit above its caption')}
   }
-  assert.equal(finished,true,id);assert.equal(await page.evaluate(()=>ChipDrawingJson.record(selected).reference),id);await page.evaluate(()=>rectangleEditor().undo());assert.equal(await page.evaluate(()=>layers.groups().reduce((n,g)=>n+g.children.length,0)),0,id+' rollback');
+  assert.equal(finished,true,id);assert.equal(await page.evaluate(()=>ChipDrawingJson.record(selected).reference),id);await page.evaluate(()=>{selected.remove();selection.clear();selected=null;renderSelection()});
   results.push({type,id,label,stages:scenes.length,checks:['point order','cursor and click position','live preview and final geometry',...(type==='arc'?['live guide geometry']:['live reference point']),'commit timing','visible bounds']});console.log('PASS '+type+' '+id+' ('+scenes.length+' replay stages)');
  }
  assert.deepEqual(errors,[]);await writeFile(path.join(output,'results.json'),JSON.stringify({ok:true,results},null,2));

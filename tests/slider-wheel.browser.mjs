@@ -12,7 +12,7 @@ try {
    document.body.append(host);
    const [input,output,unit]=host.children;
    input.id='wheel-test';
-   ChipUI.conversionComponent(input,output,unit,{step:4});
+   ChipDrawUI.conversionComponent(input,output,unit,{step:4});
    input.addEventListener('input',()=>output.textContent=input.value);
    input.addEventListener('change',()=>input.dataset.committed=input.value);
   });

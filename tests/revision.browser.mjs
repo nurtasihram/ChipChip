@@ -16,7 +16,7 @@ try{
  await page.goto(new URL('../ChipDraw.html',import.meta.url).href);
  await page.evaluate(()=>{selected=el('line',{x1:0,y1:0,x2:80,y2:40,stroke:'#69b8ff','stroke-width':2,'stroke-linecap':'round',fill:'none'});renderSelection();$('panel').classList.add('show')});
  const before=await page.locator('#selectionOverlay').innerHTML();
- await page.evaluate(()=>{ChipUI.measurements.setValue('sw',20,$('unitSelect').value);$('sw').dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.evaluate(()=>{ChipDrawUI.measurements.setValue('sw',20,$('unitSelect').value);$('sw').dispatchEvent(new Event('input',{bubbles:true}))});
  assert.notEqual(await page.locator('#selectionOverlay').innerHTML(),before,'live stroke changes repaint selection');
  if(await page.locator('#viewMenuButton').isVisible())await page.locator('#viewMenuButton').click();else if(await page.locator('#advanced .ui-panel-mini button').isVisible())await page.locator('#advanced .ui-panel-mini button').click();await page.locator('#uiSnapTab').click();
  assert.equal(await page.locator('#snapSettings').isVisible(),false);await page.locator('#snapEnabled').check();assert.equal(await page.locator('#snapSettings').isVisible(),true);
