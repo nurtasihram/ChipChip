@@ -1,7 +1,6 @@
 param(
     [ValidateSet('setup','run','test')][string]$Action='run',
-    [ValidateSet('chipchip','chipdraw','pinview')][string]$App='chipchip',
-    [string]$File
+    [ValidateSet('chipchip','chipdraw')][string]$App='chipchip'
 )
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
@@ -32,7 +31,6 @@ if ($Action -eq 'test') {
 } else {
     $exe=Join-Path $build 'chipchip.exe'
     if (!(Test-Path -LiteralPath $exe)) { $exe=Join-Path $build 'Release/chipchip.exe' }
-    $fileArgs=if ($File) { @('--file',$File) } else { @() }
-    & $exe --app $App @fileArgs
+    & $exe --app $App
 }
 exit $LASTEXITCODE

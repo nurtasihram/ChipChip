@@ -2,11 +2,10 @@ cmake_minimum_required(VERSION 3.21)
 project(ChipChip LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 find_package(Qt6 REQUIRED COMPONENTS Widgets Qml Svg Test)
-add_executable(chipchip main.cpp drawing.cpp pinview.cpp inputs.cpp sliders.cpp)
+add_executable(chipchip main.cpp drawing.cpp inputs.cpp sliders.cpp)
 target_link_libraries(chipchip PRIVATE Qt6::Widgets Qt6::Qml Qt6::Svg Qt6::Test)
 qt_add_resources(chipchip models PREFIX "/" BASE "../.." FILES
-  chipdraw-model.generated.js pinview.js ../../shared/scalar-input.js
-  ../../examples/PinView_Draft_0_2_E38xx_demo.json)
+  chipdraw-model.generated.js ../../shared/scalar-input.js)
 enable_testing()
 add_test(NAME native COMMAND chipchip --smoke-test)
 set_tests_properties(native PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

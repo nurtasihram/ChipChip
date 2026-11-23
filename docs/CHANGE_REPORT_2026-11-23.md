@@ -12,7 +12,7 @@ ChipDraw 與 PinView 的桌面入口已移植到 C++17／Qt 6，由 CMake 建置
 - HTML 和 Qt 滑動條使用相同的等分規則。懸停滾輪與焦點左右鍵可逐格調值。Qt 的純量及物理量滑動條提供手動輸入，空間不足時切換為輸入欄。
 - Monaco 可指定 JSON、JavaScript、C 等格式。預設關閉同類詞與相同選取文字高光，並提供外部高光及格式化器入口。
 
-## PinView 面板
+## PinView 面板（暫停前）
 
 「搜尋與管腳資訊」新增兩個滑動條，直接讀寫目前視窗的畫布檢視設定。切換文件會保留設定，保存 PinView 文件時沿用原有歸檔格式。
 
@@ -26,3 +26,7 @@ ChipDraw 與 PinView 的桌面入口已移植到 C++17／Qt 6，由 CMake 建置
 Windows 與 WSL 的原生面板測試均通過。測試從滑軌送入滾輪與左右鍵事件，核對綁定值與畫布實際縮放量，並在固定位置點擊，驗證半徑由 0.34 mm 增至 0.35 mm 後能選中管腳。
 
 共用滑動條另經 Edge 驗證 ChipDraw 與 PinView 的懸停、步進、邊界及左右鍵操作。Qt 的 `--web-baseline` 目前透過系統瀏覽器開啟離線 HTML，舊 WebEngine 的逐步畫面比對未重跑。
+
+## 後續決定
+
+PinView 是獨立工具，已暫停 HTML 與 Qt 入口，待重新設計。ChipChip 的三個離線 HTML 入口與原生桌面入口繼續開啟 ChipDraw。Qt 建置停止編譯 PinView 及嵌入其展示資料，共用滑動條和輸入元件繼續提供。

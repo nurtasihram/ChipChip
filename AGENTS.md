@@ -1,3 +1,7 @@
+# 產品範圍
+
+PinView 是獨立的管腳查看工具，並非 ChipChip 的核心功能或業務。重新設計期間，ChipChip 的 HTML 與原生 Qt 發行入口均暫停提供 PinView。
+
 # 專案語言限制
 
 除非使用者明確指名，所有專案嚴禁使用 Python、Java、Kotlin 或 JVM。此規則涵蓋實作、執行環境、一次性腳本、建置、測試與自動化。

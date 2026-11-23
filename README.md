@@ -18,7 +18,7 @@ ChipDraw 是 ChipChip 的預設繪圖面板。HTML 和原生 Qt 共用 JavaScrip
 
 兩端已接入四種矩形畫法，以及共用的按鈕定義、繁中與英文語言資源和 SVG 操作示範。HTML 面板在畫板內移動；Qt 工具窗格可以拖到桌面，整個放回板內後再跟隨畫板。圖層、吸附及其他繪圖工具的完整操作說明適用於 HTML 版。
 
-獨立的管腳查看器從 `PinView.html` 或 Qt 的 `run pinview` 開啟。[管腳查看器原始說明](docs/CHIPCHIP_README.md)
+PinView 是獨立的管腳查看工具。HTML 與 Qt 入口已暫停，待重新設計。
 
 ## 原始碼與產物
 
@@ -29,9 +29,9 @@ ChipDraw 是 ChipChip 的預設繪圖面板。HTML 和原生 Qt 共用 JavaScrip
 - shared/workspace-ui.css：共用 UI 樣式與面板釘選／調整大小。
 - shared/code-editor.js：Monaco JSON 編輯器、離線工作執行緒及鍵盤隔離。
 - vendor/monaco/：已封裝的 Monaco Editor、樣式、工作執行緒與授權資料。
-- src/chipchip/index.html：ChipChip 介面、管腳資料與適配層。
+- src/chipchip/pinview.html.template：保留供重新設計參考的管腳查看器模板。
 - src/chipdraw/index.html：ChipDraw 介面、SVG 編輯工具與適配層。
-- tools/build.mjs：產生 ChipDraw 繪圖入口 ChipChip.html、ChipDraw.html、index.html，以及獨立的 PinView.html。
+- tools/build.mjs：產生 ChipDraw 繪圖入口 ChipChip.html、ChipDraw.html、index.html。
 - tests/run.mjs：執行核心、共用 UI 行為與完整應用啟動檢查。
 - 根目錄的四個 HTML 為可離線開啟的產物，請勿直接修改。
 

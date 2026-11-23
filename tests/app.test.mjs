@@ -6,7 +6,7 @@ import {createMonacoFixture} from './monaco-fixture.mjs';
 const base=new URL('../',import.meta.url);
 export async function runApps(){const reports=[];
  for(const app of ['chipchip','chipdraw']){
-  const source=await readFile(new URL('src/'+app+'/index.html',base),'utf8'),dom=createDOM(source),E=dom.Element;const selectionAnimations=[];E.prototype.animate=function(frames,options){const animation={element:this,frames,options,cancelled:false,cancel(){this.cancelled=true}};selectionAnimations.push(animation);return animation};
+  const source=await readFile(new URL(app==='chipchip'?'src/chipchip/pinview.html.template':'src/chipdraw/index.html',base),'utf8'),dom=createDOM(source),E=dom.Element;const selectionAnimations=[];E.prototype.animate=function(frames,options){const animation={element:this,frames,options,cancelled:false,cancel(){this.cancelled=true}};selectionAnimations.push(animation);return animation};
   const ctx=new Proxy({measureText:text=>({width:String(text).length*7})},{get:(o,key)=>key in o?o[key]:(()=>{}),set:(o,key,v)=>{o[key]=v;return true}});
   E.prototype.getAttributeNames=function(){return Object.keys(this.attrs)};E.prototype.getContext=()=>ctx;E.prototype.getBBox=()=>({x:0,y:0,width:100,height:100});E.prototype.insertBefore=function(node,before){node.remove();const index=this.children.indexOf(before);if(index<0)this.append(node);else{this.children.splice(index,0,node);node.parentNode=this}};
   for(const [key,value]of Object.entries({clientWidth:900,clientHeight:600,offsetWidth:100,offsetHeight:80}))Object.defineProperty(E.prototype,key,{get(){return value}});

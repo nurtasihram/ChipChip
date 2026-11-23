@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 const {chromium}=await import(process.env.CHIPDRAW_PLAYWRIGHT||'playwright');
 const browser=await chromium.launch({headless:true,...(process.env.CHIPDRAW_BROWSER?{executablePath:process.env.CHIPDRAW_BROWSER}:{})});
 try {
- for(const app of ['ChipDraw','PinView']){
+ for(const app of ['ChipDraw']){
   const page=await browser.newPage();
   await page.goto(new URL('../'+app+'.html',import.meta.url).href);
   await page.evaluate(()=>{
@@ -32,6 +32,6 @@ try {
   assert.equal(await input.inputValue(),'60');
   await page.close();
  }
- console.log('PASS hover wheel, step divisions, bounds and unfocused commit in ChipDraw and PinView');
+ console.log('PASS hover wheel, step divisions, bounds and unfocused commit in ChipDraw');
 }finally{await browser.close();}
 

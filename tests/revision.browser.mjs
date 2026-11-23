@@ -3,7 +3,7 @@ const {chromium}=await import(process.env.CHIPDRAW_PLAYWRIGHT||'playwright');
 const browser=await chromium.launch({headless:true,...(process.env.CHIPDRAW_BROWSER?{executablePath:process.env.CHIPDRAW_BROWSER}:{})});
 try{
  const page=await browser.newPage({viewport:{width:1200,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
- for(const entry of ['ChipDraw.html','PinView.html']){
+ for(const entry of ['ChipDraw.html']){
   await page.goto(new URL('../'+entry,import.meta.url).href);if(await page.locator('#viewMenuButton').isVisible())await page.locator('#viewMenuButton').click();else if(await page.locator('#advanced .ui-panel-mini button').isVisible())await page.locator('#advanced .ui-panel-mini button').click();
   await page.evaluate(()=>{document.getElementById('selectionDisplayMode').value='independent'});await page.locator('#selectionMerge').click();
   await page.locator('#selectionMerge').hover();await page.mouse.wheel(0,100);await page.waitForTimeout(100);

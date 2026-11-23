@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 const {chromium}=await import(process.env.CHIPDRAW_PLAYWRIGHT||'playwright');
 const browser=await chromium.launch({headless:true,...(process.env.CHIPDRAW_BROWSER?{executablePath:process.env.CHIPDRAW_BROWSER}:{})});
 try{
- for(const app of ['ChipDraw','PinView']){
+ for(const app of ['ChipDraw']){
   const context=await browser.newContext({viewport:{width:1280,height:1000}});
   const page=await context.newPage();
   const url=new URL('../'+app+'.html',import.meta.url).href;

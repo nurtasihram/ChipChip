@@ -31,7 +31,5 @@ public:
 
 constexpr auto drawingBundle=":/desktop/qt/chipdraw-model.generated.js";
 QWidget *drawingWindow();
-QWidget *pinWindow(const QString &file);
 void testDrawing();
-void testPins();
 void testInputs();
