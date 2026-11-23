@@ -7,7 +7,7 @@ export async function runUI(){const results=[],traces=[];let sharedMarkup;
 for(const app of ['chipchip','chipdraw']){
  const source=await readFile(new URL('src/'+app+'/index.html',base),'utf8');assert.ok(source.includes('src="../../shared/workspace-ui.js"'));assert.ok(source.includes('href="../../shared/workspace-ui.css"'));assert.ok(!source.includes('id="gridX"'));assert.ok(!source.includes('function setupGrid('));assert.ok(!source.includes('.gridSettings{'));assert.ok(!source.includes('id="fileMenu"'));assert.ok(!source.includes('<header'));assert.ok(!source.includes('function updateGridControls('));assert.ok(!source.includes("getElementById('left').onclick"));
  const {document,event}=createDOM(source),listeners={},window={addEventListener(type,fn){(listeners[type]||=[]).push(fn)},dispatchEvent(e){for(const fn of listeners[e.type]||[])fn(e)}};
- document.createElementNS=(_,tag)=>document.createElement(tag);const context=vm.createContext({document,window,ResizeObserver:class{observe(){}},innerWidth:1000,innerHeight:800,matchMedia:()=>({matches:true}),Event:class{constructor(type){this.type=type}},setTimeout:()=>1,clearTimeout(){},requestAnimationFrame:()=>1,cancelAnimationFrame(){},alert(){}});vm.runInContext(core,context);vm.runInContext(await readFile(new URL('shared/bubbles.js',base),'utf8'),context);vm.runInContext(await readFile(new URL('shared/quantity-editor.js',base),'utf8'),context);for(const file of ['shared/ui-definitions.js','shared/json-store.js','shared/json-test-ui.js'])vm.runInContext(await readFile(new URL(file,base),'utf8'),context);vm.runInContext(ui,context);context.ChipUI.mount();
+ document.createElementNS=(_,tag)=>document.createElement(tag);const records=new Map(),localStorage={getItem:key=>records.get(key)??null,setItem:(key,value)=>records.set(key,value)};const context=vm.createContext({localStorage,document,window,ResizeObserver:class{observe(){}},innerWidth:1000,innerHeight:800,matchMedia:()=>({matches:true}),Event:class{constructor(type){this.type=type}},setTimeout:()=>1,clearTimeout(){},requestAnimationFrame:()=>1,cancelAnimationFrame(){},alert(){}});vm.runInContext(core,context);vm.runInContext(await readFile(new URL('shared/bubbles.js',base),'utf8'),context);vm.runInContext(await readFile(new URL('shared/quantity-editor.js',base),'utf8'),context);for(const file of ['shared/ui-definitions.js','shared/json-store.js','shared/json-test-ui.js'])vm.runInContext(await readFile(new URL(file,base),'utf8'),context);vm.runInContext(ui,context);context.ChipUI.mount();
  const $=id=>document.getElementById(id);assert.ok($('projectTitle'));assert.ok($('fileMenu'));assert.ok($('advanced'));assert.equal(document.querySelector('header').children[0].id,'viewMenuButton');assert.equal($('advanced').open,true,'settings starts expanded');$('viewMenuButton').dispatchEvent(event('click',$('viewMenuButton')));assert.equal($('advanced').open,false);$('viewMenuButton').dispatchEvent(event('click',$('viewMenuButton')));assert.equal($('advanced').open,true);assert.equal($('viewMenuButton').getAttribute('aria-expanded'),'true');assert.ok($('advanced').contains($('gridX')));assert.ok($('advanced').contains($('rotationFields')));$('viewMenuButton').dispatchEvent(event('click',$('viewMenuButton')));assert.equal($('advanced').open,false);const groups=$('advancedBody').querySelectorAll('.settingGroup').slice(0,2).map(e=>e.outerHTML).join('');if(sharedMarkup)assert.equal(groups,sharedMarkup);else sharedMarkup=groups;
  const icon=$('left'),tip=$('chipIconTooltip');assert.ok(tip);assert.equal(tip.hidden,true);icon.setAttribute('aria-describedby','existing-description');icon.dispatchEvent(event('pointerover',icon));assert.equal(tip.hidden,false);assert.equal(tip.textContent,'逆轉90°');assert.ok(icon.getAttribute('aria-describedby').includes('chipIconTooltip'));icon.dispatchEvent(event('pointerout',icon));assert.equal(tip.hidden,true);assert.equal(icon.getAttribute('aria-describedby'),'existing-description');icon.dispatchEvent(event('focusin',icon));assert.equal(tip.hidden,false);document.body.dispatchEvent(event('pointermove',document.body));assert.equal(tip.hidden,true);icon.dispatchEvent(event('focusin',icon));assert.equal(tip.hidden,false);document.dispatchEvent({...event('keydown',document),key:'Escape'});assert.equal(tip.hidden,true);
  for(const type of ['contextmenu','selectstart','copy','cut']){assert.equal($('projectTitle').dispatchEvent(event(type,$('projectTitle'))),false);assert.equal($('lengthPrecision').dispatchEvent(event(type,$('lengthPrecision'))),type!=='contextmenu')}
@@ -42,6 +42,27 @@ for(const app of ['chipchip','chipdraw']){
  const resizeEdge=$('advanced').querySelector('[data-resize-edge="se"]');assert.ok(resizeEdge);resizeEdge.dispatchEvent({...event('pointerdown',resizeEdge),button:0,pointerId:21,clientX:900,clientY:600});resizeEdge.dispatchEvent({...event('pointermove',resizeEdge),pointerId:21,clientX:2000,clientY:2000});assert.equal($('advanced').style.width,'992px');assert.equal($('advanced').style.height,'792px');resizeEdge.dispatchEvent({...event('pointerup',resizeEdge),pointerId:21});
  $('advanced').open=true;click($('pinSettings'));assert.equal($('advanced').chipFloatingPanel.pinned,false);assert.equal($('advanced').chipFloatingPanel.collapsed,true);click($('advanced').querySelector('.ui-panel-mini button'));click($('pinSettings'));assert.equal($('advanced').chipFloatingPanel.pinned,true);assert.equal($('advanced').chipFloatingPanel.collapsed,false);click($('closeSettings'));if(app==='chipdraw')assert.equal($('advanced').chipFloatingPanel.collapsed,true);else assert.equal($('advanced').open,false);
  traces.push(JSON.stringify({state,angle,mirror,x:$('gridX').value,y:$('gridY').value,changes}));results.push(app+': mounted common templates, controls, unit conversion, angles, menu and pinned panel');
+ if(app==='chipdraw'){
+  assert.equal($('selectionProperties').contains($('selectionOutlineMode')),true);
+  assert.equal($('viewProperties').contains($('selectionOutlineMode')),false);
+  for(const [id,name] of [['viewProperties','graph_system'],['measurementProperties','units_system'],['selectionProperties','select_system']])assert.equal($(id).getAttribute('data-config-system'),name);
+  records.set('snap_system','{"enabled":true}');
+  input('gridX','7');
+  const beforeCoordinate=records.get('units_system');
+  input('coordinateMode','cart');
+  assert.equal(records.get('units_system'),beforeCoordinate);
+  const graph=records.get('graph_system');
+  assert.equal(JSON.parse(graph).fields.gridX.value,7);
+  input('lengthPrecision','3');
+  assert.equal(JSON.parse(records.get('units_system')).length_precision,3);
+  const units=records.get('units_system');
+  input('selectionOutlineOpacity','74');
+  assert.equal(JSON.parse(records.get('select_system')).style.fields.selectionOutlineOpacity,'74');
+  assert.equal(records.get('graph_system'),graph);
+  assert.equal(records.get('units_system'),units);
+  assert.equal(records.get('snap_system'),'{"enabled":true}');
+  input('lengthPrecision','2');
+ }
 }
 assert.equal(traces[0],traces[1]);results.push('both apps produce identical settings behavior for the same interaction sequence');return results}
 export const results=await runUI();
