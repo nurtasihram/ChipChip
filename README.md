@@ -39,9 +39,7 @@ ChipDraw 是可離線使用的向量畫板，支援以圖層編輯幾何物件�
 ```sh
 node tools/build.mjs
 node tests/run.mjs
-node tests/browser/floating-panels.browser.mjs
-node tests/browser/panel-pin.browser.mjs
-node tests/browser/drawing-systems.browser.mjs
+node tests/run-browser.mjs
 ```
 
 配置單位由 `units_system` 統一提供。物理長度在各系統的設定中以 mm 保存，輸入框、滑桿與標尺依目前單位換算顯示。換單位會更新顯示，並保留原來的幾何和物理長度。[資料類型與計算規範](docs/reference/DATA_TYPES_AND_CALCULATION.md) · [JSON 儲存規格](docs/reference/JSON_STORAGE.md) · [模型範例](docs/wiki/Model-examples.md)

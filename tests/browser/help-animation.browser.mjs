@@ -17,11 +17,17 @@ try{
    });
    assert.equal(timeline.first.two.visible,false,id+' must place point one first');assert.equal(timeline.first.three.visible,false);
    for(const key of ['x','y']){assert.ok(Math.abs(timeline.second.two[key]-timeline.second.cursor[key])<1e-4,id+' point two follows the active cursor');assert.equal(timeline.first.one[key],timeline.moving.one[key],id+' reference point stays fixed')}
-   const active=type==='rect'?timeline.moving.two:timeline.moving.three;assert.equal(active.visible,true);for(const key of ['x','y'])assert.ok(Math.abs(active[key]-timeline.moving.cursor[key])<1e-4,id+' active number must not jump to its destination');
+   const active=type==='rect' && !['edge','right-triangle'].includes(id)?timeline.moving.two:timeline.moving.three;assert.equal(active.visible,true);let target=timeline.moving.cursor;
+   if(id==='right-triangle'){
+    const {one,two}=timeline.moving, cx=(one.x+two.x)/2, cy=(one.y+two.y)/2;
+    const radius=Math.hypot(two.x-one.x,two.y-one.y)/2, distance=Math.hypot(target.x-cx,target.y-cy);
+    target={x:cx+(target.x-cx)*radius/distance,y:cy+(target.y-cy)*radius/distance};
+   }
+   for(const key of ['x','y'])assert.ok(Math.abs(active[key]-target[key])<1e-4,id+' active point follows the drawing constraint');
    assert.equal(timeline.done.stage,'complete');assert.deepEqual(timeline.done,timeline.hold,id+' holds the completed construction before restarting');
   }
  }
- for(const [type,id]of [['rect','top-right'],['arc','center-start-sweep']]){
+ for(const [type,id]of [['rect','diagonal'],['arc','center-start-sweep']]){
   await page.locator('#toolsButtons [data-tool='+type+']').click();await page.locator('#'+type+'ConstructionTools [data-option-id="'+id+'"]').hover();
   const svg=page.locator('#chipIconTooltip svg[data-construction-animation]');await svg.waitFor({state:'visible'});await page.waitForTimeout(1350);
   const result=await svg.evaluate(n=>new Promise(resolve=>{

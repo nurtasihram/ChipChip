@@ -7,6 +7,20 @@ try{
  const edit=async(id,value)=>{await page.locator('#'+id).fill(String(value));await page.locator('#'+id).dispatchEvent('change')};
  await page.evaluate(()=>{selected=el('rect',{x:5,y:7,width:20,height:10,rx:2,ry:2,stroke:'#fff','stroke-width':3,transform:'rotate(30) scale(3 .5)'});selection.replace([selected]);renderSelection();$('panel').classList.add('show')});const origin=await page.evaluate(()=>objectOrigin(selected));
  await edit('objectWidth',90);await edit('objectHeight',12);let g=await page.evaluate(()=>({m:(({a,b,c,d})=>({a,b,c,d}))(objectMatrix(selected)),origin:objectOrigin(selected),width:+selected.getAttribute('width'),height:+selected.getAttribute('height'),stroke:+selected.getAttribute('stroke-width'),rx:+selected.getAttribute('rx'),ry:+selected.getAttribute('ry')}));close(g.width,90);close(g.height,12);close(g.origin.x,origin.x);close(g.origin.y,origin.y);close(Math.hypot(g.m.a,g.m.b),1);close(Math.hypot(g.m.c,g.m.d),1);assert.equal(g.stroke,3);assert.equal(g.rx,2);assert.equal(g.ry,2);
+ // An authored rectangle resizes about its archived reference, including after rotation.
+ await page.evaluate(()=>{
+  const raw={type:'rect',reference:'bottom-right',point:[25,17],width:20,height:10,rotation:30};
+  selected=ChipDrawingJson.create(raw,layers.active());layers.active().append(selected);
+  selection.replace([selected]);renderSelection();
+ });
+ await edit('objectWidth',34);await edit('objectHeight',18);
+ const anchored=await page.evaluate(()=>{
+  const box=selected.getBBox();
+  const corner=transformPoint({x:box.x+box.width,y:box.y+box.height},objectMatrix(selected));
+  return {corner,model:ChipDrawingJson.read(selected)};
+ });
+ close(anchored.corner.x,25);close(anchored.corner.y,-17);
+ assert.deepEqual(anchored.model.point,[25,17]);assert.equal(anchored.model.width,34);assert.equal(anchored.model.height,18);
  await page.evaluate(()=>{selected=el('ellipse',{cx:20,cy:15,rx:12,ry:6,stroke:'#fff','stroke-width':3,transform:'translate(5 7) rotate(25) scale(2 .5)'});selection.replace([selected]);renderSelection()});const center=await page.evaluate(()=>conicModel(selected).center);await edit('objectWidth',60);await edit('objectHeight',20);g=await page.evaluate(()=>({model:conicModel(selected),m:(({a,b,c,d})=>({a,b,c,d}))(objectMatrix(selected)),rx:+selected.getAttribute('rx'),ry:+selected.getAttribute('ry'),stroke:+selected.getAttribute('stroke-width')}));close(g.rx,30);close(g.ry,10);close(g.model.center.x,center.x);close(g.model.center.y,center.y);close(Math.hypot(g.m.a,g.m.b),1);close(Math.hypot(g.m.c,g.m.d),1);assert.equal(g.stroke,3);
  // Independent focus edits keep the opposite focus fixed and preserve the major axis.
  await page.evaluate(()=>{selected=el('ellipse',{cx:0,cy:0,rx:10,ry:6,stroke:'#fff','stroke-width':2});selection.replace([selected]);renderSelection()});assert.equal(await page.locator('#objectFocus1X').isEditable(),true);assert.equal(await page.locator('#objectFocus2X').isEditable(),true);await edit('objectFocus1X',-6);await edit('objectFocus1Y',4);g=await page.evaluate(()=>conicModel(selected));close(g.foci[0].x,-6);close(g.foci[0].y,-4);close(g.foci[1].x,8);close(g.foci[1].y,0);close(g.major,10);

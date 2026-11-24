@@ -39,7 +39,7 @@ try{
  const afterMove=await records();close(afterMove[3].points[0][0],17);close(afterMove[3].points[0][1],-32);
  assert.match(await fixed.last().locator('[data-metric-length]').textContent(),/40/);
  await metric('clear').click();assert.equal(await objects.count(),3);assert.deepEqual(await records(),placed.slice(0,3));
- await page.evaluate(()=>$('undo').click());assert.equal(await objects.count(),4);
+ await page.evaluate(()=>rectangleEditor().undo());assert.equal(await objects.count(),4);
  await page.evaluate(()=>{viewAngle=27;viewMirrored=true;view();$('snapEnabled').checked=true;snapRuntime.setTypes(['ruler','nearest']);clearSnapFeedback()});
  const snapped=await page.evaluate(()=>snapRuntime.snap({x:-65.1,y:-45.1},{mode:'measurement'}));close(snapped.x,-65);close(snapped.y,-45);
  const svg=await page.evaluate(()=>'<svg xmlns="http://www.w3.org/2000/svg">'+archiveDrawing()+'</svg>');

@@ -246,15 +246,15 @@ try{
  await page.evaluate(()=>{$('languageSelect').value='zh-Hant';$('languageSelect').dispatchEvent(new Event('change'));selected=el('line',{x1:12,y1:34,x2:56,y2:78,stroke:'#69b8ff',fill:'none'});(detailedAnchorTarget=selected,renderSelection())});
  await page.locator('#objectVertices .vertex-row').nth(1).locator('.vertex-delete').click();assert.deepEqual(await page.evaluate(()=>objectOrigin(selected)),{x:12,y:34});
  for(const [d,type]of [['M0 0 L10 0 L20 10','折綫'],['M0 0 A10 10 0 0 1 20 20','圓弧'],['M0 0 C5 0 10 5 20 20','貝塞爾綫']]){await page.evaluate(d=>{selected=el('path',{d,stroke:'#69b8ff',fill:'none'});(detailedAnchorTarget=selected,renderSelection())},d);assert.equal(await page.locator('#objectSummary').textContent(),'1 個物件 · '+type)}
- await page.evaluate(()=>{selected=el('polyline',{points:'0,0 10,10 20,20',stroke:'#69b8ff',fill:'none'});(detailedAnchorTarget=selected,renderSelection())});await page.locator('#objectVertices .vertex-row').nth(1).locator('.vertex-delete').click();assert.equal(await page.evaluate(()=>selected.localName),'line');
+ await page.evaluate(()=>{selected=el('polyline',{points:'0,0 10,10 20,20',stroke:'#69b8ff',fill:'none'});(detailedAnchorTarget=selected,renderSelection())});await page.locator('#objectVertices .vertex-row').nth(1).locator('.vertex-delete').click();assert.deepEqual(await page.evaluate(()=>{const item=ChipDrawingJson.read(selected);return [item.type,item.points]}),['polyline',[[0,0],[20,-20]]],'an authored polyline keeps its type and remaining endpoints');
 
- assert.deepEqual(await page.locator('#toolsButtons > [data-tool]').evaluateAll(nodes=>nodes.map(n=>n.dataset.tool)),['select','pan','point','line','poly','bezier','rect','circle','ellipse','arc']);
+ assert.deepEqual(await page.locator('#toolsButtons > [data-tool]').evaluateAll(nodes=>nodes.map(n=>n.dataset.tool)),['select','pan','point','line','poly','bezier','rect','circle','ellipse','arc','trim']);
  await page.evaluate(()=>{$('panel').classList.remove('show');setTool('select')});
  const moveButton=page.locator('#toolsButtons [data-tool=pan]'),selectButton=page.locator('#toolsButtons [data-tool=select]'),moveRect=await moveButton.boundingBox(),selectRect=await selectButton.boundingBox();
  await page.mouse.move(moveRect.x+moveRect.width/2,moveRect.y+moveRect.height/2);await page.mouse.down();await page.mouse.move(selectRect.x+2,selectRect.y+selectRect.height/2,{steps:8});await page.mouse.up();
  assert.equal(await page.evaluate(()=>defaultTool()),'pan');assert.equal(await page.evaluate(()=>tool),'select','reordering must not activate the dragged tool');
  assert.equal(await page.locator('#toolsButtons > :first-child').getAttribute('data-default-tool'),'true');
- assert.equal(await page.locator('#toolsButtons > :first-child').evaluate(n=>getComputedStyle(n,'::after').borderRightWidth),'1px');
+ assert.equal(await page.locator('#toolsButtons > [data-default-tool=true] + .ui-option-default-separator').isVisible(),true);
  await page.evaluate(()=>setTool('rect'));await page.mouse.move(70,300);await page.mouse.down();await page.mouse.move(140,360);await page.mouse.up();assert.equal(await page.evaluate(()=>tool),'pan','drag completion uses reordered default');
  await page.evaluate(()=>setTool('poly'));await page.mouse.click(70,300);await page.mouse.click(140,360);await page.mouse.down({button:'right'});await page.mouse.up({button:'right'});assert.equal(await page.evaluate(()=>tool),'pan','secondary click uses reordered default');
  await page.evaluate(()=>setTool('point'));await page.mouse.click(90,320);assert.equal(await page.evaluate(()=>isPointObject(selected)),true);assert.equal(await page.locator('#objectRotationRow').isVisible(),false);
@@ -316,7 +316,7 @@ try{
  assert.equal(await page.locator('#anchorHandles line[data-anchor-kind=first]').count(),1,'the first anchor uses its own direction settings');
 
  await page.setViewportSize({width:1100,height:850});
- await page.evaluate(()=>{$('panel').classList.remove('show');ChipUI.panel.setOpen(true);const probe=document.createElement('div');probe.id='scrollbar-probe';probe.style.width='1000px';probe.style.height='1px';$('advancedBody').append(probe);$('advancedBody').scrollTop=0;$('advancedBody').scrollLeft=0});
+ await page.evaluate(()=>{$('panel').classList.remove('show');$('selectionPropertiesWindow').chipFloatingPanel.setCollapsed(true);ChipUI.panel.setOpen(true);const probe=document.createElement('div');probe.id='scrollbar-probe';probe.style.width='1000px';probe.style.height='1px';$('advancedBody').append(probe);$('advancedBody').scrollTop=0;$('advancedBody').scrollLeft=0});
  const scrollbarGeometry=await page.evaluate(()=>{const body=$('advancedBody'),r=body.getBoundingClientRect(),edge=$('advanced').querySelector('[data-resize-edge=e]').getBoundingClientRect(),bottom=$('advanced').querySelector('[data-resize-edge=s]').getBoundingClientRect();return {x:r.right-4,y:r.top+20,hx:r.left+20,hy:r.bottom-4,right:r.right,bottom:r.bottom,edge:edge.left,bottomEdge:bottom.top}});
  assert.ok(scrollbarGeometry.right<=scrollbarGeometry.edge,'vertical scrollbar must be inside the resize rail');assert.ok(scrollbarGeometry.bottom<=scrollbarGeometry.bottomEdge,'horizontal scrollbar must be above the resize rail');
  const panelWidthBeforeScroll=await page.locator('#advanced').evaluate(n=>n.getBoundingClientRect().width);

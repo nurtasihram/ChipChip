@@ -1,9 +1,10 @@
+import {clearDrawingCanvas} from '../fixtures/drawing-canvas.mjs';
 import assert from 'node:assert/strict';
 const {chromium}=await import(process.env.CHIPDRAW_PLAYWRIGHT||'playwright');
 const browser=await chromium.launch({headless:true,...(process.env.CHIPDRAW_BROWSER?{executablePath:process.env.CHIPDRAW_BROWSER}:{})});
 const close=(a,b)=>assert.ok(Math.abs(a-b)<.001,`${a} != ${b}`);
 try{
- const page=await browser.newPage({viewport:{width:1200,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(new URL('../../ChipDraw.html',import.meta.url).href);
+ const page=await browser.newPage({viewport:{width:1200,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(new URL('../../ChipDraw.html',import.meta.url).href);await clearDrawingCanvas(page);
  await page.evaluate(()=>{setTool('select');$('snapEnabled').checked=false;layers.add({type:'vector'});selected=el('path',{d:'M -40 0 C -30 -30 -10 30 0 0 C 10 -30 30 30 40 0',stroke:'none',fill:'none','data-name':'無描邊曲綫'});selection.replace([selected]);scale=5;viewAngle=31;viewMirrored=true;view();renderSelection()});
  assert.equal(await page.locator('#geometryHints [data-geometry-boundary]').count(),1);assert.equal(await page.locator('#geometryHints [data-geometry-direction]').count(),2,'three path anchors produce two arrows');assert.equal(await page.locator('#geometryHints [data-geometry-boundary]').getAttribute('d'),await page.evaluate(()=>selected.getAttribute('d')));assert.equal(await page.locator('#geometryHints').getAttribute('pointer-events'),'none');assert.equal(await page.evaluate(()=>selected.getAttribute('stroke')),'none');
  const endpoints=await page.evaluate(()=>{detailedAnchorTarget=null;paintAnchors();return [...$('anchorHandles').querySelectorAll('[data-anchor]')].map(n=>Number(n.getAttribute('data-anchor')))});assert.deepEqual(endpoints,[0,6],'open Bezier shows both endpoints without controls');

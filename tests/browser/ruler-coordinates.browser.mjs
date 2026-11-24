@@ -1,9 +1,10 @@
+import {clearDrawingCanvas} from '../fixtures/drawing-canvas.mjs';
 import assert from 'node:assert/strict';
 const {chromium}=await import(process.env.CHIPDRAW_PLAYWRIGHT||'playwright');
 const browser=await chromium.launch({headless:true,...(process.env.CHIPDRAW_BROWSER?{executablePath:process.env.CHIPDRAW_BROWSER}:{})});
 const close=(a,b)=>assert.ok(Math.abs(a-b)<.001,`${a} != ${b}`);
 try{
- const page=await browser.newPage({viewport:{width:1200,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(new URL('../../ChipDraw.html',import.meta.url).href);
+ const page=await browser.newPage({viewport:{width:1200,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(new URL('../../ChipDraw.html',import.meta.url).href);await clearDrawingCanvas(page);
  const screen=point=>page.evaluate(point=>transformPoint(point,$('world').getScreenCTM()),point);
  const setup=()=>page.evaluate(()=>{art.innerHTML='';selection.clear();selected=null;layers.normalize();renderLayers();setTool('select');$('snapEnabled').checked=false;scale=3;viewAngle=27;viewMirrored=true;view();globalThis.movingNode=el('line',{x1:0,y1:0,x2:30,y2:0,stroke:'#fff','stroke-width':2})});
  await setup();let a=await screen({x:5,y:0}),b=await screen({x:8,y:-4});await page.mouse.move(a.x,a.y);await page.mouse.down();await page.mouse.move(b.x,b.y,{steps:3});

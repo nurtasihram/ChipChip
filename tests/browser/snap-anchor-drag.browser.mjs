@@ -1,10 +1,11 @@
+import {clearDrawingCanvas} from '../fixtures/drawing-canvas.mjs';
 import assert from 'node:assert/strict';
 const {chromium}=await import(process.env.CHIPDRAW_PLAYWRIGHT||'playwright');
 const browser=await chromium.launch({headless:true,...(process.env.CHIPDRAW_BROWSER?{executablePath:process.env.CHIPDRAW_BROWSER}:{})});
 const close=(a,b)=>assert.ok(Math.abs(a-b)<.001,`${a} != ${b}`);
 try{
  const page=await browser.newPage({viewport:{width:1200,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto(new URL('../../ChipDraw.html',import.meta.url).href);
+ await page.goto(new URL('../../ChipDraw.html',import.meta.url).href);await clearDrawingCanvas(page);
  const at=p=>page.evaluate(p=>transformPoint(p,$('world').getScreenCTM()),p);
  async function setup(anchorMode=false){await page.evaluate(anchorMode=>{setTool('select');selectionTools.clear();selection.clear();selected=null;layers.active().replaceChildren();el('path',{d:'M -30 20 C 0 0 20 0 30 20',stroke:'#69b8ff','stroke-width':2,fill:'none','data-name':'curveA'});el('path',{d:'M -30 -20 C 0 0 20 -10 30 -20',stroke:'#fff','stroke-width':2,fill:'none','data-name':'curveB'});scale=3;viewAngle=27;viewMirrored=true;view();selectionTools.setTargets({objects:ChipUI.objectTypes.map(t=>t.id),anchors:anchorMode?['control','node']:[]});$('snapEnabled').checked=true;$('snapMode').value='nearest';$('gridX').value='10';$('gridY').value='10';for(const id of ['snapSearchRadius','snapTolerance']){$(id).dataset.quantityUnit='px';ChipUI.measurements.setValue(id,id==='snapTolerance'?30:100,'px')}snapRuntime.setTypes(['control','node','grid']);renderSelection()},anchorMode);const q=await at({x:0,y:0});await page.mouse.move(q.x,q.y);return q}
  async function choose(text,point={x:0,y:0}){await page.locator('#snapOverlapList [role=option]').filter({hasText:text}).click();const q=await at(point);await page.mouse.move(q.x,q.y);return q}
@@ -15,7 +16,7 @@ try{
   await page.evaluate(()=>$('snapEnabled').checked=false);const end=await at({x:4,y:-6});await page.mouse.move(end.x,end.y,{steps:4});await page.mouse.up();
   const result=await page.evaluate(()=>[...art.querySelectorAll('path')].map(n=>({name:n.getAttribute('data-name'),transform:n.getAttribute('transform'),points:pathModel(n.getAttribute('d')).anchors.map(p=>({x:p.x,y:p.y}))})));
   assert.deepEqual(result[0].points[1],{x:0,y:0});close(result[1].points[1].x,4);close(result[1].points[1].y,-6);assert.deepEqual(result[1].points[0],{x:-30,y:-20});assert.equal(result[1].transform,null);assert.equal(await page.evaluate(()=>history.length),before+1);
-  await page.evaluate(()=>$('undo').click());assert.deepEqual(await page.evaluate(()=>pathModel(art.querySelector('[data-name=curveB]').getAttribute('d')).anchors[1]).then(p=>({x:p.x,y:p.y})),{x:0,y:0});
+  await page.evaluate(()=>rectangleEditor().undo());assert.deepEqual(await page.evaluate(()=>pathModel(art.querySelector('[data-name=curveB]').getAttribute('d')).anchors[1]).then(p=>({x:p.x,y:p.y})),{x:0,y:0});
   await setup(mode);await choose('原點');const original=await page.evaluate(()=>art.innerHTML),historyBefore=await page.evaluate(()=>history.length);await page.mouse.down();assert.equal(await page.evaluate(()=>!!anchorDrag),false,'implicit grid candidate cannot drag a coincident physical anchor');assert.equal(await page.evaluate(()=>selectionTools.anchors.length),0);await page.evaluate(()=>$('snapEnabled').checked=false);const away=await at({x:4,y:-6});await page.mouse.move(away.x,away.y,{steps:3});await page.mouse.up();assert.equal(await page.evaluate(()=>art.innerHTML),original);assert.equal(await page.evaluate(()=>history.length),historyBefore);
  }
  await setup();const start=await at({x:-30,y:-20});await page.mouse.move(start.x,start.y);await choose('起點 · curveB',{x:-30,y:-20});await page.mouse.down();assert.equal(await page.evaluate(()=>anchorDrag?.index),0);await page.evaluate(()=>$('snapEnabled').checked=false);const end=await at({x:-26,y:-26});await page.mouse.move(end.x,end.y,{steps:3});await page.mouse.up();const nodes=await page.evaluate(()=>pathModel(art.querySelector('[data-name=curveB]').getAttribute('d')).anchors);close(nodes[0].x,-26);close(nodes[0].y,-26);close(nodes[1].x,4);close(nodes[1].y,-6);

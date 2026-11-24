@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- GENERATED from src/chipdraw/index.html; shared workspace b0ce630c1b95. Edit src/ and shared/, then rebuild. --><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><!-- ChipChip-derived settings UI and behavior.
+<!-- GENERATED from src/chipdraw/index.html; shared workspace ec91fc5d19ce. Edit src/ and shared/, then rebuild. --><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><!-- ChipChip-derived settings UI and behavior.
 MIT License
 
 Copyright (c) 2026 Nurtas Ihram
@@ -2987,6 +2987,10 @@ function registerRectangleButtons(){
  })));
 }
 registerRectangleButtons();
+ChipUI.registerObjectInteractions('rect',[
+ {id:'click',gesture:'click',label:'依序點選',help:'依繪製方式逐點完成，保留矩形工具。',returnToSelect:false},
+ {id:'drag',gesture:'drag',label:'拖曳完成',help:'拖到第二點並放開；若已完成矩形，返回預設工具。',returnToSelect:true}
+]);
 window.addEventListener('chipuilanguagechange',registerRectangleButtons);
 const arcMethods=[['center-start-end','圓心與兩點'],['center-start-sweep','圓心、起點與掃角'],['three-points','三點圓弧'],['endpoints-radius','兩端點與半徑'],['endpoints-sagitta','兩端點與弓高'],['start-tangent-end','起點、切向與終點'],['two-tangents','雙切點與兩個切線角'],['center-radius-start-sweep','圓心、半徑、起始角與掃角']];
 function arcIcon(id){const dots=points=>points.map(([x,y])=>'<circle cx="'+x+'" cy="'+y+'" r="2" fill="#172438" stroke="currentColor"/>').join('');const center=id.startsWith('center'),path=center?'M5 24A19 19 0 0 1 24 5':id.includes('tangent')?'M6 26Q6 6 26 6':'M4 24A12 14 0 0 1 28 24';let guides=center?'<path d="M5 24H24V5" stroke-dasharray="2 2"/>':'<path d="M4 24H28" stroke-dasharray="2 2"/>';if(id==='center-start-sweep'||id==='center-radius-start-sweep')guides+='<path d="M15 24A9 9 0 0 1 24 15" stroke="#e7a45d"/>';if(id==='endpoints-radius')guides+='<path d="M16 29V10M4 24 16 29 28 24" stroke="#e7a45d"/>';if(id==='endpoints-sagitta')guides+='<path d="M16 24V10" stroke="#e7a45d"/>';if(id.includes('tangent'))guides='<path d="M6 28V3'+(id==='two-tangents'?'M24 6H30':'')+'" stroke="#e7a45d"/>';return '<svg class="tool-icon" viewBox="0 0 32 32" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4">'+guides+'<path d="'+path+'" stroke="#69b8ff" stroke-width="2.3"/>'+dots(center?[[24,24],[5,24],[24,5]]:id==='three-points'?[[4,24],[16,10],[28,24]]:id.includes('tangent')?[[6,26],[26,6]]:[[4,24],[28,24]])+'</svg>'}
@@ -3559,7 +3563,9 @@ function paintRectanglePreview(p=rectDraft?.cursor){
  if(data?.reference==='right-triangle'){
   const [x,y]=data.points[2];el('circle',{cx:x,cy:-y,r:3/scale,fill:'none',stroke:'#ffd166','stroke-width':1/scale,'data-rect-candidate':''},preview);
  }
- clearMoveRuler();updateStatus();paintGeometryHints();
+ const start=draft.points.at(-1);
+ paintMoveRuler(start,{x:p.x-start.x,y:p.y-start.y});
+ updateStatus();paintGeometryHints();
 }
 function beginRectangle(p,e){
  const first=!rectDraft;
@@ -3919,7 +3925,23 @@ function setRectangleParameter(n,key,value){
  snapshot();ChipDrawingJson.update(n,next);renderSelection();return true;
 }
 function rectangleModel(n){if(n?.localName!=='rect')return null;const m=objectMatrix(n),sx=Math.hypot(m.a,m.b),sy=Math.hypot(m.c,m.d);return {width:+n.getAttribute('width')*sx,height:+n.getAttribute('height')*sy,origin:transformPoint({x:+n.getAttribute('x'),y:+n.getAttribute('y')},m),m,sx,sy}}
-function resizeRectangle(n,key,value){const g=rectangleModel(n);if(!g||value<=0||!Number.isFinite(value)||!g.sx||!g.sy)return false;const width=key==='objectWidth'?value:g.width,height=key==='objectHeight'?value:g.height;if(Math.abs(width-g.width)<=1e-7*Math.max(1,width)&&Math.abs(height-g.height)<=1e-7*Math.max(1,height))return true;const model=ChipDrawingJson.encode([n]).items[0],factor=rectanglePivotFactors(model),origin={x:g.origin.x+(g.width-width)*factor[0]*g.m.a/g.sx-(g.height-height)*factor[1]*g.m.c/g.sy,y:g.origin.y+(g.width-width)*factor[0]*g.m.b/g.sx-(g.height-height)*factor[1]*g.m.d/g.sy};snapshot();attrs(n,{x:0,y:0,width,height,transform:'matrix('+[g.m.a/g.sx,g.m.b/g.sx,-g.m.b/g.sx*Math.sign(g.m.a*g.m.d-g.m.b*g.m.c),g.m.a/g.sx*Math.sign(g.m.a*g.m.d-g.m.b*g.m.c),origin.x,origin.y].join(' ')+')'});ChipDrawingJson.dimensions(n,width,height);renderSelection();return true}
+function resizeRectangle(n,key,value){
+ const g=rectangleModel(n);
+ if(!g||value<=0||!Number.isFinite(value)||!g.sx||!g.sy)return false;
+ const width=key==='objectWidth'?value:g.width,height=key==='objectHeight'?value:g.height;
+ if(Math.abs(width-g.width)<=1e-7*Math.max(1,width)&&Math.abs(height-g.height)<=1e-7*Math.max(1,height))return true;
+ const model=ChipDrawingJson.record(n);
+ if(model?.type==='rect'&&Object.hasOwn(ChipDrawingModel.rectRefs,model.reference||'top-left')){
+  return setRectangleParameter(n,key==='objectWidth'?'width':'height',value);
+ }
+ const [fx,fy]=rectanglePivotFactors(model);
+ const a=g.m.a/g.sx,b=g.m.b/g.sx,c=g.m.c/g.sy,d=g.m.d/g.sy;
+ // The archived reference uses Y up; SVG rectangle coordinates use Y down.
+ const dx=(g.width-width)*fx,dy=(height-g.height)*fy;
+ snapshot();
+ attrs(n,{x:0,y:0,width,height,transform:'matrix('+[a,b,c,d,g.origin.x+dx*a+dy*c,g.origin.y+dx*b+dy*d].join(' ')+')'});
+ ChipDrawingJson.dimensions(n,width,height);renderSelection();return true;
+}
 function focusLocks(n){try{return JSON.parse(n.getAttribute('data-focus-locks')||'[]').filter(i=>i===0||i===1)}catch{return []}}
 function isFocusLocked(n,index){return focusLocks(n).includes(index)}
 function writeConicGeometry(n,center,a,b,angle,record=true){if(record)snapshot();let target=n;if(n.localName==='circle'&&Math.abs(a-b)>1e-10*Math.max(1,a))target=replaceVectorType(n,'ellipse',{});if(target!==n&&anchorDrag?.n===n)anchorDrag.n=target;for(const key of ['r','rx','ry'])target.removeAttribute(key);const c=Math.cos(angle),q=Math.sin(angle);attrs(target,{cx:0,cy:0,...(target.localName==='circle'?{r:a}:{rx:a,ry:b}),transform:'matrix('+[c,q,-q,c,center.x,center.y].join(' ')+')'});if(target.localName==='circle')ChipDrawingJson.circle(target,center,a);if(record)renderSelection();return target}

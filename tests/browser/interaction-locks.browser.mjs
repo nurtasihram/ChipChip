@@ -1,8 +1,9 @@
+import {clearDrawingCanvas} from '../fixtures/drawing-canvas.mjs';
 import assert from 'node:assert/strict';
 const {chromium}=await import(process.env.CHIPDRAW_PLAYWRIGHT||'playwright');
 const browser=await chromium.launch({headless:true,...(process.env.CHIPDRAW_BROWSER?{executablePath:process.env.CHIPDRAW_BROWSER}:{})});
 try{
- const page=await browser.newPage({viewport:{width:1200,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(new URL('../../ChipDraw.html',import.meta.url).href);
+ const page=await browser.newPage({viewport:{width:1200,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(new URL('../../ChipDraw.html',import.meta.url).href);await clearDrawingCanvas(page);
  await page.evaluate(()=>{setTool('select');layers.active().replaceChildren();globalThis.lockEllipse=el('ellipse',{cx:0,cy:0,rx:25,ry:15,'data-focus-locks':'[0]',stroke:'#fff',fill:'none','data-name':'locked-focus'});el('line',{x1:-50,y1:-30,x2:-20,y2:-30,stroke:'#fff','stroke-width':3,'data-name':'locked-object','data-locked':'true'});el('line',{x1:-50,y1:30,x2:-20,y2:30,stroke:'#fff','stroke-width':3,'data-name':'movable'});scale=3;viewAngle=0;viewMirrored=false;view();$('snapEnabled').checked=true;$('snapMode').value='nearest';$('gridX').value='10';$('gridY').value='10';for(const id of ['snapSearchRadius','snapTolerance']){$(id).dataset.quantityUnit='px';ChipUI.measurements.setValue(id,id==='snapTolerance'?0:100,'px')}snapRuntime.setTypes(['focus','grid']);snapRuntime.snap({x:-19.9,y:.1},{mode:'test'})});
  assert.equal(await page.locator('#snapOverlapList [data-locked=true] [data-lock-indicator]').count(),1);assert.ok((await page.locator('#snapOverlapList [data-locked=true]').getAttribute('aria-label')).startsWith('已鎖定'));
  const at=p=>page.evaluate(p=>transformPoint(p,$('world').getScreenCTM()),p),click=async p=>{const q=await at(p);await page.mouse.click(q.x,q.y)};

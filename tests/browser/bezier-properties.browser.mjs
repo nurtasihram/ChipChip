@@ -13,7 +13,7 @@ try{
  await page.evaluate(()=>{const host=$('objectControl1Coordinates');host.coordinateChange({x:30,y:-14})});
  let geometry=await page.evaluate(()=>pathModel(selected.getAttribute('d')).anchors.map(p=>({x:p.x,y:p.y})));
  close(geometry[1].x,17);close(geometry[1].y,10);assert.deepEqual(geometry[0],{x:10,y:20});
- await page.evaluate(()=>$('undo').click());assert.equal(await page.evaluate(()=>selected?.getAttribute('d')||art.querySelector('path').getAttribute('d')),original);
+ await page.evaluate(()=>rectangleEditor().undo());assert.equal(await page.evaluate(()=>selected?.getAttribute('d')||art.querySelector('path').getAttribute('d')),original);
  await page.evaluate(()=>{selected=art.querySelector('path');selection.replace([selected]);renderSelection();const host=$('objectVertex0Coordinates');host.coordinateChange({x:55,y:-226})});
  geometry=await page.evaluate(()=>pathModel(selected.getAttribute('d')).anchors.map(p=>({x:p.x,y:p.y})));
  close(geometry[0].x,13);close(geometry[0].y,15);close(geometry[1].x,18);close(geometry[1].y,7);

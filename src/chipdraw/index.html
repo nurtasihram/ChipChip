@@ -251,7 +251,9 @@ function paintRectanglePreview(p=rectDraft?.cursor){
  if(data?.reference==='right-triangle'){
   const [x,y]=data.points[2];el('circle',{cx:x,cy:-y,r:3/scale,fill:'none',stroke:'#ffd166','stroke-width':1/scale,'data-rect-candidate':''},preview);
  }
- clearMoveRuler();updateStatus();paintGeometryHints();
+ const start=draft.points.at(-1);
+ paintMoveRuler(start,{x:p.x-start.x,y:p.y-start.y});
+ updateStatus();paintGeometryHints();
 }
 function beginRectangle(p,e){
  const first=!rectDraft;
@@ -611,7 +613,23 @@ function setRectangleParameter(n,key,value){
  snapshot();ChipDrawingJson.update(n,next);renderSelection();return true;
 }
 function rectangleModel(n){if(n?.localName!=='rect')return null;const m=objectMatrix(n),sx=Math.hypot(m.a,m.b),sy=Math.hypot(m.c,m.d);return {width:+n.getAttribute('width')*sx,height:+n.getAttribute('height')*sy,origin:transformPoint({x:+n.getAttribute('x'),y:+n.getAttribute('y')},m),m,sx,sy}}
-function resizeRectangle(n,key,value){const g=rectangleModel(n);if(!g||value<=0||!Number.isFinite(value)||!g.sx||!g.sy)return false;const width=key==='objectWidth'?value:g.width,height=key==='objectHeight'?value:g.height;if(Math.abs(width-g.width)<=1e-7*Math.max(1,width)&&Math.abs(height-g.height)<=1e-7*Math.max(1,height))return true;const model=ChipDrawingJson.encode([n]).items[0],factor=rectanglePivotFactors(model),origin={x:g.origin.x+(g.width-width)*factor[0]*g.m.a/g.sx-(g.height-height)*factor[1]*g.m.c/g.sy,y:g.origin.y+(g.width-width)*factor[0]*g.m.b/g.sx-(g.height-height)*factor[1]*g.m.d/g.sy};snapshot();attrs(n,{x:0,y:0,width,height,transform:'matrix('+[g.m.a/g.sx,g.m.b/g.sx,-g.m.b/g.sx*Math.sign(g.m.a*g.m.d-g.m.b*g.m.c),g.m.a/g.sx*Math.sign(g.m.a*g.m.d-g.m.b*g.m.c),origin.x,origin.y].join(' ')+')'});ChipDrawingJson.dimensions(n,width,height);renderSelection();return true}
+function resizeRectangle(n,key,value){
+ const g=rectangleModel(n);
+ if(!g||value<=0||!Number.isFinite(value)||!g.sx||!g.sy)return false;
+ const width=key==='objectWidth'?value:g.width,height=key==='objectHeight'?value:g.height;
+ if(Math.abs(width-g.width)<=1e-7*Math.max(1,width)&&Math.abs(height-g.height)<=1e-7*Math.max(1,height))return true;
+ const model=ChipDrawingJson.record(n);
+ if(model?.type==='rect'&&Object.hasOwn(ChipDrawingModel.rectRefs,model.reference||'top-left')){
+  return setRectangleParameter(n,key==='objectWidth'?'width':'height',value);
+ }
+ const [fx,fy]=rectanglePivotFactors(model);
+ const a=g.m.a/g.sx,b=g.m.b/g.sx,c=g.m.c/g.sy,d=g.m.d/g.sy;
+ // The archived reference uses Y up; SVG rectangle coordinates use Y down.
+ const dx=(g.width-width)*fx,dy=(height-g.height)*fy;
+ snapshot();
+ attrs(n,{x:0,y:0,width,height,transform:'matrix('+[a,b,c,d,g.origin.x+dx*a+dy*c,g.origin.y+dx*b+dy*d].join(' ')+')'});
+ ChipDrawingJson.dimensions(n,width,height);renderSelection();return true;
+}
 function focusLocks(n){try{return JSON.parse(n.getAttribute('data-focus-locks')||'[]').filter(i=>i===0||i===1)}catch{return []}}
 function isFocusLocked(n,index){return focusLocks(n).includes(index)}
 function writeConicGeometry(n,center,a,b,angle,record=true){if(record)snapshot();let target=n;if(n.localName==='circle'&&Math.abs(a-b)>1e-10*Math.max(1,a))target=replaceVectorType(n,'ellipse',{});if(target!==n&&anchorDrag?.n===n)anchorDrag.n=target;for(const key of ['r','rx','ry'])target.removeAttribute(key);const c=Math.cos(angle),q=Math.sin(angle);attrs(target,{cx:0,cy:0,...(target.localName==='circle'?{r:a}:{rx:a,ry:b}),transform:'matrix('+[c,q,-q,c,center.x,center.y].join(' ')+')'});if(target.localName==='circle')ChipDrawingJson.circle(target,center,a);if(record)renderSelection();return target}

@@ -22,6 +22,10 @@ function registerRectangleButtons(){
  })));
 }
 registerRectangleButtons();
+ChipUI.registerObjectInteractions('rect',[
+ {id:'click',gesture:'click',label:'依序點選',help:'依繪製方式逐點完成，保留矩形工具。',returnToSelect:false},
+ {id:'drag',gesture:'drag',label:'拖曳完成',help:'拖到第二點並放開；若已完成矩形，返回預設工具。',returnToSelect:true}
+]);
 window.addEventListener('chipuilanguagechange',registerRectangleButtons);
 const arcMethods=[['center-start-end','圓心與兩點'],['center-start-sweep','圓心、起點與掃角'],['three-points','三點圓弧'],['endpoints-radius','兩端點與半徑'],['endpoints-sagitta','兩端點與弓高'],['start-tangent-end','起點、切向與終點'],['two-tangents','雙切點與兩個切線角'],['center-radius-start-sweep','圓心、半徑、起始角與掃角']];
 function arcIcon(id){const dots=points=>points.map(([x,y])=>'<circle cx="'+x+'" cy="'+y+'" r="2" fill="#172438" stroke="currentColor"/>').join('');const center=id.startsWith('center'),path=center?'M5 24A19 19 0 0 1 24 5':id.includes('tangent')?'M6 26Q6 6 26 6':'M4 24A12 14 0 0 1 28 24';let guides=center?'<path d="M5 24H24V5" stroke-dasharray="2 2"/>':'<path d="M4 24H28" stroke-dasharray="2 2"/>';if(id==='center-start-sweep'||id==='center-radius-start-sweep')guides+='<path d="M15 24A9 9 0 0 1 24 15" stroke="#e7a45d"/>';if(id==='endpoints-radius')guides+='<path d="M16 29V10M4 24 16 29 28 24" stroke="#e7a45d"/>';if(id==='endpoints-sagitta')guides+='<path d="M16 24V10" stroke="#e7a45d"/>';if(id.includes('tangent'))guides='<path d="M6 28V3'+(id==='two-tangents'?'M24 6H30':'')+'" stroke="#e7a45d"/>';return '<svg class="tool-icon" viewBox="0 0 32 32" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4">'+guides+'<path d="'+path+'" stroke="#69b8ff" stroke-width="2.3"/>'+dots(center?[[24,24],[5,24],[24,5]]:id==='three-points'?[[4,24],[16,10],[28,24]]:id.includes('tangent')?[[6,26],[26,6]]:[[4,24],[28,24]])+'</svg>'}
