@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- GENERATED from src/chipdraw/index.html; shared workspace 6dc4ada3cce9. Edit src/ and shared/, then rebuild. --><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><!-- ChipChip-derived settings UI and behavior.
+<!-- GENERATED from src/chipdraw/index.html; shared workspace b0ce630c1b95. Edit src/ and shared/, then rebuild. --><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><!-- ChipChip-derived settings UI and behavior.
 MIT License
 
 Copyright (c) 2026 Nurtas Ihram
@@ -2817,11 +2817,11 @@ function geometry(node,previous){
  else if(t==='polyline'||t==='polygon'||t==='measurement-triangle'){
   const tokens=(attr(node,'points')||'').trim().split(/[\s,]+/).map(Number);if(tokens.length%2||!tokens.every(Number.isFinite))throw Error('物件點簇損壞');result.points=[];for(let i=0;i<tokens.length;i+=2)result.points.push(world([tokens[i],tokens[i+1]],m));
   if(t==='measurement-triangle')result.reference=previous?.reference;
-  if(t==='polyline'&&previous?.closed!==false&&result.points.length>2&&result.points[0].every((v,i)=>v===result.points.at(-1)[i])){result.closed=true;result.points.pop()}
+  if(t==='polyline'&&node.localName==='polyline'&&(!previous||previous.closed===true)&&result.points.length>2&&result.points[0].every((v,i)=>v===result.points.at(-1)[i])){result.closed=true;result.points.pop()}
  }
  else if(t==='bezier'){
   const path=bridge.parse?.(attr(node,'d')||'');if(!path||path.commands.filter(c=>c.type==='M').length!==1)throw Error('此複合路徑尚未支援貝塞爾 JSON 轉換');
-  const commands=path.commands,closed=commands.at(-1)?.type==='Z',curves=root.ChipCurveMetrics.commands(commands);if(!curves.length)throw Error('貝塞爾線至少需要一段曲線');
+  const closed=path.closed,curves=root.ChipCurveMetrics.commands(path.commands);if(!curves.length)throw Error('貝塞爾線至少需要一段曲線');
   result={type:'bezier',points:[],control_points:[],closed};
   for(const curve of curves){if(!curve.degree)throw Error('圓弧與貝塞爾的混合線型尚未定義');const a=curve.point(0),b=curve.point(1),v=curve.derivative(0),third=curve.derivative(0,3),scale=Math.max(1,Math.hypot(v.x,v.y),Math.hypot(b.x-a.x,b.y-a.y));if(Math.hypot(third.x,third.y)>1e-10*scale)throw Error('此三階曲線不能精確轉為現有二階 JSON 模型，尚未支援；原圖形保持不變');
    if(closed&&curve===curves.at(-1)&&a.x===b.x&&a.y===b.y&&curve.degree===1)continue;
@@ -2908,7 +2908,7 @@ function decodeObject(data,target,context=layer(target)){
   for(const kind of ['stroke','fill']){const p=inspected.paint[kind];set(node,kind,p.type==='none'?'none':p.color);set(node,kind+'-opacity',p.opacity)}
   const p=inspected.paint.stroke;for(const [key,name]of Object.entries({width:'stroke-width',linecap:'stroke-linecap',linejoin:'stroke-linejoin',miterlimit:'stroke-miterlimit',offset:'stroke-dashoffset'}))set(node,name,p[key]);set(node,'stroke-dasharray',p.type==='dashed'?p.pattern.join(' '):'none');
   if(g.type==='point'){set(node,'stroke-linecap','round');set(node,'stroke-dasharray','none');set(node,'stroke-dashoffset',0)}
-  if(['line','polyline','bezier','measurement-tape'].includes(g.type)&&!g.closed)set(node,'fill','none');
+  if((['line','polyline','bezier','measurement-tape'].includes(g.type)&&!g.closed)||(g.type==='arc'&&g.closed==='none'))set(node,'fill','none');
  }
  if(data.hiden===true)set(node,'display','none');
  set(node,'data-model-id',data.id||ids().next());if(data.name)set(node,'data-model-name',data.name);
@@ -3691,10 +3691,14 @@ function pathModel(source){
   for(let j=type==='A'?5:0;j<values.length;j+=2)anchors.push({x:values[j],y:values[j+1],control:j<values.length-2,entry,index:j});
   x=values.at(-2);y=values.at(-1);if(type==='M'){sx=x;sy=y;command=relative?'l':'L'}
  }
- let allClosed=true,hasSubpath=false,drawn=false,closed=false,start=null,end=null;
- for(const c of commands){if(c.type==='M'){if(hasSubpath&&(!drawn||!(closed||end.x===start.x&&end.y===start.y)))allClosed=false;hasSubpath=true;drawn=false;closed=false;start={x:c.values[0],y:c.values[1]};end=start}else if(c.type==='Z'){closed=true;end=start}else{drawn=true;closed=false;end={x:c.values.at(-2),y:c.values.at(-1)}}}
- const fillClosed=hasSubpath&&drawn&&allClosed&&(closed||end.x===start.x&&end.y===start.y);
- return {commands,anchors,closed:fillClosed,write:()=>commands.map(c=>c.type+' '+c.values.join(' ')).join(' ')};
+ // Each drawn subpath must end with its own close command.
+ let allClosed=true,hasSubpath=false,drawn=false,closed=false;
+ for(const c of commands){
+  if(c.type==='M'){if(hasSubpath&&!closed)allClosed=false;hasSubpath=true;drawn=false;closed=false;}
+  else if(c.type==='Z')closed=drawn;
+  else{drawn=true;closed=false;}
+ }
+ return {commands,anchors,closed:hasSubpath&&allClosed&&closed,write:()=>commands.map(c=>c.type+' '+c.values.join(' ')).join(' ')};
 }
 function anchorName(index,count){return index===0?'起點':index===count-1?'終點':'錨點 '+index}
 function pathControlGroups(model){
@@ -4022,7 +4026,7 @@ svg.addEventListener('pointerdown',()=>{propertyEdit=null},true);
 
 function fitCoordinateEditors(){const panel=$('panel'),r=panel.getBoundingClientRect();let width=r.width;for(const editor of panel.querySelectorAll('[data-coordinate-editor]')){if(editor.closest('[hidden]'))continue;const content=editor.scrollWidth||0,available=editor.clientWidth||0;width=Math.max(width,content+r.width-available)}if(width>r.width+1){panel.style.width=Math.min(width,innerWidth-16)+'px';clampPanel()}}
 function isClosedObject(n){
- if(!n)return false;const authored=ChipDrawingJson.record(n);if(authored&&['polyline','bezier'].includes(authored.type)&&typeof authored.closed==='boolean')return authored.closed;
+ if(!n)return false;const authored=ChipDrawingJson.record(n);if(authored&&['polyline','bezier'].includes(authored.type))return authored.closed===true;
  if(authored?.type==='arc')return !!authored.closed&&authored.closed!=='none';const declaredArc=n.localName==='path'&&ChipArc.read(n);if(declaredArc)return !!declaredArc.closed&&declaredArc.closed!=='none';
  if(['rect','circle','ellipse','polygon'].includes(n.localName))return true;
  if(n.localName==='polyline'){const points=vectorModel(n)?.anchors;return !!points&&points.length>=4&&points[0].x===points.at(-1).x&&points[0].y===points.at(-1).y}

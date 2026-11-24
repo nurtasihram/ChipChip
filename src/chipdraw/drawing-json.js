@@ -53,11 +53,11 @@ function geometry(node,previous){
  else if(t==='polyline'||t==='polygon'||t==='measurement-triangle'){
   const tokens=(attr(node,'points')||'').trim().split(/[\s,]+/).map(Number);if(tokens.length%2||!tokens.every(Number.isFinite))throw Error('物件點簇損壞');result.points=[];for(let i=0;i<tokens.length;i+=2)result.points.push(world([tokens[i],tokens[i+1]],m));
   if(t==='measurement-triangle')result.reference=previous?.reference;
-  if(t==='polyline'&&previous?.closed!==false&&result.points.length>2&&result.points[0].every((v,i)=>v===result.points.at(-1)[i])){result.closed=true;result.points.pop()}
+  if(t==='polyline'&&node.localName==='polyline'&&(!previous||previous.closed===true)&&result.points.length>2&&result.points[0].every((v,i)=>v===result.points.at(-1)[i])){result.closed=true;result.points.pop()}
  }
  else if(t==='bezier'){
   const path=bridge.parse?.(attr(node,'d')||'');if(!path||path.commands.filter(c=>c.type==='M').length!==1)throw Error('此複合路徑尚未支援貝塞爾 JSON 轉換');
-  const commands=path.commands,closed=commands.at(-1)?.type==='Z',curves=root.ChipCurveMetrics.commands(commands);if(!curves.length)throw Error('貝塞爾線至少需要一段曲線');
+  const closed=path.closed,curves=root.ChipCurveMetrics.commands(path.commands);if(!curves.length)throw Error('貝塞爾線至少需要一段曲線');
   result={type:'bezier',points:[],control_points:[],closed};
   for(const curve of curves){if(!curve.degree)throw Error('圓弧與貝塞爾的混合線型尚未定義');const a=curve.point(0),b=curve.point(1),v=curve.derivative(0),third=curve.derivative(0,3),scale=Math.max(1,Math.hypot(v.x,v.y),Math.hypot(b.x-a.x,b.y-a.y));if(Math.hypot(third.x,third.y)>1e-10*scale)throw Error('此三階曲線不能精確轉為現有二階 JSON 模型，尚未支援；原圖形保持不變');
    if(closed&&curve===curves.at(-1)&&a.x===b.x&&a.y===b.y&&curve.degree===1)continue;
@@ -144,7 +144,7 @@ function decodeObject(data,target,context=layer(target)){
   for(const kind of ['stroke','fill']){const p=inspected.paint[kind];set(node,kind,p.type==='none'?'none':p.color);set(node,kind+'-opacity',p.opacity)}
   const p=inspected.paint.stroke;for(const [key,name]of Object.entries({width:'stroke-width',linecap:'stroke-linecap',linejoin:'stroke-linejoin',miterlimit:'stroke-miterlimit',offset:'stroke-dashoffset'}))set(node,name,p[key]);set(node,'stroke-dasharray',p.type==='dashed'?p.pattern.join(' '):'none');
   if(g.type==='point'){set(node,'stroke-linecap','round');set(node,'stroke-dasharray','none');set(node,'stroke-dashoffset',0)}
-  if(['line','polyline','bezier','measurement-tape'].includes(g.type)&&!g.closed)set(node,'fill','none');
+  if((['line','polyline','bezier','measurement-tape'].includes(g.type)&&!g.closed)||(g.type==='arc'&&g.closed==='none'))set(node,'fill','none');
  }
  if(data.hiden===true)set(node,'display','none');
  set(node,'data-model-id',data.id||ids().next());if(data.name)set(node,'data-model-name',data.name);

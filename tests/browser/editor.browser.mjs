@@ -175,7 +175,7 @@ try{
  assert.deepEqual(await page.evaluate(()=>({h:history.length,f:future.length,html:art.innerHTML.replace(/class="[^"]*"/g,'')})),escState,'Escape cancels only the unfinished polyline and its temporary undo entry');
  await page.locator('[data-tool=select]').click();
 
- const fillCases=[['line',{x1:0,y1:0,x2:20,y2:20},false],['polyline',{points:'0,0 20,0 20,20'},false],['polyline',{points:'0,0 20,0 20,20 0,0'},true],['path',{d:'M0 0 L20 0 L20 20'},false],['path',{d:'M0 0 L20 0 L20 20 Z'},true],['path',{d:'M0 0 L20 0 L20 20 Z M30 0 L40 10'},false],['path',{d:'M0 0 L20 0 L20 20 L0 0'},true],['rect',{x:0,y:0,width:20,height:20},true]];
+ const fillCases=[['line',{x1:0,y1:0,x2:20,y2:20},false],['polyline',{points:'0,0 20,0 20,20'},false],['polyline',{points:'0,0 20,0 20,20 0,0'},true],['path',{d:'M0 0 L20 0 L20 20'},false],['path',{d:'M0 0 L20 0 L20 20 Z'},true],['path',{d:'M0 0 L20 0 L20 20 Z M30 0 L40 10'},false],['path',{d:'M0 0 L20 0 L20 20 L0 0'},false],['rect',{x:0,y:0,width:20,height:20},true]];
  for(const [tag,attributes,closed]of fillCases){
   await page.evaluate(({tag,attributes})=>{setTool('select');selected=el(tag,{...attributes,stroke:'#69b8ff',fill:'#aa00aa'});detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('panel').classList.add('show')},{tag,attributes});
   assert.equal(await page.locator('#objectFillRow').isVisible(),closed,tag+' '+JSON.stringify(attributes)+' fill availability');assert.equal(await page.locator('#fillEnabled').isVisible(),closed);
@@ -185,7 +185,7 @@ try{
  assert.equal(await page.locator('#objectFillRow').isVisible(),false,'mixed open/closed selection has no fill control');
 
  await page.setViewportSize({width:1100,height:850});
- await page.evaluate(()=>{setTool('select');$('coordinateMode').value='cart';$('lengthPrecision').value='2';selected=el('polyline',{points:'149.26,-432.96 -59.63,208.52 -287.04,-60.36 -268.52,-303.33 414.44,55.93',stroke:'#69b8ff',fill:'none'});detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('panel').classList.add('show');$('panel').style.width='650px';clampPanel()});
+ await page.evaluate(()=>{setTool('select');$('coordinateMode').value='cart';$('coordinateMode').dispatchEvent(new Event('change',{bubbles:true}));$('lengthPrecision').value='2';$('lengthPrecision').dispatchEvent(new Event('change',{bubbles:true}));selected=el('polyline',{points:'149.26,-432.96 -59.63,208.52 -287.04,-60.36 -268.52,-303.33 414.44,55.93',stroke:'#69b8ff',fill:'none'});detailedAnchorTarget=selected;(detailedAnchorTarget=selected,renderSelection());$('panel').classList.add('show');$('panel').style.width='650px';clampPanel()});
  const columns=await page.locator('#objectVertices [data-coordinate-editor]').evaluateAll(nodes=>nodes.map(n=>[...n.querySelectorAll('input')].map(n=>({left:n.getBoundingClientRect().left,width:n.getBoundingClientRect().width}))));
  for(let axis=0;axis<2;axis++){assert.ok(Math.max(...columns.map(n=>n[axis].left))-Math.min(...columns.map(n=>n[axis].left))<1,'node coordinate columns must align');assert.ok(Math.max(...columns.map(n=>n[axis].width))-Math.min(...columns.map(n=>n[axis].width))<1)}
  await page.evaluate(()=>{$('panel').classList.remove('show');setTool('poly')});

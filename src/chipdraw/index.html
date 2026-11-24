@@ -383,10 +383,14 @@ function pathModel(source){
   for(let j=type==='A'?5:0;j<values.length;j+=2)anchors.push({x:values[j],y:values[j+1],control:j<values.length-2,entry,index:j});
   x=values.at(-2);y=values.at(-1);if(type==='M'){sx=x;sy=y;command=relative?'l':'L'}
  }
- let allClosed=true,hasSubpath=false,drawn=false,closed=false,start=null,end=null;
- for(const c of commands){if(c.type==='M'){if(hasSubpath&&(!drawn||!(closed||end.x===start.x&&end.y===start.y)))allClosed=false;hasSubpath=true;drawn=false;closed=false;start={x:c.values[0],y:c.values[1]};end=start}else if(c.type==='Z'){closed=true;end=start}else{drawn=true;closed=false;end={x:c.values.at(-2),y:c.values.at(-1)}}}
- const fillClosed=hasSubpath&&drawn&&allClosed&&(closed||end.x===start.x&&end.y===start.y);
- return {commands,anchors,closed:fillClosed,write:()=>commands.map(c=>c.type+' '+c.values.join(' ')).join(' ')};
+ // Each drawn subpath must end with its own close command.
+ let allClosed=true,hasSubpath=false,drawn=false,closed=false;
+ for(const c of commands){
+  if(c.type==='M'){if(hasSubpath&&!closed)allClosed=false;hasSubpath=true;drawn=false;closed=false;}
+  else if(c.type==='Z')closed=drawn;
+  else{drawn=true;closed=false;}
+ }
+ return {commands,anchors,closed:hasSubpath&&allClosed&&closed,write:()=>commands.map(c=>c.type+' '+c.values.join(' ')).join(' ')};
 }
 function anchorName(index,count){return index===0?'起點':index===count-1?'終點':'錨點 '+index}
 function pathControlGroups(model){
@@ -714,7 +718,7 @@ svg.addEventListener('pointerdown',()=>{propertyEdit=null},true);
 
 function fitCoordinateEditors(){const panel=$('panel'),r=panel.getBoundingClientRect();let width=r.width;for(const editor of panel.querySelectorAll('[data-coordinate-editor]')){if(editor.closest('[hidden]'))continue;const content=editor.scrollWidth||0,available=editor.clientWidth||0;width=Math.max(width,content+r.width-available)}if(width>r.width+1){panel.style.width=Math.min(width,innerWidth-16)+'px';clampPanel()}}
 function isClosedObject(n){
- if(!n)return false;const authored=ChipDrawingJson.record(n);if(authored&&['polyline','bezier'].includes(authored.type)&&typeof authored.closed==='boolean')return authored.closed;
+ if(!n)return false;const authored=ChipDrawingJson.record(n);if(authored&&['polyline','bezier'].includes(authored.type))return authored.closed===true;
  if(authored?.type==='arc')return !!authored.closed&&authored.closed!=='none';const declaredArc=n.localName==='path'&&ChipArc.read(n);if(declaredArc)return !!declaredArc.closed&&declaredArc.closed!=='none';
  if(['rect','circle','ellipse','polygon'].includes(n.localName))return true;
  if(n.localName==='polyline'){const points=vectorModel(n)?.anchors;return !!points&&points.length>=4&&points[0].x===points.at(-1).x&&points[0].y===points.at(-1).y}

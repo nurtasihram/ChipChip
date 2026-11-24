@@ -12,5 +12,14 @@ assert.equal(moved.write(),'M 0 0 L 20 10 L 15 15','moving one relative endpoint
 assert.equal(model('M1e2,-2e-1 L.5 +6').anchors[0].x,100);
 for(const invalid of ['M 1','M 1 2 R 3 4','M 1 2 garbage','M 1 Infinity'])assert.equal(model(invalid),null);
 assert.equal(model('M0 0 C1 2 3 4 5 6 S7 8 9 10 Q11 12 13 14 T15 16').anchors.filter(a=>a.control).length,4);
-for(const [path,closed]of [['M0 0 L10 10',false],['M0 0 L10 0 L10 10 Z',true],['M0 0 L10 0 L0 0',true],['M0 0 L10 0 Z M20 0 L30 10',false]])assert.equal(model(path).closed,closed);
+for(const [path,closed] of [
+ ['M0 0 L10 10',false],
+ ['M0 0 L10 0 L0 0',false],
+ ['M0 0 Q5 5 0 0',false],
+ ['M0 0 L10 0 L10 10 Z',true],
+ ['M0 0 L10 0 L0 0 z',true],
+ ['M0 0 L10 0 Z M20 0 L30 10 z',true],
+ ['M0 0 L10 0 L0 0 M20 0 L30 10 Z',false],
+ ['M0 0 L10 0 Z M20 0 L30 10',false]
+]) assert.equal(model(path).closed,closed,path);
 export const results=['ChipDraw path normalization: relative, repeated, close, curves, arcs, invalid input and isolated point edits'];
