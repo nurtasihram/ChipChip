@@ -1,20 +1,23 @@
 # ChipDraw 桌面版
 
-從專案根目錄啟動桌面版。預設入口及 `run chipdraw` 都開啟原生矩形編輯器。完整的選取、吸附、計量單位、圖層與物件窗格可在 [離線畫板](../../ChipDraw.html) 使用。
+登入 GitHub，開啟最近一次成功的 Windows 建置，在 Artifacts 下載 **ChipDraw-Windows-x64**。完整解壓縮後，雙擊 `ChipDraw.exe` 即可啟動。套件隨附 Qt 程式庫及平台外掛。[Windows 建置與下載](https://github.com/nurtasihram/ChipChip/actions/workflows/windows-qt.yml)
 
-| 平台 | 首次建立桌面環境 | 啟動原生編輯器 | 執行桌面回歸 |
-| --- | --- | --- | --- |
-| Windows | `.\tools\qt.ps1 setup` | `.\tools\qt.ps1 run` | `.\tools\qt.ps1 test` |
-| Linux／WSL | `bash tools/qt.sh setup` | `bash tools/qt.sh run` | `bash tools/qt.sh test` |
-
-桌面入口現有依賴列於 [requirements.txt](requirements.txt)。Windows 與 Linux 各自使用獨立的環境。Linux 需要可用的圖形桌面，WSL 使用 WSLg。兩種顯示後端皆可用時預設採用 XWayland，以便在桌面定位浮動窗格。
+桌面版使用 C++、Qt Widgets 和 QJSEngine。矩形幾何、互動狀態、物件格式、按鈕定義及提示動畫沿用 HTML 版的 JavaScript 模型。ChipChip 系列嚴禁使用 Python，範圍涵蓋執行、開發工具、建置、測試及打包。
 
 ## 原生矩形編輯
 
-在畫布按右鍵開啟工具窗格。選擇對角線、指定邊、直三角板或邊中點，再按畫布預覽的提示放置點位。對角線畫法也可直接拖曳。按 Esc 取消預覽。拖動窗格標題可移動，拖動邊框可調整大小。工具窗格可移到畫板外，整個窗格放回畫板後會再次跟隨畫板。
+在畫布按右鍵開啟工具窗格，可選對角線、指定邊、直三角板或邊中點，再於畫布選點。對角線畫法也可拖曳建立矩形。按 Esc 取消預覽。工具窗格可拖出畫板，拖回畫板範圍後再次跟隨主視窗。完整的圖層、選取、吸附、計量單位和物件窗格見[離線畫板](../../ChipDraw.html)。
 
-原生版與 HTML 版執行同一份矩形狀態機與圖稿模型，分別由 Qt Graphics View 與 SVG 顯示預覽。修改共用模型後，在根目錄執行 `node tools/build-qt-model.mjs` 及 `node tools/build.mjs`。用 `node tools/build-qt-model.mjs --check` 可比對桌面內嵌版本。[矩形狀態機](../../shared/rectangle-editor.js) · [JSON 儲存規格](../../docs/reference/JSON_STORAGE.md)
+## 開發與驗證
 
-## 相容性驗證
+建置需要 C++17 編譯器、CMake 3.21 以上和對應編譯器的 Qt 6.5 以上開發套件（Widgets、Qml、SvgWidgets，測試另需 Test）。在已設定 Qt 及編譯器的開發環境，從專案根目錄執行：
 
-桌面測試會檢查原生矩形操作，並在 Qt WebEngine 中載入根目錄的離線畫板，比對語言切換、計量設定及 JSON。各平台的桌面測試報告分別輸出至 `.qt-test-output/windows/` 或 `.qt-test-output/linux/`。要單獨檢查 HTML 版的窗格行為，請使用 [專案首頁的瀏覽器測試命令](../../README.md#建置與驗證)。
+```sh
+cmake -S desktop/qt -B output/native -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build output/native
+ctest --test-dir output/native --output-on-failure
+```
+
+若 CMake 無法定位 Qt，設定 `CMAKE_PREFIX_PATH` 指向該架構的 Qt 安裝目錄。Windows 發佈時，將 Release 的 `ChipDraw.exe` 複製到空白套件目錄，使用同一 Qt 安裝提供的 `windeployqt --release --compiler-runtime ChipDraw.exe` 收集相依檔。
+
+原生測試以滑鼠事件操作畫布，檢查取消、點選、拖曳、復原及重做。Web 端回歸使用 `node tests/run.mjs`。變更共用模型後，使用 `node tools/build-qt-model.mjs` 重建桌面資源，使用 `node tools/build.mjs` 更新離線畫板。

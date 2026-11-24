@@ -1,0 +1,87 @@
+name: ChipDraw for Windows
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - desktop/qt/**
+      - .github/workflows/windows-qt.yml
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: msys2/setup-msys2@3c51bf698df1e37b2261f53cb67797b97761185c
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-qt6-declarative
+            mingw-w64-ucrt-x86_64-qt6-svg
+      - name: Build and test the native editor
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          cmake -S desktop/qt -B output/native -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build output/native
+          ctest --test-dir output/native --output-on-failure
+      - name: Assemble the portable application
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          dest=output/ChipDraw
+          mkdir -p "$dest/platforms" "$dest/licenses"
+          cp output/native/ChipDraw.exe "$dest/"
+          platform=$(pacman -Qlq mingw-w64-ucrt-x86_64-qt6-base | grep '/platforms/qwindows.dll$')
+          cp "$platform" "$dest/platforms/"
+          cp LICENSE "$dest/licenses/ChipChip.txt"
+          printf '[Paths]\nPrefix=.\nPlugins=.\n' > "$dest/qt.conf"
+
+          # Follow PE imports of the executable and the Windows platform plugin.
+          queue=("$dest/ChipDraw.exe" "$dest/platforms/qwindows.dll")
+          packages=(mingw-w64-ucrt-x86_64-qt6-base)
+          for (( i=0; i<${#queue[@]}; i++ )); do
+            while IFS= read -r dll; do
+              src="$MINGW_PREFIX/bin/$dll"
+              [[ -f "$src" && ! -f "$dest/$dll" ]] || continue
+              cp "$src" "$dest/"
+              queue+=("$dest/$dll")
+              packages+=("$(pacman -Qqo "$src")")
+            done < <(objdump -p "${queue[i]}" | awk '/DLL Name:/{print $3}' | tr -d '\r')
+          done
+          while IFS= read -r package; do
+            while IFS= read -r file; do
+              [[ -f "$file" ]] || continue
+              relative=${file#*/share/licenses/}
+              mkdir -p "$dest/licenses/$(dirname "$relative")"
+              cp "$file" "$dest/licenses/$relative"
+            done < <(pacman -Qlq "$package" | grep '/share/licenses/' || true)
+          done < <(printf '%s\n' "${packages[@]}" | sort -u)
+      - name: Launch with only the bundled runtime
+        shell: pwsh
+        run: |
+          $root = (Resolve-Path output/ChipDraw).Path
+          $env:Path = "$env:SystemRoot\System32;$env:SystemRoot"
+          Remove-Item Env:QT_PLUGIN_PATH,Env:QML_IMPORT_PATH -ErrorAction SilentlyContinue
+          $app = Start-Process "$root\ChipDraw.exe" -WorkingDirectory $root -PassThru
+          try {
+            for ($i=0; $i -lt 50; $i++) {
+              $app.Refresh()
+              if ($app.HasExited) { throw "ChipDraw exited with $($app.ExitCode)" }
+              if ($app.MainWindowTitle -eq 'ChipDraw' -and $app.Responding) { break }
+              Start-Sleep -Milliseconds 300
+            }
+            if ($app.MainWindowTitle -ne 'ChipDraw' -or !$app.Responding) { throw 'Native window failed to open' }
+          } finally {
+            if (!$app.HasExited) { $null=$app.CloseMainWindow(); if (!$app.WaitForExit(3000)) { $app.Kill() } }
+          }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ChipDraw-Windows-x64
+          path: output/ChipDraw/
+          if-no-files-found: error

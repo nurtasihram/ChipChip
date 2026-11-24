@@ -1,5 +1,7 @@
 # ChipChip · ChipDraw 繪圖工作區
 
+**ChipChip 系列嚴禁使用 Python。** 此規定適用於 ChipChip、ChipDraw 及其所有子專案，涵蓋程式本體、直接與間接依賴、啟動器、建置、測試、CI、自動化、打包及一次性腳本。共用核心沿用 JavaScript；桌面版使用 C++／Qt。
+
 ChipDraw 是可離線使用的向量畫板，支援以圖層編輯幾何物件、吸附定位和精確計量。下載最新版的 **ChipDraw.html**，用瀏覽器開啟即可使用。已下載的舊檔案需要重新下載才能看到新版窗格。[下載離線畫板](https://github.com/nurtasihram/ChipChip/raw/refs/heads/main/ChipDraw.html)
 
 ![選取、吸附與計量單位並排釘選；左下角是已收合的視圖、物件和圖層窗格](docs/images/workspace-panes.png)
@@ -26,7 +28,7 @@ ChipDraw 是可離線使用的向量畫板，支援以圖層編輯幾何物件�
 | `ChipDraw.html`、`ChipChip.html`、`index.html` | 同一畫板的三個離線入口，由建置工具產生。 |
 | [src/chipdraw](src/chipdraw/) | HTML 畫板、SVG 編輯及各工具的接入點。 |
 | [shared](shared/) | 幾何查詢、計量換算、圖稿模型、窗格與輸入元件。 |
-| [desktop/qt](desktop/qt/README.md) | 原生矩形編輯器、桌面啟動方式及相容性測試說明。 |
+| [desktop/qt](desktop/qt/README.md) | 原生矩形編輯器、桌面啟動方式及原生回歸測試。 |
 | [tests](tests/) | 核心測試入口及測試案例；瀏覽器測試在 `browser/`，測試用替身在 `fixtures/`。 |
 | [tools](tools/) | 離線建置、桌面啟動及繪圖示範錄製工具。 |
 | [docs](docs/) | `guides/` 操作指南、`reference/` 技術規格、`design-samples/` 設計樣本、`images/` 畫面及 `wiki/` Wiki 原稿。 |
