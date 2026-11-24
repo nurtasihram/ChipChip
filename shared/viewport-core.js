@@ -2,8 +2,22 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;root.ChipViewport=api})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
 const colors=Object.freeze({rho:'#60a5fa',theta:'#42d98c',scale:'#ffd166',limit:'#ff5969'});
-let pixelRatio=null;function setPixelRatio(numerator,denominator,unit){if(!Number.isSafeInteger(numerator)||numerator<=0||!Number.isSafeInteger(denominator)||denominator<=0||unit==='px'||!units[unit])throw new RangeError('像素換算必須為兩個正整數與物理長度單位');pixelRatio=Object.freeze({kind:'rational',numerator,denominator,unit});return pixelRatio}function getPixelRatio(){return pixelRatio}
-let unitDpi=Number(globalThis.CHIP_CONTEXT_DPI)||96;function setDpi(value){if(Number.isFinite(value)&&value>0) {unitDpi=value;pixelRatio=null}}const units=Object.freeze({get px(){return pixelRatio?pixelRatio.numerator*units[pixelRatio.unit]/pixelRatio.denominator:25.4/unitDpi},km:1000000,m:1000,cm:10,mm:1,um:.001,ft:304.8,inch:25.4,mil:.0254});
+let standalonePixelRatio=null,readCalibration,writeCalibration;
+let unitDpi=Number(globalThis.CHIP_CONTEXT_DPI)||96;
+function bindPixelCalibration(read,write){standalonePixelRatio=null;readCalibration=read;writeCalibration=write}
+function calibration(){return readCalibration?readCalibration():standalonePixelRatio}
+function getPixelRatio(){const ratio=calibration();return ratio?.kind==='rational'?ratio:null}
+function setPixelRatio(numerator,denominator,unit){
+ if(!Number.isSafeInteger(numerator)||numerator<=0||!Number.isSafeInteger(denominator)||denominator<=0||unit==='px'||!units[unit])throw new RangeError('像素換算必須為兩個正整數與物理長度單位');
+ const value=Object.freeze({kind:'rational',numerator,denominator,unit});
+ if(writeCalibration)writeCalibration(value);else standalonePixelRatio=value;
+ return value;
+}
+function setDpi(value){
+ if(!Number.isFinite(value)||value<=0)return;
+ if(writeCalibration)writeCalibration({kind:'dpi',value});else{unitDpi=value;standalonePixelRatio=null}
+}
+const units=Object.freeze({get px(){const ratio=calibration();return ratio?.kind==='rational'?ratio.numerator*units[ratio.unit]/ratio.denominator:25.4/(ratio?.value||unitDpi)},km:1000000,m:1000,cm:10,mm:1,um:.001,ft:304.8,inch:25.4,mil:.0254});
 class Camera{
  constructor({x=0,y=0,scale=1,angle=0,mirror=false}={}){if(![x,y,scale,angle].every(Number.isFinite)||scale<=0)throw Error('Invalid camera');Object.assign(this,{x,y,scale,angle,mirror})}
  matrix(){const c=Math.cos(this.angle),s=Math.sin(this.angle),m=this.mirror?-1:1,z=this.scale;return {a:z*m*c,b:z*m*s,c:z*s,d:-z*c,e:this.x,f:this.y}}
@@ -53,5 +67,5 @@ function bezierSegmentIsStraight(points){
  if(values.length===4){const [,p,q]=values,A=3*(3*p-3*q+1),B=6*(q-2*p),C=3*p;rates.push(C,A+B+C);if(Math.abs(A)<1e-12){if(Math.abs(B)>1e-12)roots.push(-C/B)}else{const vertex=-B/(2*A);if(vertex>0&&vertex<1)rates.push(A*vertex*vertex+B*vertex+C);const d=B*B-4*A*C;if(d>=0)roots.push((-B-Math.sqrt(d))/(2*A),(-B+Math.sqrt(d))/(2*A))}}else if(values.length===3){const p=values[1],d=1-2*p;rates.push(2*p,2*(1-p));if(Math.abs(d)>1e-12)roots.push(-p/d)}
  return rates.every(v=>v>=-1e-10)&&roots.filter(t=>t>0&&t<1).every(t=>{const v=sample(t);return v>=-1e-10&&v<=1+1e-10});
 }
-return Object.freeze({Camera,conicGeometry,bezierSegmentIsStraight,previewBackground,selectionDash,setDpi,setPixelRatio,getPixelRatio,rational,floating,numeric,formatRational,colors,units,snap,clipLine,gridGeometry,drawGrid});
+return Object.freeze({Camera,conicGeometry,bezierSegmentIsStraight,previewBackground,selectionDash,bindPixelCalibration,setDpi,setPixelRatio,getPixelRatio,rational,floating,numeric,formatRational,colors,units,snap,clipLine,gridGeometry,drawGrid});
 });

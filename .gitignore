@@ -3,10 +3,8 @@
 .DS_Store
 __pycache__/
 
-# Local reference snapshots
-revision-review/
-ChipChip_view_revision_ready.zip
 node_modules/
 .venv-qt/
 .venv-qt-wsl/
 .qt-test-output/
+/output/

@@ -33,16 +33,13 @@ def make_page(profile, view):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--app', choices=['chipchip', 'chipdraw', 'pinview'], default='chipchip')
+    parser.add_argument('--app', choices=['chipchip', 'chipdraw'], default='chipchip')
     parser.add_argument('--smoke-test', action='store_true')
     parser.add_argument('--web-baseline', action='store_true')
-    parser.add_argument('--file', type=Path)
     parser.add_argument('--native-rectangle', action='store_true', help='Open the native ChipDraw rectangle editor')
     args = parser.parse_args()
     if args.app == 'chipchip':
         args.app = 'chipdraw'
-    if args.file and args.app != 'pinview':
-        parser.error('--file opens a PinView document with --app pinview')
     if args.native_rectangle and (args.app != 'chipdraw' or args.web_baseline):
         parser.error('--native-rectangle requires native ChipDraw')
     if args.app == 'chipdraw' and not (args.web_baseline or args.smoke_test):
@@ -51,23 +48,18 @@ def main():
     if args.app == 'chipdraw' and args.smoke_test:
         subprocess.run([sys.executable, str(Path(__file__).with_name('test_native_entry.py'))], check=True)
         subprocess.run([sys.executable, str(Path(__file__).with_name('test_rectangle.py'))], check=True)
-    if args.app == 'pinview' and not args.web_baseline and not args.smoke_test:
-        from pinview import run
-        return run(ROOT, args.file)
-    if args.app == 'pinview' and args.smoke_test:
-        subprocess.run([sys.executable, str(Path(__file__).with_name('test_pinview.py'))], check=True)
     from PySide6.QtWebEngineCore import QWebEngineProfile, QWebEngineSettings
     from PySide6.QtWebEngineWidgets import QWebEngineView
-    entry = ROOT / ('PinView.html' if args.app == 'pinview' else 'ChipChip.html')
+    entry = ROOT / 'ChipChip.html'
     if not entry.is_file():
         parser.error('Run node tools/build.mjs first')
     from pane import Pane
     app = QApplication([sys.argv[0]])
     app.setApplicationName('ChipChip Qt Test')
     app.setOrganizationName('ChipChip')
-    window = Pane('ChipDraw' if args.app == 'chipdraw' else 'PinView')
+    window = Pane('ChipDraw')
     window.button('關閉窗格','m5 5 14 14M19 5 5 19',window.close)
-    window.setWindowTitle('ChipChip · ChipDraw' if args.app == 'chipdraw' else 'ChipChip · PinView')
+    window.setWindowTitle('ChipChip · ChipDraw')
     window.resize(1280, 860)
     view = QWebEngineView(window)
     # A private profile isolates regression runs from persisted desktop settings.

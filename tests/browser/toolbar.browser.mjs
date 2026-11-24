@@ -1,0 +1,80 @@
+import assert from 'node:assert/strict';
+const {chromium}=await import(process.env.CHIPDRAW_PLAYWRIGHT||'playwright');
+const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-gpu','--disable-software-rasterizer'],...(process.env.CHIPDRAW_BROWSER?{executablePath:process.env.CHIPDRAW_BROWSER}:{})});
+try{
+ const page=await browser.newPage({viewport:{width:1500,height:1000}}),errors=[];page.on('pageerror',error=>errors.push(error.message));await page.goto(new URL('../../ChipDraw.html',import.meta.url).href);await page.waitForFunction(()=>document.getElementById('advanced').style.height);
+ const ids=['tools','advanced','panel','layersPanel','selectionPropertiesWindow','snapPropertiesWindow','measurementPropertiesWindow'];
+ const close=(a,b)=>Math.abs(a-b)<2;
+ async function dragHandle(id,edge,expire=false){
+  const shell=page.locator('#'+id),handle=shell.locator('.ui-toolbar-handle'),grip=await handle.isVisible()?handle:shell.locator('.ui-toolbar-items button').first(),r=await shell.boundingBox(),h=await grip.boundingBox();
+  const b=await shell.evaluate(node=>{const tray=node.querySelector('.ui-toolbar-items');return tray.chipToolbar.bounds()});
+  const x=edge==='left'?b.left:edge==='right'?b.right-r.width:r.x,y=edge==='top'?b.top:edge==='bottom'?b.bottom-r.height:r.y;
+  await page.mouse.move(h.x+h.width/2,h.y+h.height/2);await page.mouse.down();await page.mouse.move(h.x+h.width/2+x-r.x,h.y+h.height/2+y-r.y);
+  assert.equal(await page.locator('#dockPreview').evaluate(node=>node.classList.contains('visible')),true,id+' shows the same edge preview');assert.equal(await page.locator('#dockPreview').getAttribute('data-edge'),edge);
+  const preview=await page.locator('#dockPreview').boundingBox(),before=await shell.getAttribute('aria-orientation');
+  if(expire){await page.waitForTimeout(550);assert.equal(await page.locator('#dockPreview').evaluate(node=>node.classList.contains('visible')),false)}
+  await page.mouse.up();
+  if(expire){assert.equal(await shell.getAttribute('aria-orientation'),before);return}
+  const result=await shell.boundingBox();for(const key of ['x','y','width','height'])assert.ok(close(result[key],preview[key]),id+' actual dock matches its preview '+key);
+ }
+ for(const id of ids){
+  await page.evaluate(({ids,id})=>{for(const key of ids)document.getElementById(key).style.visibility=key===id?'visible':'hidden';if(id!=='tools'){const node=document.getElementById(id);if(id==='advanced')node.open=true;if(id==='panel')node.classList.add('show');node.chipFloatingPanel.setCollapsed(true)}const node=document.getElementById(id);node.classList.remove('vertical');node.setAttribute('aria-orientation','horizontal');node.querySelector('.ui-toolbar-items').chipToolbar.place(650,300)},{ids,id});
+  await dragHandle(id,'left');await dragHandle(id,'top');await dragHandle(id,'right');await dragHandle(id,'bottom');
+  await page.locator('#'+id).evaluate(node=>{node.classList.remove('vertical');node.setAttribute('aria-orientation','horizontal');node.querySelector('.ui-toolbar-items').chipToolbar.place(650,300)});await dragHandle(id,'left',true);
+  if(id!=='tools'){await page.locator('#'+id+' .ui-panel-mini button').click();assert.equal(await page.locator('#'+id+' .ui-floating-body').isVisible(),true,'action button still expands its own panel')}
+ }
+ // Moving the original node retains both the common option model and its click behavior.
+ await page.reload();await page.waitForFunction(()=>document.getElementById('advanced').style.height);await page.evaluate(()=>{for(const id of ['advanced','panel','layersPanel'])document.getElementById(id).style.visibility='hidden';globalThis.originalLine=document.querySelector('[data-tool=line]');globalThis.originalOrder=drawingToolOptions.order()});
+ async function tear(selector,x,y,edge){const r=await page.locator(selector).boundingBox();await page.mouse.move(r.x+r.width/2,r.y+r.height/2);await page.mouse.down();await page.mouse.move(x,y,{steps:6});if(edge){assert.equal(await page.locator("#dockPreview").getAttribute("data-toolbar-group-drop"),edge);assert.ok(await page.locator("#dockPreview").evaluate(node=>node.classList.contains("visible")))}await page.mouse.up()}
+ await tear('#toolsButtons [data-tool=line]',650,350);assert.equal(await page.locator('[data-toolbar-detached=true]').count(),1);assert.equal(await page.locator('[data-toolbar-detached=true] .ui-toolbar-handle').isVisible(),false,'single-button toolbar does not waste space on a handle');assert.equal(await page.evaluate(()=>document.querySelector('[data-toolbar-detached=true] [data-tool=line]')===originalLine),true);assert.deepEqual(await page.evaluate(()=>drawingToolOptions.order()),await page.evaluate(()=>originalOrder));
+ await page.locator('[data-toolbar-detached=true] [data-tool=line]').click();assert.equal(await page.evaluate(()=>tool),'line');await page.locator('#toolsButtons [data-tool=rect]').click();assert.equal(await page.locator('[data-toolbar-detached=true] [data-tool=line]').getAttribute('aria-pressed'),'false');
+ const home=await page.locator('#toolsButtons').boundingBox();await tear('[data-toolbar-detached=true] button',home.x+home.width/2,home.y+home.height/2);assert.equal(await page.locator('[data-toolbar-detached=true]').count(),0);assert.equal(await page.evaluate(()=>document.querySelector('#toolsButtons [data-tool=line]')===originalLine),true);assert.deepEqual(await page.evaluate(()=>drawingToolOptions.order()),await page.evaluate(()=>['line',...originalOrder.filter(id=>id!=='line')]));
+ await tear('#toolsButtons [data-tool=point]',650,350);const detached=page.locator('[data-toolbar-detached=true]'),initial=await detached.boundingBox(),currentTool=await page.evaluate(()=>tool);await tear('[data-toolbar-detached=true] [data-tool=point]',initial.x+100,initial.y+100);const moved=await detached.boundingBox();assert.ok(moved.x>initial.x+20&&moved.y>initial.y+20);assert.equal(await page.evaluate(()=>tool),currentTool,'dragging a detached button does not trigger it');
+ const h=await page.locator('#toolsButtons [data-tool=line]').boundingBox();await page.mouse.move(h.x+h.width/2,h.y+h.height/2);await page.mouse.down();await page.mouse.move(700,450);await page.keyboard.press('Escape');await page.mouse.up();assert.equal(await page.locator('#toolsButtons [data-tool=line]').count(),1,'Escape cancels tear off');assert.equal(await page.locator('[data-toolbar-detached=true]').count(),1);
+ const defaults=()=>page.locator('[data-default-tool=true]').evaluateAll(nodes=>nodes.map(button=>button.dataset.tool));
+ const detachedFor=id=>page.locator('[data-toolbar-detached=true]').filter({has:page.locator('[data-tool='+id+']')});
+ const activate=async id=>{await page.evaluate(id=>drawingToolOptions.button(id).click(),id)};
+ assert.deepEqual(await defaults(),['line'],'activating a one-button toolbar sets the global default');
+ await tear('#toolsButtons [data-tool=arc]',700,550);
+ for(const edge of ['left','top','bottom','right']){
+  const arc=await detachedFor('arc').boundingBox();
+  const x=edge==='left'?arc.x-6:edge==='right'?arc.x+arc.width+6:arc.x+arc.width/2;
+  const y=edge==='top'?arc.y-6:edge==='bottom'?arc.y+arc.height+6:arc.y+arc.height/2;
+  await tear('[data-toolbar-detached=true] [data-tool=point]',x,y,edge);
+  assert.equal(await page.locator('#dockPreview').getAttribute('data-toolbar-group-drop'),null);
+  assert.equal(await page.locator('[data-toolbar-detached=true]').count(),1,'same-family singletons merge at '+edge);
+  const first=edge==='left'||edge==='top'?'point':'arc';
+  assert.deepEqual(await detachedFor('arc').locator('[data-tool]').evaluateAll(nodes=>nodes.map(button=>button.dataset.tool)),[first,first==='arc'?'point':'arc']);
+  assert.equal(await detachedFor('arc').getAttribute('aria-orientation'),edge==='left'||edge==='right'?'horizontal':'vertical');
+  assert.equal(await detachedFor('arc').locator('.ui-toolbar-handle').isVisible(),true);
+  assert.equal(await detachedFor('arc').locator('.ui-option-default-separator').count(),1);
+  assert.deepEqual(await defaults(),['line'],'merging inactive tools keeps the current default');
+  if(edge!=='right')await tear('[data-toolbar-detached=true] [data-tool=point]',950,500);
+ }
+ await activate('arc');assert.deepEqual(await defaults(),['arc']);assert.equal(await page.evaluate(()=>defaultTool()),'arc');
+ await activate('point');assert.deepEqual(await defaults(),['arc'],'using the second slot does not set a default');
+ await tear('[data-toolbar-detached=true] [data-tool=point]',950,500);
+ assert.equal(await page.locator('[data-toolbar-detached=true]').count(),2);
+ assert.deepEqual(await defaults(),['point'],'an already active tool becomes default when it becomes a singleton');
+ await activate('rect');assert.deepEqual(await defaults(),['point'],'using another ordinary tool keeps the singleton default');
+ await activate('arc');assert.deepEqual(await defaults(),['arc'],'activating a different singleton transfers the default');
+ await activate('line');assert.deepEqual(await defaults(),['line'],'activating the primary default slot transfers the default');
+ const touchMerge=await page.context().newCDPSession(page);
+ await touchMerge.send('Emulation.setTouchEmulationEnabled',{enabled:true});
+ const trim=await page.locator('#toolsButtons [data-tool=trim]').boundingBox(),arcTarget=await detachedFor('arc').boundingBox();
+ await touchMerge.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:1,x:trim.x+trim.width/2,y:trim.y+trim.height/2}]});
+ await touchMerge.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{id:1,x:arcTarget.x-6,y:arcTarget.y+arcTarget.height/2}]});
+ assert.equal(await page.locator('#dockPreview').getAttribute('data-toolbar-group-drop'),'left');
+ await touchMerge.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ await touchMerge.detach();
+ assert.deepEqual(await detachedFor('arc').locator('[data-tool]').evaluateAll(nodes=>nodes.map(button=>button.dataset.tool)),['trim','arc']);
+ assert.deepEqual(await defaults(),['line']);
+
+ // A native action that opens subtools keeps the same handler after tear off.
+ await page.evaluate(()=>{const shell=document.createElement('div'),handle=document.createElement('div'),tray=document.createElement('div');shell.id='actionToolbar';handle.tabIndex=0;for(const name of ['子工具','第二工具']){const button=document.createElement('button');button.textContent=name;button.setAttribute('aria-label',name);button.onclick=()=>{document.body.dataset.lastAction=name};tray.append(button)}shell.append(handle,tray);document.body.append(shell);ChipUI.floatingPanel(shell,{toolbar:true,handle,items:tray}).place(900,400)});
+ await tear('#actionToolbar button:first-child',1000,650);await page.getByRole('button',{name:'子工具',exact:true}).click();assert.equal(await page.evaluate(()=>document.body.dataset.lastAction),'子工具');
+ // A priority-enabled one-button toolbar moves by its button rather than starting a meaningless reorder/tear-off.
+ await page.evaluate(()=>{const shell=document.createElement('div'),handle=document.createElement('div'),tray=document.createElement('div');shell.id='singlePriorityToolbar';handle.tabIndex=0;shell.append(handle,tray);document.body.append(shell);ChipUI.optionModel(tray,{items:[{id:'line',label:'單工具測試',icon:ChipUI.objectTypeIcon('line')}],mode:'single',priority:true,onChange:()=>{document.body.dataset.singleTriggered='true'}});ChipUI.floatingPanel(shell,{toolbar:true,handle,items:tray}).place(850,600)});assert.equal(await page.locator('#singlePriorityToolbar .ui-toolbar-handle').isVisible(),false);const countBefore=await page.locator('[data-toolbar-detached=true]').count(),singleBefore=await page.locator('#singlePriorityToolbar').boundingBox();await tear('#singlePriorityToolbar button',1100,700);const singleAfter=await page.locator('#singlePriorityToolbar').boundingBox();assert.ok(singleAfter.x>singleBefore.x+50&&singleAfter.y>singleBefore.y+30);assert.equal(await page.locator('[data-toolbar-detached=true]').count(),countBefore);assert.equal(await page.evaluate(()=>document.body.dataset.singleTriggered),undefined);await page.locator('#singlePriorityToolbar button').click();assert.equal(await page.evaluate(()=>document.body.dataset.singleTriggered),'true');
+ const cdp=await page.context().newCDPSession(page);await cdp.send('Emulation.setTouchEmulationEnabled',{enabled:true});await page.evaluate(()=>document.body.dataset.singleTriggered='false');const touchButton=await page.locator('#singlePriorityToolbar button').boundingBox();await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:1,x:touchButton.x+18,y:touchButton.y+18}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{id:1,x:touchButton.x+78,y:touchButton.y+48}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});assert.equal(await page.evaluate(()=>document.body.dataset.singleTriggered),'false');assert.ok((await page.locator('#singlePriorityToolbar').boundingBox()).x>singleAfter.x+40,'a single button also moves its toolbar by touch');const tap=await page.locator('#singlePriorityToolbar button').boundingBox();await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:2,x:tap.x+18,y:tap.y+18}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await page.waitForFunction(()=>document.body.dataset.singleTriggered==='true');assert.equal(await page.evaluate(()=>document.body.dataset.singleTriggered),'true','touch tap still activates the single tool');await cdp.detach();
+ assert.deepEqual(errors,[]);console.log('PASS: identical four-edge docking previews, orientation and expiry; original buttons tear off, merge at four sides, share one default, move, return, cancel and retain native actions');
+}finally{await browser.close()}

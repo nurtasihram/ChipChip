@@ -3,9 +3,16 @@
 'use strict';
 const packs = {
   "zh-Hant": {
+    "pane.objects": "物件",
+    "pane.layers": "圖層",
     "settings.measurement": "計量單位",
     "settings.snap": "吸附",
     "settings.selection": "選取",
+    "panel.openNamed": "展開{title}",
+    "panel.collapseNamed": "收縮{title}",
+    "panel.closeNamed": "關閉{title}",
+    "panel.pinNamed": "釘選{title}",
+    "panel.unpinNamed": "取消釘選{title}",
     "pane.close": "關閉繪圖窗格",
     "panel.close": "收起面板",
     "canvas.pan": "平移畫布",
@@ -47,9 +54,16 @@ const packs = {
     "fullscreen.off": "退出全螢幕"
   },
   "en": {
+    "pane.objects": "Objects",
+    "pane.layers": "Layers",
     "settings.measurement": "Measurement Units",
     "settings.snap": "Snapping",
     "settings.selection": "Selection",
+    "panel.openNamed": "Open {title}",
+    "panel.collapseNamed": "Collapse {title}",
+    "panel.closeNamed": "Close {title}",
+    "panel.pinNamed": "Pin {title}",
+    "panel.unpinNamed": "Unpin {title}",
     "pane.close": "Close drawing pane",
     "panel.close": "Close panel",
     "canvas.pan": "Pan canvas",

@@ -48,7 +48,7 @@ function mount(api){
  const find=id=>controls.querySelector('#'+id),step=find('pointConstructionStep'),output=find('pointConstructionValue'),commit=find('pointConstructionCommit');
  const fraction=ChipUI.fractionPositionComponent(find('pointConstructionFraction'),{id:'pointConstruction',onChange:q=>{if(q){numerator=q.numerator;denominator=q.denominator;}paint();}});
  const lengthField=ChipUI.physicalQuantityComponent(find('pointConstructionLengthHost'),{id:'pointConstructionLength',value:length,min:0,onChange:q=>{if(lineMode())return;length=q.value;paint();}});
- lengthField.input.addEventListener('input',()=>{if(lineMode())return;const input=lengthField.input,value=ChipUI.measurements.value(input.id)*ChipUI.measurements.unitFactor(input.dataset.quantityUnit);if(input.value.trim()&&Number.isFinite(value)&&value>=0){length=value;input.removeAttribute('aria-invalid')}else input.setAttribute('aria-invalid','true');paint();});
+ lengthField.input.addEventListener('input',()=>{if(lineMode())return;const input=lengthField.input,value=ChipUI.measurements.value(input.id)*ChipUI.measurements.unitFactor(ChipUI.measurements.unitForInput(input.id));if(input.value.trim()&&Number.isFinite(value)&&value>=0){length=value;input.removeAttribute('aria-invalid')}else input.setAttribute('aria-invalid','true');paint();});
  const trimMode=()=>tool()==='trim';
  const lineMode=()=>tool()==='line'&&['tangent','normal'].includes(current()),active=()=>trimMode()||lineMode()||tool()==='point'&&['divide','length'].includes(current());
  function cancel(){const owned=active()||!!state;lineLength=0;state=null;trimState=null;trimPlan=null;trimError='';press=null;restoreSnap();if(owned){preview.replaceChildren();api.clearSnap();}paint();}

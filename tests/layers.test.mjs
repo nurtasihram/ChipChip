@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
-import {createDOM} from './dom-fixture.mjs';
+import {createDOM} from './fixtures/dom-fixture.mjs';
 const {document}=createDOM('<div id="art"><line x1="0"/></div>');
 document.createElementNS=(_,tag)=>document.createElement(tag);
 const context=vm.createContext({document});

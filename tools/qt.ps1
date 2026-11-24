@@ -1,6 +1,6 @@
 param(
     [ValidateSet('setup', 'run', 'test')][string]$Action = 'run',
-    [ValidateSet('chipchip', 'chipdraw', 'pinview')][string]$App = 'chipchip'
+    [ValidateSet('chipchip', 'chipdraw')][string]$App = 'chipchip'
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
@@ -16,10 +16,8 @@ if ($Action -eq 'setup') {
 if (!(Test-Path -LiteralPath $qtPython)) { throw 'Run ./tools/qt.ps1 setup first.' }
 $entry = Join-Path $projectRoot 'desktop\qt\main.py'
 if ($Action -eq 'test') {
-    foreach ($target in @('chipchip', 'pinview')) {
-        & $qtPython $entry --app $target --smoke-test
-        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-    }
+    & $qtPython $entry --app $App --smoke-test
+    exit $LASTEXITCODE
 } else {
     & $qtPython $entry --app $App
     exit $LASTEXITCODE

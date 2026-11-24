@@ -1,19 +1,19 @@
 (function(root){
 'use strict';
-function mount({read,load,validate=null,host=null,subject='目前圖稿',hintText=null,refreshOnOpen=false,contextKey=()=>null,problems=()=>[],schema=null,idPrefix='jsonTest'}){
+function mount({read,load,validate=null,host=null,subject='目前圖稿',hintText=null,refreshOnOpen=false,revision=null,contextKey=()=>null,problems=()=>[],schema=null,idPrefix='jsonTest'}){
  const trigger=document.createElement('button');trigger.id=idPrefix+'Toggle';trigger.type='button';
  if(host){trigger.className='json-test-disclosure';trigger.innerHTML='<svg class="json-test-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="json-test-code-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 3H5v5l-2 2 2 2v5h2M13 3h2v5l2 2-2 2v5h-2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>JSON 模型</span>'}
  else trigger.textContent='JSON 模型';
  trigger.setAttribute('aria-label',subject+' JSON 模型');trigger.setAttribute('aria-expanded','false');trigger.setAttribute('aria-controls',idPrefix+'Panel');(host||document.querySelector('header')).append(trigger);
- let panel=null,field,message,apply,controller,busy=false,lastOutput=null,lastContext=null;
+ let panel=null,field,message,apply,controller,busy=false,lastRevision=null,lastContext=null;
  function button(host,id,text,action){const n=document.createElement('button');n.id=id;n.type='button';n.textContent=text;n.addEventListener('click',action);host.append(n);return n}
  function report(text,error=false){message.textContent=text;message.dataset.error=String(error);message.hidden=host&&!text;apply.dataset.error=String(error);apply.title=error?text:'保存';apply.setAttribute('aria-invalid',String(error))}
  function check(){if(busy||!validate)return;try{validate(ChipJson.parse(field.value));report('')}catch(error){report(error.message,true)}}
  function reportProblems(prefix){const issues=problems();report(issues.length?(prefix?prefix+'；':'')+issues.slice(0,3).map(issue=>issue.message).join('；'):prefix,issues.some(issue=>issue.severity==='error'))}
  function sameContext(a,b){return Array.isArray(a)&&Array.isArray(b)?a.length===b.length&&a.every((v,i)=>v===b[i]):a===b}
  function update(onlyChanged=false){
-  try{const text=ChipJson.stringify(read()),context=contextKey();if(!onlyChanged||text!==lastOutput||!sameContext(context,lastContext)){field.value=text;lastOutput=text;lastContext=context;if(host)check();else reportProblems('已輸出'+subject+' JSON')}else if(host)check();return true}
-  catch(error){field.value='';lastOutput=null;lastContext=null;report(error.message,true);return false}
+  try{const text=ChipJson.stringify(read()),context=contextKey(),current=revision?revision():text;if(!onlyChanged||current!==lastRevision||!sameContext(context,lastContext)){field.value=text;lastRevision=current;lastContext=context;if(host)check();else reportProblems('已輸出'+subject+' JSON')}else if(host)check();return true}
+  catch(error){field.value='';lastRevision=null;lastContext=null;report(error.message,true);return false}
  }
  function hide(){if(busy)return;panel.hidden=true;trigger.setAttribute('aria-expanded','false');trigger.focus()}
  function create(){
